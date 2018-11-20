@@ -1,0 +1,78 @@
+{
+    "name": "vscode-imp",
+    "displayName": "Electric Imp Squirrel",
+    "description": "Electric Imp vscode support",
+    "version": "0.0.1",
+    "publisher": "Electric Imp",
+    "icon": "simple_nut.png",
+    "engines": {
+        "vscode": "^1.28.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "keywords" : [
+        "electric imp", "electricimp", "imp"
+    ],
+    "activationEvents": [
+        "onCommand:imp.auth.creds",
+        "onCommand:imp.workspace.project.create",
+        "onCommand:imp.workspace.project.open",
+        "onCommand:imp.deploy.project.run",
+        "onCommand:imp.device.logstream",
+        "onLanguage:squirrel"
+    ],
+    "main": "./src/extension",
+    "contributes": {
+        "commands": [
+            {
+                "command": "imp.auth.creds",
+                "title": "imp: Auth User Password"
+            },
+            {
+                "command": "imp.workspace.project.create",
+                "title": "imp: Create Project"
+            },
+            {
+                "command": "imp.workspace.project.open",
+                "title": "imp: Open Project"
+            },
+            {
+                "command": "imp.workspace.project.run",
+                "title": "imp: Deploy Project"
+            },
+            {
+                "command": "imp.logstream.open",
+                "title": "imp: Open LogStream"
+            }
+        ],
+        "languages": [{
+            "id": "squirrel",
+            "aliases": ["Squirrel", "squirrel"],
+            "extensions": [".nut"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "squirrel",
+            "scopeName": "source.nut",
+            "path": "./syntaxes/Squirrel.tmLanguage.json"
+        }]
+
+    },
+    "scripts": {
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "node ./node_modules/vscode/bin/test"
+    },
+    "devDependencies": {
+        "@types/node": "^8.10.25",
+        "@types/mocha": "^2.2.42",
+        "typescript": "^2.6.1",
+        "vscode": "^1.1.21",
+        "eslint": "^4.11.0",
+        "imp-central-api": "^1.4.1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/blablacar/vscode-squirrel-lang.git"
+    }
+}
