@@ -25,6 +25,8 @@
 'use strict';
 
 const vscode = require('vscode');
+const ImpCentralApi = require('imp-central-api');
+const impCentralApi = new ImpCentralApi();
 
 /*
  * Here we will have all logic related with logstreams manipulation.
@@ -33,6 +35,16 @@ const vscode = require('vscode');
  */
 
 class LogStreamHelper {
+    _logMessage(message)
+    {
+        this.channel.appendLine(message);
+    }
+
+    _logState(message)
+    {
+        this.channel.appendLine(message);;
+    }
+
     // Initialize vscode workspace, create plugin conlfiguration file in the directory.
     // 
     // Parameters:
@@ -46,7 +58,14 @@ class LogStreamHelper {
 
             this.channel = vscode.window.createOutputChannel("device ID = " + deviceid);
             this.channel.show(true);
-            this.channel.appendLine('The user will see logs here.');
+
+            let logStreamID;
+            impCentralApi.logStreams.create(this._logMessage.bind(this), this._logState.bind(this)).then(logStream => {
+                logStreamID = logStream.data.id;
+                impCentralApi.logStreams.addDevice(logStreamID, deviceid);
+            }).catch(error => {
+                vscode.window.showErrorMessage(`The device ${deviceid} can not be added ` + error);
+            });
         });
     }
 }
