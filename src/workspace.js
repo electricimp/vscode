@@ -88,7 +88,7 @@ class WorkspaceHelper {
     // 
     // Parameters:
     //     none
-    createProject() {
+    newProject() {
         let folder = this._getCurrentFolderPath();
         if (!folder) {
             vscode.window.showErrorMessage('An imp configuration file can only be generated if VS Code is opened on a folder.');
@@ -114,15 +114,6 @@ class WorkspaceHelper {
                 this._createSourceFiles(folderPath);
             });
         }
-    }
-
-    // Select vscode workspace.
-    // 
-    // Parameters:
-    //     none
-    openProject() {
-        // TODO: Find way how to select workspace in the vscode samples.
-        vscode.window.showWarningMessage('Not implemented for now. Run % code . in the imp working directory.');
     }
 
     // Deploy the source code (agent.nut, device.nut) on device group.

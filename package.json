@@ -16,9 +16,8 @@
     ],
     "activationEvents": [
         "onCommand:imp.auth.creds",
-        "onCommand:imp.workspace.project.create",
-        "onCommand:imp.workspace.project.open",
-        "onCommand:imp.deploy.project.run",
+        "onCommand:imp.workspace.project.new",
+        "onCommand:imp.deploy.project.deploy",
         "onCommand:imp.device.logstream",
         "onLanguage:squirrel"
     ],
@@ -30,15 +29,11 @@
                 "title": "imp: Auth User Password"
             },
             {
-                "command": "imp.workspace.project.create",
-                "title": "imp: Create Project"
+                "command": "imp.workspace.project.new",
+                "title": "imp: New Project"
             },
             {
-                "command": "imp.workspace.project.open",
-                "title": "imp: Open Project"
-            },
-            {
-                "command": "imp.workspace.project.run",
+                "command": "imp.workspace.project.deploy",
                 "title": "imp: Deploy Project"
             },
             {

@@ -43,17 +43,12 @@ function activate(context) {
         auth.loginLoginKeyDialog();
     }));
 */
-    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.create', function () {
+    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.new', function () {
         let workspace = new workspaceHelper();
-        workspace.createProject();
+        workspace.newProject();
     }));
 
-    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.open', function () {
-        let workspace = new workspaceHelper();
-        workspace.openProject();
-    }));
-
-    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.run', function () {
+    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.deploy', function () {
         let workspace = new workspaceHelper();
         workspace.deploy();
     }));
