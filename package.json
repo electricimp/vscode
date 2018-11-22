@@ -41,6 +41,13 @@
                 "title": "imp: Open LogStream"
             }
         ],
+        "keybindings": [
+            {
+                "command": "imp.workspace.project.deploy",
+                "key": "ctrl+shift+d",
+                "mac": "cmd+shift+d"
+            }
+        ],
         "languages": [{
             "id": "squirrel",
             "aliases": ["Squirrel", "squirrel"],
