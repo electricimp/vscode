@@ -24,8 +24,11 @@
 
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
+const workspaceHelper = require('./workspace');
 
 /*
  * Here we should have all logic related with imp api auth.
@@ -35,6 +38,24 @@ const ImpCentralApi = require('imp-central-api');
  */
 
 class AuthHelper {
+    static _storeAuthInfo(authinfo) {
+        const authFile = path.join(workspaceHelper.getCurrentFolderPath(), workspaceHelper.authFileName);
+        fs.writeFile(authFile, JSON.stringify(authinfo) || '', (error) => {
+            if (error) {
+                vscode.window.showErrorMessage('Can not save auth file in the workspace.');
+            }
+        });
+    }
+
+    static _storeGitIgnoreFile() {
+        const gitIgnoreFile = path.join(workspaceHelper.getCurrentFolderPath(), workspaceHelper.gitIgnoreFileName);
+        fs.writeFile(gitIgnoreFile, workspaceHelper.gitIgnoreFileContent || '', (error) => {
+            if (error) {
+                vscode.window.showErrorMessage('Can not save .gitignore file in the workspace.');
+            }
+        });
+    }
+
     // Check if imp-central-api returned auth error.
     //
     // Parameters:
@@ -76,9 +97,16 @@ class AuthHelper {
                 }
 
                 const impCentralApi = new ImpCentralApi();
-                impCentralApi.auth.login(username, password).then(function(/* result */) {
+                impCentralApi.auth.login(username, password).then(function(result) {
+                    AuthHelper._storeAuthInfo(result);
+                    AuthHelper._storeGitIgnoreFile(result);
+
+                    /* 
+                     * TODO: Add try/catch to do not display the successfull message,
+                     * if we can not save the files above.
+                     */
+
                     vscode.window.showInformationMessage('Global login is successful.'); 
-                    // TODO: Save user auth creds in the workspace file.
                 }, function() {
                     vscode.window.showErrorMessage('Invalid Credentials: The provided credentials are invalid.');
                 });

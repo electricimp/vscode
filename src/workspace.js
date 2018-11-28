@@ -37,6 +37,18 @@ const DeviceGroups = ImpCentralApi.DeviceGroups;
  */
 
 class WorkspaceHelper {
+    static get authFileName() {
+        return 'auth.info';
+    }
+
+    static get gitIgnoreFileName() {
+        return '.gitignore';
+    }
+
+    static get gitIgnoreFileContent() {
+        return WorkspaceHelper.authFileName;
+    }
+
     static get configFileName() {
         return 'imp.config';
     }
