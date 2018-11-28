@@ -24,6 +24,8 @@
 
 'use strict';
 
+const fs = require('fs');
+const util = require('util');
 const vscode = require('vscode');
 const authHelper = require('./auth');
 const workspaceHelper = require('./workspace');
@@ -71,6 +73,9 @@ function activate(context) {
             vscode.window.showErrorMessage('The command is not implemented');
         }
     }));
+
+    // === USE IN CASE OF DEBUG
+    DEBUG_UNHANDLED_REJECTION();
 }
 exports.activate = activate;
 
@@ -78,3 +83,14 @@ exports.activate = activate;
 function deactivate() {
 }
 exports.deactivate = deactivate;
+
+// Debug stuff
+function DEBUG_UNHANDLED_REJECTION() {
+    process.on('unhandledRejection', (reason, p) => {
+        fs.writeFileSync('/tmp/node.log', '=======================================\n');
+        fs.appendFileSync('/tmp/node.log', 'Unhandled Rejection at: Promise');
+        fs.appendFileSync('/tmp/node.log', 'p = ' + util.inspect(p, {showHidden: false, depth: null}));
+        fs.appendFileSync('/tmp/node.log', 'r = ' + util.inspect(reason, {showHidden: false, depth: null}));
+        fs.appendFileSync('/tmp/node.log', '\n');
+    });
+}
