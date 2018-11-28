@@ -53,9 +53,13 @@ function activate(context) {
         workspace.deploy();
     }));
 
-    context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.open', function () {
-        let logstream = new logStreamHelper();
-        logstream.openOutputChannel();
+    context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.add', function () {
+            let logstream = new logStreamHelper();
+            logstream.openOutputChannel();
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.remove', function () {
+            vscode.window.showErrorMessage('The command is not implemented');
     }));
 }
 exports.activate = activate;

@@ -18,7 +18,8 @@
         "onCommand:imp.auth.creds",
         "onCommand:imp.workspace.project.new",
         "onCommand:imp.deploy.project.deploy",
-        "onCommand:imp.device.logstream",
+        "onCommand:imp.logstream.add",
+        "onCommand:imp.logstream.remove",
         "onLanguage:squirrel"
     ],
     "main": "./src/extension",
@@ -37,8 +38,12 @@
                 "title": "imp: Deploy Project"
             },
             {
-                "command": "imp.logstream.open",
-                "title": "imp: Open LogStream"
+                "command": "imp.logstream.add",
+                "title": "imp: Add Device Logs"
+            },
+            {
+                "command": "imp.logstream.remove",
+                "title": "imp: Remove Device Logs"
             }
         ],
         "keybindings": [
