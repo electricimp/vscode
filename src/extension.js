@@ -31,8 +31,10 @@ const logStreamHelper = require('./logstream');
 
 function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('imp.auth.creds', function () {
-        let auth = new authHelper();
-        auth.loginCredsDialog();
+        if (workspaceHelper.isWorkspaceFolderOpened()) {
+            let auth = new authHelper();
+            auth.loginCredsDialog();
+        }
     }));
 
 /*  
@@ -44,22 +46,30 @@ function activate(context) {
     }));
 */
     context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.new', function () {
-        let workspace = new workspaceHelper();
-        workspace.newProject();
+        if (workspaceHelper.isWorkspaceFolderOpened()) {
+            let workspace = new workspaceHelper();
+            workspace.newProject();
+        }
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.deploy', function () {
-        let workspace = new workspaceHelper();
-        workspace.deploy();
+        if (workspaceHelper.isWorkspaceFolderOpened()) {
+            let workspace = new workspaceHelper();
+            workspace.deploy();
+        }
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.add', function () {
+        if (workspaceHelper.isWorkspaceFolderOpened()) {
             let logstream = new logStreamHelper();
             logstream.openOutputChannel();
+        }
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.remove', function () {
+        if (workspaceHelper.isWorkspaceFolderOpened()) {
             vscode.window.showErrorMessage('The command is not implemented');
+        }
     }));
 }
 exports.activate = activate;

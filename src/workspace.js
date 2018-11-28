@@ -49,7 +49,7 @@ class WorkspaceHelper {
         return 'device.nut';
     }
 
-    _getCurrentFolderPath() {
+    static getCurrentFolderPath() {
         let folders = vscode.workspace.workspaceFolders;
         let folder = undefined;
         if (!folders) {
@@ -59,12 +59,19 @@ class WorkspaceHelper {
         if (folders.length === 1) {
             folder = folders[0];
         } else {
-            // TODO: There are no plans to support milti-root.
-            // Do something with this case.
+            vscode.window.showErrorMessage('Multi-root Workspaces are not supported.');
             return undefined;
         }
 
         return folder.uri.fsPath;
+    }
+
+    static isWorkspaceFolderOpened() {
+        if (WorkspaceHelper.getCurrentFolderPath())
+            return true;
+
+        vscode.window.showErrorMessage('Please select the folder to start work with imp commands.');
+        return false;
     }
 
     _createSourceFiles(folderPath) {
@@ -89,13 +96,7 @@ class WorkspaceHelper {
     // Parameters:
     //     none
     newProject() {
-        let folder = this._getCurrentFolderPath();
-        if (!folder) {
-            vscode.window.showErrorMessage('An imp configuration file can only be generated if VS Code is opened on a folder.');
-            return;
-        }
-
-        let folderPath = folder;
+        let folderPath = WorkspaceHelper.getCurrentFolderPath();
         let impConfigFile = path.join(folderPath, WorkspaceHelper.configFileName);
         if (fs.existsSync(impConfigFile)) {
             vscode.window.showInformationMessage('An imp configuration file already exists.');
@@ -121,13 +122,7 @@ class WorkspaceHelper {
     // Parameters:
     //     none
     deploy() {
-        let folder = this._getCurrentFolderPath();
-        if (!folder) {
-            vscode.window.showErrorMessage('An imp work folder is not defined.');
-            return;
-        }
-
-        let folderPath = folder;
+        let folderPath = WorkspaceHelper.getCurrentFolderPath();
         let impConfigFile = path.join(folderPath, WorkspaceHelper.configFileName);
         let config = JSON.parse(fs.readFileSync(impConfigFile).toString());
 
