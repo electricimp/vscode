@@ -34,19 +34,10 @@ const logStreamHelper = require('./logstream');
 function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('imp.auth.creds', function () {
         if (workspaceHelper.isWorkspaceFolderOpened()) {
-            let auth = new authHelper();
-            auth.loginCredsDialog();
+            authHelper.loginCredsDialog();
         }
     }));
 
-/*  
-    // Second vscode auth command, not used for now.
-    // Do not forget to add it to package.json later.
-    context.subscriptions.push(vscode.commands.registerCommand('imp.auth.loginkey', function () {
-        let auth = new authHelper();
-        auth.loginLoginKeyDialog();
-    }));
-*/
     context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.new', function () {
         if (workspaceHelper.isWorkspaceFolderOpened()) {
             let workspace = new workspaceHelper();

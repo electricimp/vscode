@@ -26,7 +26,7 @@
 
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
-const impCentralApi = new ImpCentralApi();
+const AuthHelper = require('./auth');
 
 /*
  * Here we will have all logic related with logstreams manipulation.
@@ -35,21 +35,15 @@ const impCentralApi = new ImpCentralApi();
  */
 
 class LogStreamHelper {
-    _logMessage(message)
-    {
+    _logMessage(message) {
         this.channel.appendLine(message);
     }
 
-    _logState(message)
-    {
-        this.channel.appendLine(message);;
+    _logState(message) {
+        this.channel.appendLine(message);
     }
 
-    // Initialize vscode workspace, create plugin conlfiguration file in the directory.
-    // 
-    // Parameters:
-    //     none
-    openOutputChannel() {
+    _addDevice(accessToken) {
         vscode.window.showInputBox({ prompt: 'Enter device id:' }).then(deviceid => {
             if (!deviceid) {
                 vscode.window.showErrorMessage('The device ID is empty');
@@ -60,12 +54,24 @@ class LogStreamHelper {
             this.channel.show(true);
 
             let logStreamID;
+            var impCentralApi = new ImpCentralApi();
+            impCentralApi.auth.accessToken = accessToken;
             impCentralApi.logStreams.create(this._logMessage.bind(this), this._logState.bind(this)).then(logStream => {
                 logStreamID = logStream.data.id;
                 impCentralApi.logStreams.addDevice(logStreamID, deviceid);
             }).catch(error => {
                 vscode.window.showErrorMessage(`The device ${deviceid} can not be added ` + error);
             });
+        });
+    }
+
+    // Add device to LogStream and send it's logs to the outputChannel.
+    // 
+    // Parameters:
+    //     none
+    openOutputChannel() {
+        AuthHelper.authorize().then(this._addDevice.bind(this), function(err) {
+            vscode.window.showErrorMessage('Can not add device ' + err);
         });
     }
 }

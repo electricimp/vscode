@@ -28,121 +28,77 @@ const fs = require('fs');
 const path = require('path');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
-const workspaceHelper = require('./workspace');
+const WorkspaceHelper = require('./workspace');
 
-/*
- * Here we should have all logic related with imp api auth.
- * For now it is slightly simplified. If we will get auth error, we will ask user to enter auth creds.
- * The whole login process should be automated and based on auth tokens like in the impt.
- * See impt ImpCentralApiHelper class.
- */
-
-class AuthHelper {
-    static _storeAuthInfo(authinfo) {
-        const authFile = path.join(workspaceHelper.getCurrentFolderPath(), workspaceHelper.authFileName);
-        fs.writeFile(authFile, JSON.stringify(authinfo) || '', (error) => {
-            if (error) {
-                vscode.window.showErrorMessage('Can not save auth file in the workspace.');
-            }
-        });
+// Initiate user login dialog using username/password authorization.
+// Save file with access token in the workspace directory.
+//
+// Parameters:
+//     none
+//
+// Returns:
+//     none
+function loginCredsDialog() {
+    const username_options = {
+        prompt: 'Enter username or email address:' 
     }
-
-    static _storeGitIgnoreFile() {
-        const gitIgnoreFile = path.join(workspaceHelper.getCurrentFolderPath(), workspaceHelper.gitIgnoreFileName);
-        fs.writeFile(gitIgnoreFile, workspaceHelper.gitIgnoreFileContent || '', (error) => {
-            if (error) {
-                vscode.window.showErrorMessage('Can not save .gitignore file in the workspace.');
-            }
-        });
-    }
-
-    // Check if imp-central-api returned auth error.
-    //
-    // Parameters:
-    //     error : error from imp-central-api to check
-    //
-    // Returns:                     bool value dependent of error check
-    //
-    isAuthenticationError(error) {
-        return error instanceof ImpCentralApi.Errors.ImpCentralApiError &&
-            error._statusCode === 401;
-    }
-
-    // Initiate user login dialog using username/password authorization.
-    //
-    // Parameters:
-    //     none
-    //
-    // Returns:
-    //     none
-    loginCredsDialog() {
-        const username_options = {
-            prompt: 'Enter username or email address:' 
+    vscode.window.showInputBox(username_options).then(username => {
+        if (!username) {
+            vscode.window.showErrorMessage('The username is empty');
+            return;
         }
-        vscode.window.showInputBox(username_options).then(username => {
-            if (!username) {
-                vscode.window.showErrorMessage('The username is empty');
-                return;
-            }
 
-            const password_options = {
-                password: true,
-                prompt: 'Enter password:'
-            }
-
-            vscode.window.showInputBox(password_options).then(password => {
-                if (!password) {
-                    vscode.window.showErrorMessage('The password is empty');
-                    return;
-                }
-
-                const impCentralApi = new ImpCentralApi();
-                impCentralApi.auth.login(username, password).then(function(result) {
-                    AuthHelper._storeAuthInfo(result);
-                    AuthHelper._storeGitIgnoreFile(result);
-
-                    /* 
-                     * TODO: Add try/catch to do not display the successfull message,
-                     * if we can not save the files above.
-                     */
-
-                    vscode.window.showInformationMessage('Global login is successful.'); 
-                }, function() {
-                    vscode.window.showErrorMessage('Invalid Credentials: The provided credentials are invalid.');
-                });
-            });			
-        });
-    }
-
-// NOTE: Second vscode auth command.
-// See description below. Need to be discussed. Comment for now.
-/* 
-    // Initiate user login dialog using loginKey authorization.
-    // 
-    // Parameters:
-    //     none
-    loginLoginKeyDialog() {
-        let options = {
+        const password_options = {
             password: true,
-            prompt: 'Enter Login Key:'
+            prompt: 'Enter password:'
         }
 
-        vscode.window.showInputBox(options).then(loginkey => {
-            if (!loginkey) {
-                vscode.window.showErrorMessage('The loginkey is empty');
+        vscode.window.showInputBox(password_options).then(password => {
+            if (!password) {
+                vscode.window.showErrorMessage('The password is empty');
                 return;
             }
 
             const impCentralApi = new ImpCentralApi();
-            impCentralApi.auth.getAccessToken(loginkey).then(function(result) {
-                vscode.window.showInformationMessage('Global login is successful.');
-                    // Extract access-token from result
-                }, function() {
-                    vscode.window.showErrorMessage(`Login Key "${loginkey}" is not found.`);
-                });
+            impCentralApi.auth.login(username, password).then(function(authInfo) {
+                const authFile = path.join(WorkspaceHelper.getCurrentFolderPath(), WorkspaceHelper.authFileName);
+                const gitIgnoreFile = path.join(WorkspaceHelper.getCurrentFolderPath(), WorkspaceHelper.gitIgnoreFileName);
+                try {
+                    fs.writeFileSync(authFile, JSON.stringify(authInfo));
+                    fs.writeFileSync(gitIgnoreFile, JSON.stringify(authInfo));
+                } catch(err) {
+                    // TODO: Possibly it is required to split json and fs errors handling.
+                    vscode.window.showErrorMessage('Auth error ' + err);
+                    return;
+                }
+                vscode.window.showInformationMessage('Workspace login is successful.'); 
+            }, function() {
+                vscode.window.showErrorMessage('Invalid Credentials: The provided credentials are invalid.');
+            });
         });
-    }
-*/
+    });
 }
+module.exports.loginCredsDialog = loginCredsDialog;
 
-module.exports = AuthHelper;
+// Authorization procedure using authorization file from current workspace.
+//
+// Parameters:
+//     none
+//
+// Returns:                     Promise that resolves when the login is successfull, 
+//                              or rejects with an error
+//
+function authorize() {
+    return new Promise(function(resolve, reject) {
+        const authFile = path.join(WorkspaceHelper.getCurrentFolderPath(), WorkspaceHelper.authFileName);
+        try {
+            let data = fs.readFileSync(authFile);
+            const auth = JSON.parse(data);
+            resolve(auth.access_token);
+        } catch (err) {
+            vscode.window.showErrorMessage('Cannot read auth file. ');
+            reject(err);
+        }
+    });
+}
+module.exports.authorize = authorize;

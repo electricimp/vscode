@@ -29,6 +29,7 @@ const fs = require('fs');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
 const DeviceGroups = ImpCentralApi.DeviceGroups;
+const AuthHelper = require('./auth');
 
 /*
  * Workspace helper class.
@@ -82,18 +83,18 @@ class WorkspaceHelper {
         if (WorkspaceHelper.getCurrentFolderPath())
             return true;
 
-        vscode.window.showErrorMessage('Please select the folder to start work with imp commands.');
+        vscode.window.showErrorMessage('Please select the workspace folder proceed.');
         return false;
     }
 
-    _createSourceFiles(folderPath) {
+    static _createSourceFiles(folderPath) {
         const agentFile = path.join(folderPath, WorkspaceHelper.agentSourceFileName);
         const deviceFile = path.join(folderPath, WorkspaceHelper.deviceSourceFileName);
         fs.writeFileSync(agentFile, '// This is agent code');
         fs.writeFileSync(deviceFile, '// This is device code');
     }
 
-    _updateConfigurationFile(configFilePath, deviceGroup, agentSource, deviceSource) {
+    static _updateConfigurationFile(configFilePath, deviceGroup, agentSource, deviceSource) {
         const options = {
             deviceGroupId: deviceGroup,
             device_code : agentSource,
@@ -108,25 +109,33 @@ class WorkspaceHelper {
     // Parameters:
     //     none
     newProject() {
-        let folderPath = WorkspaceHelper.getCurrentFolderPath();
-        let impConfigFile = path.join(folderPath, WorkspaceHelper.configFileName);
-        if (fs.existsSync(impConfigFile)) {
-            vscode.window.showInformationMessage('An imp configuration file already exists.');
-            let document = vscode.workspace.openTextDocument(impConfigFile);
-            vscode.window.showTextDocument(document);
-        } else {
-            vscode.window.showInputBox({ prompt: 'Enter an exist device group Id:' }).then(deviceGroupId => {
-                if (!deviceGroupId) {
-                    vscode.window.showErrorMessage('The device group Id is empty');
-                    return;
-                }
+        AuthHelper.authorize().then(accessToken => {
+            let folderPath = WorkspaceHelper.getCurrentFolderPath();
+            let impConfigFile = path.join(folderPath, WorkspaceHelper.configFileName);
+            if (fs.existsSync(impConfigFile)) {
+                vscode.window.showInformationMessage('An imp configuration file already exists.');
+                let document = vscode.workspace.openTextDocument(impConfigFile);
+                vscode.window.showTextDocument(document);
+            } else {
+                vscode.window.showInputBox({ prompt: 'Enter an exist device group Id:' }).then(deviceGroupId => {
+                    if (!deviceGroupId) {
+                        vscode.window.showErrorMessage('The device group Id is empty');
+                        return;
+                    }
 
-                // TODO: Check that device group Id is valid
-
-                this._updateConfigurationFile(impConfigFile, deviceGroupId, WorkspaceHelper.agentSourceFileName, WorkspaceHelper.deviceSourceFileName);
-                this._createSourceFiles(folderPath);
-            });
-        }
+                    var impCentralApi = new ImpCentralApi();
+                    impCentralApi.auth.accessToken = accessToken;
+                    impCentralApi.deviceGroups.get(deviceGroupId).then(function(/* result */) {
+                        WorkspaceHelper._updateConfigurationFile(impConfigFile, deviceGroupId, WorkspaceHelper.agentSourceFileName, WorkspaceHelper.deviceSourceFileName);
+                        WorkspaceHelper._createSourceFiles(folderPath);
+                    }, function(err) {
+                        vscode.window.showErrorMessage('The device group ' + deviceGroupId + ' is invalid');
+                    });
+                });
+            }
+        }, err => {
+            vscode.window.showErrorMessage('Can not create project ' + err);
+        });
     }
 
     // Deploy the source code (agent.nut, device.nut) on device group.
@@ -150,19 +159,25 @@ class WorkspaceHelper {
             agent_code : agentSource,
         };
 
-        const impCentralApi = new ImpCentralApi();
-        impCentralApi.deployments.create(config.deviceGroupId, DeviceGroups.TYPE_DEVELOPMENT, attrs).then(function(result) {
-            vscode.window.showInformationMessage('deploy ' + result);
+        AuthHelper.authorize().then(accessToken => {
+            var impCentralApi = new ImpCentralApi();
+            impCentralApi.auth.accessToken = accessToken;
+            impCentralApi.deployments.create(config.deviceGroupId, DeviceGroups.TYPE_DEVELOPMENT, attrs).then(function(result) {
+                vscode.window.showInformationMessage('deploy ' + result);
 
-            // TODO: Move all devices related logic to not-exist devices.js file.
+                // TODO: Move all devices related logic to not-exist devices.js file.
 
-            impCentralApi.deviceGroups.restartDevices(config.deviceGroupId).then(function(/* result */) {
-                vscode.window.showInformationMessage('All devices in the group ' + config.deviceGroupId + ' were reset');
+                impCentralApi.deviceGroups.restartDevices(config.deviceGroupId).then(function(result) {
+                    vscode.window.showInformationMessage('All devices in the group ' + config.deviceGroupId + ' were reset');
+                }, function(err) {
+                    vscode.window.showErrorMessage('reset ' + err);
+                });
+
             }, function(err) {
-                vscode.window.showErrorMessage('reset ' + err);
+                vscode.window.showErrorMessage('deploy ' + err);
             });
-        }, function(err) {
-            vscode.window.showErrorMessage('deploy ' + err);
+        }, err => {
+            vscode.window.showErrorMessage('Can not deploy project ' + err);
         });
     }
 }
