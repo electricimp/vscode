@@ -17,7 +17,7 @@
     "activationEvents": [
         "onCommand:imp.auth.creds",
         "onCommand:imp.workspace.project.new",
-        "onCommand:imp.deploy.project.deploy",
+        "onCommand:imp.workspace.project.deploy",
         "onCommand:imp.logstream.add",
         "onCommand:imp.logstream.remove",
         "onLanguage:squirrel"
