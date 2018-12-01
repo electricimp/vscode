@@ -41,7 +41,7 @@ function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.new', function () {
         if (workspaceHelper.isWorkspaceFolderOpened()) {
             let workspace = new workspaceHelper();
-            workspace.newProject();
+            workspace.newProjectDialog();
         }
     }));
 
@@ -54,8 +54,8 @@ function activate(context) {
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.add', function () {
         if (workspaceHelper.isWorkspaceFolderOpened()) {
-            let logstream = new logStreamHelper();
-            logstream.openOutputChannel();
+            let logstream = new logStreamHelper.LogStreamHelper();
+            logstream.addDeviceDialog();
         }
     }));
 

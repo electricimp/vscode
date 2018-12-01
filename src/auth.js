@@ -68,12 +68,12 @@ function loginCredsDialog() {
                     fs.writeFileSync(gitIgnoreFile, JSON.stringify(authInfo));
                 } catch(err) {
                     // TODO: Possibly it is required to split json and fs errors handling.
-                    vscode.window.showErrorMessage('Auth error ' + err);
+                    vscode.window.showErrorMessage('Auth file error: ' + err);
                     return;
                 }
                 vscode.window.showInformationMessage('Workspace login is successful.'); 
-            }, function() {
-                vscode.window.showErrorMessage('Invalid Credentials: The provided credentials are invalid.');
+            }, function(err) {
+                vscode.window.showErrorMessage('Auth failed: ' + err);
             });
         });
     });
@@ -96,7 +96,7 @@ function authorize() {
             const auth = JSON.parse(data);
             resolve(auth.access_token);
         } catch (err) {
-            vscode.window.showErrorMessage('Cannot read auth file. ');
+            vscode.window.showErrorMessage('Cannot read auth file: ' + err);
             reject(err);
         }
     });

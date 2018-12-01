@@ -58,9 +58,11 @@ class LogStreamHelper {
             impCentralApi.auth.accessToken = accessToken;
             impCentralApi.logStreams.create(this._logMessage.bind(this), this._logState.bind(this)).then(logStream => {
                 logStreamID = logStream.data.id;
-                impCentralApi.logStreams.addDevice(logStreamID, deviceid);
-            }).catch(error => {
-                vscode.window.showErrorMessage(`The device ${deviceid} can not be added ` + error);
+                impCentralApi.logStreams.addDevice(logStreamID, deviceid).then(() => {
+                    logStreamState.isAdded = true;
+                }, err => {
+                    vscode.window.showErrorMessage(`The device ${deviceid} can not be added: ` + err);
+                });
             });
         });
     }
@@ -69,11 +71,23 @@ class LogStreamHelper {
     // 
     // Parameters:
     //     none
-    openOutputChannel() {
-        AuthHelper.authorize().then(this._addDevice.bind(this), function(err) {
-            vscode.window.showErrorMessage('Can not add device ' + err);
-        });
+    addDeviceDialog() {
+        if (logStreamState.isAdded) {
+            vscode.window.showErrorMessage("Some device already added, cannot add more for now.");
+        } else {
+            AuthHelper.authorize().then(this._addDevice.bind(this), function(err) {
+                vscode.window.showErrorMessage('Can not add device: ' + err);
+            });
+        }
     }
 }
+module.exports.LogStreamHelper = LogStreamHelper;
 
-module.exports = LogStreamHelper;
+// Global variable to store LogStream/outputChannel state between extension commands calls.
+// NOTE: Possibly could not be exported.
+var logStreamState = {
+    logStreamID: undefined,
+    outputChannel: undefined,
+    isAdded: false
+}
+module.exports.logStreamState = logStreamState;
