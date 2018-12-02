@@ -27,7 +27,7 @@ This extension contributes the following commands:
 * `imp: New Project`: Create configuration file and source code files in the selected workspace directory.
 * `imp: Deploy Project`: Deploy the source code on the selected device group and reset the devices.
 * `imp: Add Device Logs`: Display selected device logs in the console output (the only one device available for now).
-* `imp: Remove Device Logs`: Deploy the source code on the selected device group and reset the devices.
+* `imp: Remove Device Logs`: Not supported for now.
 
 ## Current limitations
 
