@@ -4,12 +4,12 @@ Microsoft Visual Studio Code extension for Electric Imp applications development
 
 ## Overview
 
-The Plug-in is designed to improve developer productivity. It allows you to rapidly build and maintain applications by
-providing:
+The Plug-in is designed to improve developer productivity. It allows you to rapidly build and maintain applications by providing:
 
-* Code auto-completion for [Electric Imp’s imp API](https://developer.electricimp.com/api)
 * Advanced Squirrel code highlighting
-* TODO: Complete list of features.
+* Code auto-completion for [Electric Imp’s imp API](https://developer.electricimp.com/api)
+* Source code deployment and debug.
+* Ability to work with imp infrastructure.
 
 The Plug-in requires connection to the Internet as it leverages the
 [Electric Imp impCentral™ API](https://developer.electricimp.com/tools/impcentralapi)
@@ -23,26 +23,30 @@ The installation process, starting from nodejs installation will be described he
 
 This extension contributes the following commands:
 
-* `imp.command1`: TODO:
-* `imp.command2`: Describe available commands here.
+* `imp: Auth User Password`: Create authrization file with access token in the selected workspace directory.
+* `imp: New Project`: Create configuration file and source code files in the selected workspace directory.
+* `imp: Deploy Project`: Deploy the source code on the selected device group and reset the devices.
+* `imp: Add Device Logs`: Display selected device logs in the console output (the only one device available for now).
+* `imp: Remove Device Logs`: Deploy the source code on the selected device group and reset the devices.
 
 ## Current limitations
 
 This is a very early version of extension, so the functionality is heavily restricted. The only available checked scenario is described below:
-- Run % code . in the extension directory.
-- Run extension debug mode, the another vscode window will be opened with [Extension Development] string in the window header.
-- Choose the working directory. File -> Open Folder... in the [Extension Development] window.
-- Run the 'imp: Auth User Password' extension command using Alt + Ctrl + P.
+- Download the extension from github.
+- Run the `npm install .` in the extension directory.
+- Run `code .` in the extension directory.
+- Start the extension debug procedure. Ctrl + Shift + D. The select "Start Debugging". The another vscode window will be opened with [Extension Development] string in the window header.
+- Choose the squirrel project working directory using File -> Open Folder.
+- Use the Alt + Ctrl + P and run the `imp: Auth User Password` extension command.
 The successful login procedure will be ended with pop-up notification in the right corner of the extension development window.
-- Run the 'imp: Create Project' command. Enter exist device group id, where the source code planned to be deployed. The files agent.nut, device.nut and imp.config should be appear in the working directory.
-- Make some changes in the device.nut and agent.nut and run 'imp: Deploy Project'.
-It is expected, that source code will be deployed on the device group and all devices will receive reset signal. It is possible to check the new deployment using impt tool or Web-based IDE.
+- Run the `imp: New Project` command. Enter exist device group id, where the source code planned to be deployed. The files agent.nut, device.nut and imp.config should appear in the working directory.
+- Make some changes in the device.nut and agent.nut and run `imp: Deploy Project`. The pop-up window with information message will be displayed in case of success.
+It is expected, that source code will be deployed on the selected device group and all devices will receive reset signal.
 
 ## TODO (Current scope view)
 ### Development scope:
 * Whole node codebase quality improvements (continuous).
-* Auto-login functionality, store auth information somewhere (see impt) to avoid manual creds entering from user, when vscode workspace will be opened.
-* Manage with devices logStreams streaming to vsode ouput console. Implement user interaction functionality to allow adding and removing device logs from/to output console.
+* Refresh access token functionality.
 * Products, device groups and devices manipulation (should be split).
 * Errors detection in the device logs.
 * Errors highlighting.
