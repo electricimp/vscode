@@ -22,13 +22,12 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
-'use strict';
 
 const fs = require('fs');
 const path = require('path');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
-const WorkspaceHelper = require('./workspace');
+const Workspace = require('./workspace');
 
 // Initiate user login dialog using username/password authorization.
 // Save file with access token in the workspace directory.
@@ -39,44 +38,53 @@ const WorkspaceHelper = require('./workspace');
 // Returns:
 //     none
 function loginCredsDialog() {
-    const username_options = {
-        prompt: 'Enter username or email address:' 
-    }
-    vscode.window.showInputBox(username_options).then(username => {
-        if (!username) {
-            vscode.window.showErrorMessage('The username is empty');
-            return;
-        }
-
-        const password_options = {
-            password: true,
-            prompt: 'Enter password:'
-        }
-
-        vscode.window.showInputBox(password_options).then(password => {
-            if (!password) {
-                vscode.window.showErrorMessage('The password is empty');
+    const usernameOptions = {
+        prompt: 'Enter username or email address:',
+    };
+    vscode.window.showInputBox(usernameOptions)
+        .then((username) => {
+            if (!username) {
+                vscode.window.showErrorMessage('The username is empty');
                 return;
             }
 
-            const impCentralApi = new ImpCentralApi();
-            impCentralApi.auth.login(username, password).then(function(authInfo) {
-                const authFile = path.join(WorkspaceHelper.getCurrentFolderPath(), WorkspaceHelper.authFileName);
-                const gitIgnoreFile = path.join(WorkspaceHelper.getCurrentFolderPath(), WorkspaceHelper.gitIgnoreFileName);
-                try {
-                    fs.writeFileSync(authFile, JSON.stringify(authInfo));
-                    fs.writeFileSync(gitIgnoreFile, JSON.stringify(authInfo));
-                } catch(err) {
-                    // TODO: Possibly it is required to split json and fs errors handling.
-                    vscode.window.showErrorMessage('Auth file error: ' + err);
-                    return;
-                }
-                vscode.window.showInformationMessage('Workspace login is successful.'); 
-            }, function(err) {
-                vscode.window.showErrorMessage('Auth failed: ' + err);
-            });
+            const passwordOptions = {
+                password: true,
+                prompt: 'Enter password:',
+            };
+
+            vscode.window.showInputBox(passwordOptions)
+                .then((password) => {
+                    if (!password) {
+                        vscode.window.showErrorMessage('The password is empty');
+                        return;
+                    }
+
+                    const impCentralApi = new ImpCentralApi();
+                    impCentralApi.auth.login(username, password)
+                        .then((authInfo) => {
+                            const currentPath = Workspace.getCurrentFolderPath();
+                            const authName = Workspace.Helper.authFileName;
+                            const gitIgnoreName = Workspace.Helper.gitIgnoreFileName;
+                            const authFile = path.join(currentPath, authName);
+                            const gitIgnoreFile = path.join(currentPath, gitIgnoreName);
+                            try {
+                                fs.writeFileSync(authFile, JSON.stringify(authInfo));
+                                fs.writeFileSync(gitIgnoreFile, JSON.stringify(authInfo));
+                            } catch (err) {
+                                /*
+                                 * TODO: Possibly it is required to split
+                                 * json and fs errors handling.
+                                 */
+                                vscode.window.showErrorMessage(`Auth file error: ${err}`);
+                                return;
+                            }
+                            vscode.window.showInformationMessage('Workspace login is successful.');
+                        }, (err) => {
+                            vscode.window.showErrorMessage(`Auth failed: ${err}`);
+                        });
+                });
         });
-    });
 }
 module.exports.loginCredsDialog = loginCredsDialog;
 
@@ -85,20 +93,21 @@ module.exports.loginCredsDialog = loginCredsDialog;
 // Parameters:
 //     none
 //
-// Returns:                     Promise that resolves when the login is successfull, 
+// Returns:                     Promise that resolves when the login is successfull,
 //                              or rejects with an error
 //
 function authorize() {
-    return new Promise(function(resolve, reject) {
-        const authFile = path.join(WorkspaceHelper.getCurrentFolderPath(), WorkspaceHelper.authFileName);
+    return new Promise(((resolve, reject) => {
+        const authName = Workspace.Helper.authFileName;
+        const authFile = path.join(Workspace.getCurrentFolderPath(), authName);
         try {
-            let data = fs.readFileSync(authFile);
+            const data = fs.readFileSync(authFile);
             const auth = JSON.parse(data);
             resolve(auth.access_token);
         } catch (err) {
-            vscode.window.showErrorMessage('Cannot read auth file: ' + err);
+            vscode.window.showErrorMessage(`Cannot read auth file: ${err}`);
             reject(err);
         }
-    });
+    }));
 }
 module.exports.authorize = authorize;

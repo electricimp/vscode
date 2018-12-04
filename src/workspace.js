@@ -22,22 +22,17 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
-'use strict';
 
 const path = require('path');
 const fs = require('fs');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
-const DeviceGroups = ImpCentralApi.DeviceGroups;
-const AuthHelper = require('./auth');
+const Auth = require('./auth');
 
-/*
- * Workspace helper class.
- * Here we should have the logic related with working directory manipulations.
- * Source code files manipulation. Store the information required for source code deployment.
- */
+const DevGoups = ImpCentralApi.DeviceGroups;
 
-class WorkspaceHelper {
+// This class provides the constants required for workspace manipulation.
+class Helper {
     static get authFileName() {
         return 'auth.info';
     }
@@ -47,7 +42,7 @@ class WorkspaceHelper {
     }
 
     static get gitIgnoreFileContent() {
-        return WorkspaceHelper.authFileName;
+        return Helper.authFileName;
     }
 
     static get configFileName() {
@@ -69,121 +64,139 @@ class WorkspaceHelper {
     static get deviceSourceHeader() {
         return '// This is device code';
     }
+}
+module.exports.Helper = Helper;
 
-    static getCurrentFolderPath() {
-        let folders = vscode.workspace.workspaceFolders;
-        let folder = undefined;
-        if (!folders) {
-            return undefined;
-        }
+// Get path to workspace working directory.
+//
+// Parameters:
+//     none
+function getCurrentFolderPath() {
+    const folders = vscode.workspace.workspaceFolders;
+    let folder;
+    if (!folders) {
+        return undefined;
+    }
 
-        if (folders.length === 1) {
-            folder = folders[0];
+    if (folders.length === 1) {
+        [folder] = folders;
+    } else {
+        vscode.window.showErrorMessage('Multi-root workspaces are not supported.');
+        return undefined;
+    }
+
+    return folder.uri.fsPath;
+}
+module.exports.getCurrentFolderPath = getCurrentFolderPath;
+
+// Check, if workspace working directory was selected by user.
+//
+// Parameters:
+//     none
+function isWorkspaceFolderOpened() {
+    if (getCurrentFolderPath()) return true;
+
+    vscode.window.showErrorMessage('Please select the workspace folder proceed.');
+    return false;
+}
+module.exports.isWorkspaceFolderOpened = isWorkspaceFolderOpened;
+
+// Initialize vscode workspace, create plugin conlfiguration file in the directory.
+//
+// Parameters:
+//     none
+function newProjectDialog() {
+    Auth.authorize().then((accessToken) => {
+        const folderPath = getCurrentFolderPath();
+        const impConfigFile = path.join(folderPath, Helper.configFileName);
+        if (fs.existsSync(impConfigFile)) {
+            vscode.window.showErrorMessage('An imp configuration file already exists.');
+            const document = vscode.workspace.openTextDocument(impConfigFile);
+            vscode.window.showTextDocument(document);
         } else {
-            vscode.window.showErrorMessage('Multi-root workspaces are not supported.');
-            return undefined;
-        }
-
-        return folder.uri.fsPath;
-    }
-
-    static isWorkspaceFolderOpened() {
-        if (WorkspaceHelper.getCurrentFolderPath())
-            return true;
-
-        vscode.window.showErrorMessage('Please select the workspace folder proceed.');
-        return false;
-    }
-
-    // Initialize vscode workspace, create plugin conlfiguration file in the directory.
-    // 
-    // Parameters:
-    //     none
-    newProjectDialog() {
-        AuthHelper.authorize().then(accessToken => {
-            let folderPath = WorkspaceHelper.getCurrentFolderPath();
-            let impConfigFile = path.join(folderPath, WorkspaceHelper.configFileName);
-            if (fs.existsSync(impConfigFile)) {
-                vscode.window.showErrorMessage('An imp configuration file already exists.');
-                let document = vscode.workspace.openTextDocument(impConfigFile);
-                vscode.window.showTextDocument(document);
-            } else {
-                vscode.window.showInputBox({ prompt: 'Enter an exist device group Id:' }).then(deviceGroupId => {
+            vscode.window.showInputBox({ prompt: 'Enter an exist device group Id:' })
+                .then((deviceGroupId) => {
                     if (!deviceGroupId) {
                         vscode.window.showErrorMessage('The device group Id is empty');
                         return;
                     }
 
-                    var impCentralApi = new ImpCentralApi();
+                    const impCentralApi = new ImpCentralApi();
                     impCentralApi.auth.accessToken = accessToken;
-                    impCentralApi.deviceGroups.get(deviceGroupId).then(function(/* result */) {
-                        const options = {
-                            deviceGroupId: deviceGroupId,
-                            device_code : WorkspaceHelper.deviceSourceFileName,
-                            agent_code : WorkspaceHelper.agentSourceFileName
-                        };
+                    impCentralApi.deviceGroups.get(deviceGroupId)
+                        .then((/* result */) => {
+                            const options = {
+                                deviceGroupId,
+                                device_code: Helper.deviceSourceFileName,
+                                agent_code: Helper.agentSourceFileName,
+                            };
 
-                        try {
-                            fs.writeFileSync(impConfigFile, JSON.stringify(options));
-                            fs.writeFileSync(path.join(folderPath, WorkspaceHelper.agentSourceFileName), WorkspaceHelper.agentSourceHeader);
-                            fs.writeFileSync(path.join(folderPath, WorkspaceHelper.deviceSourceFileName), WorkspaceHelper.deviceSourceHeader);
-                        } catch(err) {
-                            vscode.window.showErrorMessage('Project files: ' + err);
-                        }
+                            try {
+                                const agentPath = path.join(folderPath, Helper.agentSourceFileName);
+                                const devPath = path.join(folderPath, Helper.deviceSourceFileName);
 
-                    }, function(err) {
-                        vscode.window.showErrorMessage('Cannot use DG: ' + err);
-                    });
+                                fs.writeFileSync(impConfigFile, JSON.stringify(options));
+                                fs.writeFileSync(agentPath, Helper.agentSourceHeader);
+                                fs.writeFileSync(devPath, Helper.deviceSourceHeader);
+                            } catch (err) {
+                                vscode.window.showErrorMessage(`Project files: ${err}`);
+                            }
+                        }, (err) => {
+                            vscode.window.showErrorMessage(`Cannot use DG: ${err}`);
+                        });
                 });
-            }
-        }, err => {
-            vscode.window.showErrorMessage('Can not create project: ' + err);
-        });
-    }
-
-    // Deploy the source code (agent.nut, device.nut) on device group.
-    // 
-    // Parameters:
-    //     none
-    deploy() {
-        let folderPath = WorkspaceHelper.getCurrentFolderPath();
-        let impConfigFile = path.join(folderPath, WorkspaceHelper.configFileName);
-        let config = undefined;
-        let agentSource = undefined;
-        let deviceSource = undefined;
-
-        try {
-            config = JSON.parse(fs.readFileSync(impConfigFile).toString());
-            agentSource = fs.readFileSync(path.join(folderPath, WorkspaceHelper.agentSourceFileName)).toString();
-            deviceSource = fs.readFileSync(path.join(folderPath, WorkspaceHelper.deviceSourceFileName)).toString();
-        } catch(err) {
-            vscode.window.showErrorMessage('Cannot read project files: ' + err);
-            return;
         }
-
-        const attrs = {
-            device_code : agentSource.replace(/\\/g, "/"),
-            agent_code : deviceSource.replace(/\\/g, "/"),
-        };
-
-        AuthHelper.authorize().then(accessToken => {
-            var impCentralApi = new ImpCentralApi();
-            impCentralApi.auth.accessToken = accessToken;
-            impCentralApi.deployments.create(config.deviceGroupId, DeviceGroups.TYPE_DEVELOPMENT, attrs).then(function(/* result */) {
-                // TODO: Move all devices related logic to not-exist devices.js file.
-                impCentralApi.deviceGroups.restartDevices(config.deviceGroupId).then(function(/* result */) {
-                    vscode.window.showInformationMessage('Successfully deployed on ' + config.deviceGroupId);
-                }, function(err) {
-                    vscode.window.showErrorMessage('Reset devices: ' + err);
-                });
-
-            }, function(err) {
-                vscode.window.showErrorMessage('Deploy failed: ' + err);
-            });
-        }, err => {
-            vscode.window.showErrorMessage('Can not deploy project: ' + err);
-        });
-    }
+    }, (err) => {
+        vscode.window.showErrorMessage(`Can not create project: ${err}`);
+    });
 }
+module.exports.newProjectDialog = newProjectDialog;
 
-module.exports = WorkspaceHelper;
+// Deploy the source code (agent.nut, device.nut) on device group.
+//
+// Parameters:
+//     none
+function deploy() {
+    const folderPath = getCurrentFolderPath();
+    const impConfigFile = path.join(folderPath, Helper.configFileName);
+    let config;
+    let agentSource;
+    let deviceSource;
+
+    try {
+        const agentSourcePath = path.join(folderPath, Helper.agentSourceFileName);
+        const deviceSourcePath = path.join(folderPath, Helper.deviceSourceFileName);
+
+        config = JSON.parse(fs.readFileSync(impConfigFile).toString());
+        agentSource = fs.readFileSync(agentSourcePath).toString();
+        deviceSource = fs.readFileSync(deviceSourcePath).toString();
+    } catch (err) {
+        vscode.window.showErrorMessage(`Cannot read project files: ${err}`);
+        return;
+    }
+
+    const attrs = {
+        device_code: agentSource.replace(/\\/g, '/'),
+        agent_code: deviceSource.replace(/\\/g, '/'),
+    };
+
+    Auth.authorize().then((accessToken) => {
+        const impCentralApi = new ImpCentralApi();
+        impCentralApi.auth.accessToken = accessToken;
+        impCentralApi.deployments.create(config.deviceGroupId, DevGoups.TYPE_DEVELOPMENT, attrs)
+            .then((/* result */) => {
+                // TODO: Move all devices related logic to not-exist devices.js file.
+                impCentralApi.deviceGroups.restartDevices(config.deviceGroupId)
+                    .then(() => {
+                        vscode.window.showInformationMessage(`Successfully deployed on ${config.deviceGroupId}`);
+                    }, (err) => {
+                        vscode.window.showErrorMessage(`Reset devices: ${err}`);
+                    });
+            }, (err) => {
+                vscode.window.showErrorMessage(`Deploy failed: ${err}`);
+            });
+    }, (err) => {
+        vscode.window.showErrorMessage(`Can not deploy project: ${err}`);
+    });
+}
+module.exports.deploy = deploy;

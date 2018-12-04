@@ -22,7 +22,6 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
-'use strict';
 
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
@@ -34,60 +33,64 @@ const AuthHelper = require('./auth');
  * The command uses vscode outputChannel api to print hello-like message for now.
  */
 
+// Global variable to store LogStream/outputChannel state between extension commands calls.
+// NOTE: Possibly could not be exported.
+const logStreamState = {
+    logStreamID: undefined,
+    outputChannel: undefined,
+    isAdded: false,
+};
+module.exports.logStreamState = logStreamState;
+
 class LogStreamHelper {
-    _logMessage(message) {
+    logMsg(message) {
         this.channel.appendLine(message);
     }
 
-    _logState(message) {
+    logState(message) {
         this.channel.appendLine(message);
     }
 
-    _addDevice(accessToken) {
-        vscode.window.showInputBox({ prompt: 'Enter device id:' }).then(deviceid => {
-            if (!deviceid) {
-                vscode.window.showErrorMessage('The device ID is empty');
-                return;
-            }
+    addDevice(accessToken) {
+        vscode.window.showInputBox({ prompt: 'Enter device id:' })
+            .then((deviceid) => {
+                if (!deviceid) {
+                    vscode.window.showErrorMessage('The device ID is empty');
+                    return;
+                }
 
-            this.channel = vscode.window.createOutputChannel("device ID = " + deviceid);
-            this.channel.show(true);
+                this.channel = vscode.window.createOutputChannel(`device ID = ${deviceid}`);
+                this.channel.show(true);
 
-            let logStreamID;
-            var impCentralApi = new ImpCentralApi();
-            impCentralApi.auth.accessToken = accessToken;
-            impCentralApi.logStreams.create(this._logMessage.bind(this), this._logState.bind(this)).then(logStream => {
-                logStreamID = logStream.data.id;
-                impCentralApi.logStreams.addDevice(logStreamID, deviceid).then(() => {
-                    logStreamState.isAdded = true;
-                }, err => {
-                    vscode.window.showErrorMessage(`The device ${deviceid} can not be added: ` + err);
-                });
+                let logStreamID;
+                const impCentralApi = new ImpCentralApi();
+                impCentralApi.auth.accessToken = accessToken;
+                impCentralApi.logStreams.create(this.logMsg.bind(this), this.logState.bind(this))
+                    .then((logStream) => {
+                        logStreamID = logStream.data.id;
+                        impCentralApi.logStreams.addDevice(logStreamID, deviceid)
+                            .then(() => {
+                                logStreamState.isAdded = true;
+                            }, (err) => {
+                                vscode.window.showErrorMessage(`The device ${deviceid} can not be added: ${err}`);
+                            });
+                    });
             });
-        });
     }
 
     // Add device to LogStream and send it's logs to the outputChannel.
-    // 
+    //
     // Parameters:
     //     none
     addDeviceDialog() {
         if (logStreamState.isAdded) {
-            vscode.window.showErrorMessage("Some device already added, cannot add more for now.");
+            vscode.window.showErrorMessage('Some device already added, cannot add more for now.');
         } else {
-            AuthHelper.authorize().then(this._addDevice.bind(this), function(err) {
-                vscode.window.showErrorMessage('Can not add device: ' + err);
-            });
+            AuthHelper.authorize()
+                .then(this.addDevice.bind(this), (err) => {
+                    vscode.window.showErrorMessage(`Can not add device: ${err}`);
+                });
         }
     }
 }
 module.exports.LogStreamHelper = LogStreamHelper;
-
-// Global variable to store LogStream/outputChannel state between extension commands calls.
-// NOTE: Possibly could not be exported.
-var logStreamState = {
-    logStreamID: undefined,
-    outputChannel: undefined,
-    isAdded: false
-}
-module.exports.logStreamState = logStreamState;
