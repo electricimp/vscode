@@ -92,7 +92,8 @@
     "vscode": "^1.1.21"
   },
   "dependencies": {
-    "imp-central-api": "^1.4.1"
+    "imp-central-api": "^1.4.1",
+    "Builder": "^2.4.0"
   },
   "repository": {
     "type": "git",

@@ -27,6 +27,7 @@ const path = require('path');
 const fs = require('fs');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
+const Builder = require('Builder');
 const Auth = require('./auth');
 
 const DevGoups = ImpCentralApi.DeviceGroups;
@@ -152,6 +153,13 @@ function newProjectDialog() {
 }
 module.exports.newProjectDialog = newProjectDialog;
 
+function applyBuilder(inputFileName, input) {
+    const builder = new Builder();
+
+    builder.file = inputFileName;
+    return builder.machine.execute(input.toString());
+}
+
 // Deploy the source code (agent.nut, device.nut) on device group.
 //
 // Parameters:
@@ -172,6 +180,21 @@ function deploy() {
         deviceSource = fs.readFileSync(deviceSourcePath).toString();
     } catch (err) {
         vscode.window.showErrorMessage(`Cannot read project files: ${err}`);
+        return;
+    }
+
+    agentSource = agentSource.replace(/\\/g, '/');
+    deviceSource = deviceSource.replace(/\\/g, '/');
+
+    try {
+        agentSource = applyBuilder(Helper.agentSourceFileName, agentSource);
+        deviceSource = applyBuilder(Helper.deviceSourceFileName, deviceSource);
+    } catch (err) {
+        /*
+         * TODO: Seems like, it is part of sources processing errors.
+         * Find a way to report it to user correctly.
+         */
+        vscode.window.showErrorMessage(`Cannot apply Builder: ${err}`);
         return;
     }
 
