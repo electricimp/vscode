@@ -102,6 +102,30 @@ function isWorkspaceFolderOpened() {
 }
 module.exports.isWorkspaceFolderOpened = isWorkspaceFolderOpened;
 
+// Get workspace config object.
+// If it is not possible, return undefined.
+//
+// Parameters:
+//     none
+function getWorkspaceData(doNotDisplayNotExist) {
+    const folderPath = getCurrentFolderPath();
+    const impConfigFile = path.join(folderPath, Helper.configFileName);
+    if (fs.existsSync(impConfigFile)) {
+        try {
+            return JSON.parse(fs.readFileSync(impConfigFile).toString());
+        } catch (err) {
+            if (doNotDisplayNotExist === undefined) {
+                vscode.window.showErrorMessage(`Cannot read project file: ${err}`);
+            }
+            return undefined;
+        }
+    }
+
+    vscode.window.showErrorMessage('Project file does not exist');
+    return undefined;
+}
+module.exports.getWorkspaceData = getWorkspaceData;
+
 // Initialize vscode workspace, create plugin conlfiguration file in the directory.
 //
 // Parameters:
@@ -110,7 +134,7 @@ function newProjectDialog() {
     Auth.authorize().then((accessToken) => {
         const folderPath = getCurrentFolderPath();
         const impConfigFile = path.join(folderPath, Helper.configFileName);
-        if (fs.existsSync(impConfigFile)) {
+        if (getWorkspaceData(true)) {
             vscode.window.showErrorMessage('An imp configuration file already exists.');
             const document = vscode.workspace.openTextDocument(impConfigFile);
             vscode.window.showTextDocument(document);
@@ -165,21 +189,22 @@ function applyBuilder(inputFileName, input) {
 // Parameters:
 //     none
 function deploy() {
-    const folderPath = getCurrentFolderPath();
-    const impConfigFile = path.join(folderPath, Helper.configFileName);
-    let config;
+    const config = getWorkspaceData();
+    if (config === undefined) {
+        return;
+    }
+
     let agentSource;
     let deviceSource;
 
     try {
-        const agentSourcePath = path.join(folderPath, Helper.agentSourceFileName);
-        const deviceSourcePath = path.join(folderPath, Helper.deviceSourceFileName);
+        const agentSourcePath = path.join(getCurrentFolderPath(), Helper.agentSourceFileName);
+        const deviceSourcePath = path.join(getCurrentFolderPath(), Helper.deviceSourceFileName);
 
-        config = JSON.parse(fs.readFileSync(impConfigFile).toString());
         agentSource = fs.readFileSync(agentSourcePath).toString();
         deviceSource = fs.readFileSync(deviceSourcePath).toString();
     } catch (err) {
-        vscode.window.showErrorMessage(`Cannot read project files: ${err}`);
+        vscode.window.showErrorMessage(`Cannot read source files: ${err}`);
         return;
     }
 

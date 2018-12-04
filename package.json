@@ -22,6 +22,8 @@
     "onCommand:imp.workspace.project.deploy",
     "onCommand:imp.logstream.add",
     "onCommand:imp.logstream.remove",
+    "onCommand:imp.device.add",
+    "onCommand:imp.device.remove",
     "onLanguage:squirrel"
   ],
   "main": "./src/extension",
@@ -46,6 +48,14 @@
       {
         "command": "imp.logstream.remove",
         "title": "imp: Remove Device Logs"
+      },
+      {
+        "command": "imp.device.add",
+        "title": "imp: Add Device to current DG"
+      },
+      {
+        "command": "imp.device.remove",
+        "title": "imp: Remove Device from current DG"
       }
     ],
     "keybindings": [
