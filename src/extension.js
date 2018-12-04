@@ -72,6 +72,12 @@ function activate(context) {
             Devices.removeDeviceFromDGDialog();
         }
     }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('imp.device.agenturl', () => {
+        if (Workspace.isWorkspaceFolderOpened()) {
+            Devices.getAgentURLDialog();
+        }
+    }));
 }
 exports.activate = activate;
 

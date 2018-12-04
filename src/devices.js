@@ -28,12 +28,30 @@ const ImpCentralApi = require('imp-central-api');
 const Auth = require('./auth');
 const Workspace = require('./workspace');
 
-/*
-NOTES:
-The next stuff should be checked:
-- Check auth file
-- Check project file to read DG
-*/
+function getAgentURLDialog() {
+    vscode.window.showInputBox({ prompt: 'Enter a valid device Id:' })
+        .then((deviceId) => {
+            if (!deviceId) {
+                vscode.window.showErrorMessage('The device Id is empty');
+                return;
+            }
+
+            Auth.authorize()
+                .then((accessToken) => {
+                    const impCentralApi = new ImpCentralApi();
+                    impCentralApi.auth.accessToken = accessToken;
+                    impCentralApi.devices.get(deviceId)
+                        .then((device) => {
+                            vscode.window.showInformationMessage(device.data.attributes.agent_url);
+                        }, (err) => {
+                            vscode.window.showErrorMessage(`Cannot get device: ${err}`);
+                        });
+                }, (err) => {
+                    vscode.window.showErrorMessage(`Cannot get device: ${err}`);
+                });
+        });
+}
+module.exports.getAgentURLDialog = getAgentURLDialog;
 
 function addDeviceToDGDialog() {
     const config = Workspace.getWorkspaceData();
@@ -41,7 +59,7 @@ function addDeviceToDGDialog() {
         return;
     }
 
-    vscode.window.showInputBox({ prompt: 'Enter an valid device Id:' })
+    vscode.window.showInputBox({ prompt: 'Enter a valid device Id:' })
         .then((deviceId) => {
             if (!deviceId) {
                 vscode.window.showErrorMessage('The device Id is empty');
@@ -71,7 +89,7 @@ function removeDeviceFromDGDialog() {
         return;
     }
 
-    vscode.window.showInputBox({ prompt: 'Enter an valid device Id:' })
+    vscode.window.showInputBox({ prompt: 'Enter a valid device Id:' })
         .then((deviceId) => {
             if (!deviceId) {
                 vscode.window.showErrorMessage('The device Id is empty');

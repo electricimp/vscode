@@ -24,6 +24,7 @@
     "onCommand:imp.logstream.remove",
     "onCommand:imp.device.add",
     "onCommand:imp.device.remove",
+    "onCommand:imp.device.agenturl",
     "onLanguage:squirrel"
   ],
   "main": "./src/extension",
@@ -56,6 +57,10 @@
       {
         "command": "imp.device.remove",
         "title": "imp: Remove Device from current DG"
+      },
+      {
+        "command": "imp.device.agenturl",
+        "title": "imp: Get agent URL"
       }
     ],
     "keybindings": [
