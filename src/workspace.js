@@ -33,7 +33,7 @@ const Auth = require('./auth');
 const DevGoups = ImpCentralApi.DeviceGroups;
 
 // This class provides the constants required for workspace manipulation.
-class Helper {
+class Consts {
     static get authFileName() {
         return 'auth.info';
     }
@@ -43,7 +43,7 @@ class Helper {
     }
 
     static get gitIgnoreFileContent() {
-        return Helper.authFileName;
+        return Consts.authFileName;
     }
 
     static get configFileName() {
@@ -66,7 +66,7 @@ class Helper {
         return '// This is device code';
     }
 }
-module.exports.Helper = Helper;
+module.exports.Consts = Consts;
 
 // Get path to workspace working directory.
 //
@@ -111,7 +111,7 @@ module.exports.isWorkspaceFolderOpened = isWorkspaceFolderOpened;
 //     none
 function getWorkspaceData(doNotDisplayNotExist) {
     const folderPath = getCurrentFolderPath();
-    const impConfigFile = path.join(folderPath, Helper.configFileName);
+    const impConfigFile = path.join(folderPath, Consts.configFileName);
     if (fs.existsSync(impConfigFile)) {
         try {
             return JSON.parse(fs.readFileSync(impConfigFile).toString());
@@ -136,7 +136,7 @@ module.exports.getWorkspaceData = getWorkspaceData;
 function newProjectDialog() {
     Auth.authorize().then((accessToken) => {
         const folderPath = getCurrentFolderPath();
-        const impConfigFile = path.join(folderPath, Helper.configFileName);
+        const impConfigFile = path.join(folderPath, Consts.configFileName);
         if (getWorkspaceData(true)) {
             vscode.window.showErrorMessage('An imp configuration file already exists.');
             const document = vscode.workspace.openTextDocument(impConfigFile);
@@ -155,17 +155,17 @@ function newProjectDialog() {
                         .then((/* result */) => {
                             const options = {
                                 deviceGroupId,
-                                device_code: Helper.deviceSourceFileName,
-                                agent_code: Helper.agentSourceFileName,
+                                device_code: Consts.deviceSourceFileName,
+                                agent_code: Consts.agentSourceFileName,
                             };
 
                             try {
-                                const agentPath = path.join(folderPath, Helper.agentSourceFileName);
-                                const devPath = path.join(folderPath, Helper.deviceSourceFileName);
+                                const agentPath = path.join(folderPath, Consts.agentSourceFileName);
+                                const devPath = path.join(folderPath, Consts.deviceSourceFileName);
 
                                 fs.writeFileSync(impConfigFile, JSON.stringify(options));
-                                fs.writeFileSync(agentPath, Helper.agentSourceHeader);
-                                fs.writeFileSync(devPath, Helper.deviceSourceHeader);
+                                fs.writeFileSync(agentPath, Consts.agentSourceHeader);
+                                fs.writeFileSync(devPath, Consts.deviceSourceHeader);
                             } catch (err) {
                                 vscode.window.showErrorMessage(`Project files: ${err}`);
                             }
@@ -202,8 +202,8 @@ function deploy() {
         let deviceSource;
 
         try {
-            const agentSourcePath = path.join(getCurrentFolderPath(), Helper.agentSourceFileName);
-            const deviceSourcePath = path.join(getCurrentFolderPath(), Helper.deviceSourceFileName);
+            const agentSourcePath = path.join(getCurrentFolderPath(), Consts.agentSourceFileName);
+            const deviceSourcePath = path.join(getCurrentFolderPath(), Consts.deviceSourceFileName);
 
             agentSource = fs.readFileSync(agentSourcePath).toString();
             deviceSource = fs.readFileSync(deviceSourcePath).toString();
@@ -216,8 +216,8 @@ function deploy() {
         deviceSource = deviceSource.replace(/\\/g, '/');
 
         try {
-            agentSource = applyBuilder(Helper.agentSourceFileName, agentSource);
-            deviceSource = applyBuilder(Helper.deviceSourceFileName, deviceSource);
+            agentSource = applyBuilder(Consts.agentSourceFileName, agentSource);
+            deviceSource = applyBuilder(Consts.deviceSourceFileName, deviceSource);
         } catch (err) {
             /*
              * TODO: Seems like, it is part of sources processing errors.

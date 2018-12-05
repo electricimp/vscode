@@ -64,8 +64,8 @@ function loginCredsDialog() {
                     impCentralApi.auth.login(username, password)
                         .then((authInfo) => {
                             const currentPath = Workspace.getCurrentFolderPath();
-                            const authName = Workspace.Helper.authFileName;
-                            const gitIgnoreName = Workspace.Helper.gitIgnoreFileName;
+                            const authName = Workspace.Consts.authFileName;
+                            const gitIgnoreName = Workspace.Consts.gitIgnoreFileName;
                             const authFile = path.join(currentPath, authName);
                             const gitIgnoreFile = path.join(currentPath, gitIgnoreName);
                             try {
@@ -98,7 +98,7 @@ module.exports.loginCredsDialog = loginCredsDialog;
 //
 function authorize() {
     return new Promise(((resolve, reject) => {
-        const authName = Workspace.Helper.authFileName;
+        const authName = Workspace.Consts.authFileName;
         const authFile = path.join(Workspace.getCurrentFolderPath(), authName);
         try {
             const data = fs.readFileSync(authFile);

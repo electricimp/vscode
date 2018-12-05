@@ -25,7 +25,7 @@
 
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
-const AuthHelper = require('./auth');
+const Auth = require('./auth');
 
 /*
  * Here we will have all logic related with logstreams manipulation.
@@ -42,7 +42,7 @@ const logStreamState = {
 };
 module.exports.logStreamState = logStreamState;
 
-class LogStreamHelper {
+class LogStream {
     logMsg(message) {
         this.channel.appendLine(message);
     }
@@ -86,11 +86,11 @@ class LogStreamHelper {
         if (logStreamState.isAdded) {
             vscode.window.showErrorMessage('Some device already added, cannot add more for now.');
         } else {
-            AuthHelper.authorize()
+            Auth.authorize()
                 .then(this.addDevice.bind(this), (err) => {
                     vscode.window.showErrorMessage(`Can not add device: ${err}`);
                 });
         }
     }
 }
-module.exports.LogStreamHelper = LogStreamHelper;
+module.exports = LogStream;

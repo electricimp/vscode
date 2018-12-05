@@ -50,7 +50,7 @@ function activate(context) {
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.add', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
-            const logstream = new LogStream.LogStreamHelper();
+            const logstream = new LogStream();
             logstream.addDeviceDialog();
         }
     }));
