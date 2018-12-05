@@ -60,8 +60,8 @@ function loginCredsDialog() {
                         return;
                     }
 
-                    const impCentralApi = new ImpCentralApi();
-                    impCentralApi.auth.login(username, password)
+                    const api = new ImpCentralApi();
+                    api.auth.login(username, password)
                         .then((authInfo) => {
                             const currentPath = Workspace.getCurrentFolderPath();
                             const authName = Workspace.Consts.authFileName;

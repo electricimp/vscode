@@ -33,9 +33,9 @@ function getAgentURLDialog() {
         .then((accessToken) => {
             vscode.window.showInputBox({ prompt: 'Enter a valid device Id:' })
                 .then((deviceID) => {
-                    const impCentralApi = new ImpCentralApi();
-                    impCentralApi.auth.accessToken = accessToken;
-                    impCentralApi.devices.get(deviceID)
+                    const api = new ImpCentralApi();
+                    api.auth.accessToken = accessToken;
+                    api.devices.get(deviceID)
                         .then((device) => {
                             vscode.window.showInformationMessage(device.data.attributes.agent_url);
                         }, (err) => {
@@ -63,9 +63,9 @@ function addDeviceToDGDialog() {
                         return;
                     }
 
-                    const impCentralApi = new ImpCentralApi();
-                    impCentralApi.auth.accessToken = accessToken;
-                    impCentralApi.deviceGroups.addDevices(config.deviceGroupId, deviceID)
+                    const api = new ImpCentralApi();
+                    api.auth.accessToken = accessToken;
+                    api.deviceGroups.addDevices(config.deviceGroupId, deviceID)
                         .then(() => {
                             vscode.window.showInformationMessage(`The ${deviceID} is added to ${config.deviceGroupId}`);
                         }, (err) => {
@@ -93,9 +93,9 @@ function removeDeviceFromDGDialog() {
                         return;
                     }
 
-                    const impCentralApi = new ImpCentralApi();
-                    impCentralApi.auth.accessToken = accessToken;
-                    impCentralApi.deviceGroups.removeDevices(config.deviceGroupId, null, deviceID)
+                    const api = new ImpCentralApi();
+                    api.auth.accessToken = accessToken;
+                    api.deviceGroups.removeDevices(config.deviceGroupId, null, deviceID)
                         .then(() => {
                             vscode.window.showInformationMessage(`The ${deviceID} is removed from ${config.deviceGroupId}`);
                         }, (err) => {

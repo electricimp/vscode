@@ -149,9 +149,9 @@ function newProjectDialog() {
                         return;
                     }
 
-                    const impCentralApi = new ImpCentralApi();
-                    impCentralApi.auth.accessToken = accessToken;
-                    impCentralApi.deviceGroups.get(deviceGroupId)
+                    const api = new ImpCentralApi();
+                    api.auth.accessToken = accessToken;
+                    api.deviceGroups.get(deviceGroupId)
                         .then((/* result */) => {
                             const options = {
                                 deviceGroupId,
@@ -175,7 +175,7 @@ function newProjectDialog() {
                 });
         }
     }, (err) => {
-        vscode.window.showErrorMessage(`Can not create project: ${err}`);
+        vscode.window.showErrorMessage(`Auth error: ${err}`);
     });
 }
 module.exports.newProjectDialog = newProjectDialog;
@@ -232,12 +232,12 @@ function deploy() {
             agent_code: deviceSource.replace(/\\/g, '/'),
         };
 
-        const impCentralApi = new ImpCentralApi();
-        impCentralApi.auth.accessToken = accessToken;
-        impCentralApi.deployments.create(config.deviceGroupId, DevGoups.TYPE_DEVELOPMENT, attrs)
+        const api = new ImpCentralApi();
+        api.auth.accessToken = accessToken;
+        api.deployments.create(config.deviceGroupId, DevGoups.TYPE_DEVELOPMENT, attrs)
             .then((/* result */) => {
                 // TODO: Move all devices related logic to not-exist devices.js file.
-                impCentralApi.deviceGroups.restartDevices(config.deviceGroupId)
+                api.deviceGroups.restartDevices(config.deviceGroupId)
                     .then(() => {
                         vscode.window.showInformationMessage(`Successfully deployed on ${config.deviceGroupId}`);
                     }, (err) => {
@@ -247,7 +247,7 @@ function deploy() {
                 vscode.window.showErrorMessage(`Deploy failed: ${err}`);
             });
     }, (err) => {
-        vscode.window.showErrorMessage(`Can not deploy project: ${err}`);
+        vscode.window.showErrorMessage(`Auth error: ${err}`);
     });
 }
 module.exports.deploy = deploy;

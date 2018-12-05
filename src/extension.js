@@ -29,6 +29,8 @@ const Workspace = require('./workspace');
 const LogStream = require('./logstream');
 const Devices = require('./devices');
 
+const logstream = new LogStream();
+
 function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('imp.auth.creds', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
@@ -50,26 +52,25 @@ function activate(context) {
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.add', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
-            const logstream = new LogStream();
             logstream.addDeviceDialog();
         }
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.remove', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
-            vscode.window.showErrorMessage('The command is not implemented');
+            logstream.removeDeviceDialog();
         }
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.pause', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
-            vscode.window.showErrorMessage('The command is not implemented');
+            logstream.pauseLogOutput();
         }
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.clean', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
-            vscode.window.showErrorMessage('The command is not implemented');
+            logstream.clearLogOutput();
         }
     }));
 

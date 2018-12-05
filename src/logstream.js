@@ -33,48 +33,63 @@ const Auth = require('./auth');
  * The command uses vscode outputChannel api to print hello-like message for now.
  */
 
-// Global variable to store LogStream/outputChannel state between extension commands calls.
-// NOTE: Possibly could not be exported.
-const logStreamState = {
-    logStreamID: undefined,
-    outputChannel: undefined,
-    isAdded: false,
-};
-module.exports.logStreamState = logStreamState;
-
 class LogStream {
+    constructor() {
+        this.logStreamID = undefined;
+        this.outputChannel = undefined;
+        this.devices = new Set();
+        this.pause = false;
+    }
+
     logMsg(message) {
-        this.channel.appendLine(message);
+        if (this.pause === false) {
+            this.outputChannel.appendLine(message);
+        }
     }
 
     logState(message) {
-        this.channel.appendLine(message);
+        if (this.pause === false) {
+            this.outputChannel.appendLine(message);
+        }
+    }
+
+    isOpened() {
+        return this.logStreamID && this.outputChannel;
+    }
+
+    impAddDevice(impCentralApi, deviceID) {
+        impCentralApi.logStreams.addDevice(this.logStreamID, deviceID)
+            .then(() => {
+                this.outputChannel.show(true);
+                this.devices.add(deviceID);
+                vscode.window.showInformationMessage(`Device added: ${deviceID}`);
+            }, (err) => {
+                vscode.window.showErrorMessage(`The device ${deviceID} can not be added: ${err}`);
+            });
     }
 
     addDevice(accessToken) {
         vscode.window.showInputBox({ prompt: 'Enter device id:' })
-            .then((deviceid) => {
-                if (!deviceid) {
+            .then((deviceID) => {
+                if (!deviceID) {
                     vscode.window.showErrorMessage('The device ID is empty');
                     return;
                 }
 
-                this.channel = vscode.window.createOutputChannel(`device ID = ${deviceid}`);
-                this.channel.show(true);
-
-                let logStreamID;
-                const impCentralApi = new ImpCentralApi();
-                impCentralApi.auth.accessToken = accessToken;
-                impCentralApi.logStreams.create(this.logMsg.bind(this), this.logState.bind(this))
-                    .then((logStream) => {
-                        logStreamID = logStream.data.id;
-                        impCentralApi.logStreams.addDevice(logStreamID, deviceid)
-                            .then(() => {
-                                logStreamState.isAdded = true;
-                            }, (err) => {
-                                vscode.window.showErrorMessage(`The device ${deviceid} can not be added: ${err}`);
-                            });
-                    });
+                const api = new ImpCentralApi();
+                api.auth.accessToken = accessToken;
+                if (this.isOpened() === undefined) {
+                    api.logStreams.create(this.logMsg.bind(this), this.logState.bind(this))
+                        .then((logStream) => {
+                            this.logStreamID = logStream.data.id;
+                            this.outputChannel = vscode.window.createOutputChannel('imp: LogStream');
+                            this.impAddDevice(api, deviceID);
+                        }, (err) => {
+                            vscode.window.showErrorMessage(`Cannot open imp LogStream: ${err}`);
+                        });
+                } else {
+                    this.impAddDevice(api, deviceID);
+                }
             });
     }
 
@@ -83,14 +98,76 @@ class LogStream {
     // Parameters:
     //     none
     addDeviceDialog() {
-        if (logStreamState.isAdded) {
-            vscode.window.showErrorMessage('Some device already added, cannot add more for now.');
-        } else {
-            Auth.authorize()
-                .then(this.addDevice.bind(this), (err) => {
-                    vscode.window.showErrorMessage(`Can not add device: ${err}`);
-                });
+        Auth.authorize()
+            .then(this.addDevice.bind(this), (err) => {
+                vscode.window.showErrorMessage(`Auth error: ${err}`);
+            });
+    }
+
+    impRemoveDevice(impCentralApi, deviceID) {
+        impCentralApi.logStreams.removeDevice(this.logStreamID, deviceID)
+            .then(() => {
+                this.devices.delete(deviceID);
+                vscode.window.showInformationMessage(`Device removed: ${deviceID}`);
+            }, (err) => {
+                vscode.window.showErrorMessage(`The device ${deviceID} can not be removed: ${err}`);
+            });
+    }
+
+    removeDevice(accessToken) {
+        if (this.isOpened() === undefined) {
+            vscode.window.showErrorMessage('Cannot remove device from LogStream');
+            return;
         }
+
+        vscode.window.showInputBox({ prompt: 'Enter device id:' })
+            .then((deviceID) => {
+                if (!deviceID) {
+                    vscode.window.showErrorMessage('The device ID is empty');
+                    return;
+                }
+
+                const api = new ImpCentralApi();
+                api.auth.accessToken = accessToken;
+                this.impRemoveDevice(api, deviceID);
+            });
+    }
+
+    // Remove device from LogStream.
+    //
+    // Parameters:
+    //     none
+    removeDeviceDialog() {
+        Auth.authorize()
+            .then(this.removeDevice.bind(this), (err) => {
+                vscode.window.showErrorMessage(`Auth error: ${err}`);
+            });
+    }
+
+    // Clear LogStream output window.
+    //
+    // Parameters:
+    //     none
+    clearLogOutput() {
+        if (this.isOpened() === undefined) {
+            vscode.window.showErrorMessage('Cannot clear LogStream');
+            return;
+        }
+
+        this.outputChannel.clear();
+    }
+
+    // Pause LogStream output window
+    //
+    // Parameters:
+    //     none
+    pauseLogOutput() {
+        if (this.isOpened() === undefined) {
+            vscode.window.showErrorMessage('Cannot pause LogStream');
+            return;
+        }
+
+        this.pause = !this.pause;
     }
 }
 module.exports = LogStream;
