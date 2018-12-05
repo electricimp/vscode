@@ -66,7 +66,7 @@
       },
       {
         "command": "imp.logstream.clean",
-        "title": "imp: Clean Logs"
+        "title": "imp: Clear Logs"
       },
       {
         "command": "imp.device.add",

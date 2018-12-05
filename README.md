@@ -24,10 +24,17 @@ The installation process, starting from nodejs installation will be described he
 This extension contributes the following commands:
 
 * `imp: Auth User Password`: Create authrization file with access token in the selected workspace directory.
-* `imp: New Project`: Create configuration file and source code files in the selected workspace directory.
+* `imp: New Project, exist DG`: Create configuration file and source code files in the selected workspace directory using exist device group ID.
+* `imp: New Project, new DG`: Create configuration file and source code files in the selected workspace directory using freshly created device group.
+* `imp: New Project, new Product`: Create configuration file and source code files in the selected workspace directory using freshly created product and device group.
 * `imp: Deploy Project`: Deploy the source code on the selected device group and reset the devices.
-* `imp: Add Device Logs`: Display selected device logs in the console output (the only one device available for now).
-* `imp: Remove Device Logs`: Not supported for now.
+* `imp: Add Device Logs`: Add selected device logs to the console output.
+* `imp: Remove Device Logs`: Remove selected device logs from the console output.
+* `imp: Pause Logs`: Pause the logs in the console output.
+* `imp: Clear Logs`: Clear the logs in the console output.
+* `imp: Add Device to current DG`: Add device to workspace device group.
+* `imp: Remove Device from current DG`: Remove device from the workspace device group.
+* `imp: Get agent URL`: Get agent URL.
 
 ## Current limitations
 
