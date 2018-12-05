@@ -38,9 +38,21 @@ function activate(context) {
         }
     }));
 
-    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.new', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.dg.exist', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
-            Workspace.newProjectDialog();
+            Workspace.newProjectDGExistDialog();
+        }
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.dg.new', () => {
+        if (Workspace.isWorkspaceFolderOpened()) {
+            Workspace.newProjectDGNewDialog();
+        }
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.product.new', () => {
+        if (Workspace.isWorkspaceFolderOpened()) {
+            Workspace.newProjectProductNewDialog();
         }
     }));
 

@@ -30,7 +30,7 @@ const ImpCentralApi = require('imp-central-api');
 const Builder = require('Builder');
 const Auth = require('./auth');
 
-const DevGoups = ImpCentralApi.DeviceGroups;
+const DevGroups = ImpCentralApi.DeviceGroups;
 
 // This class provides the constants required for workspace manipulation.
 class Consts {
@@ -111,10 +111,10 @@ module.exports.isWorkspaceFolderOpened = isWorkspaceFolderOpened;
 //     none
 function getWorkspaceData(doNotDisplayNotExist) {
     const folderPath = getCurrentFolderPath();
-    const impConfigFile = path.join(folderPath, Consts.configFileName);
-    if (fs.existsSync(impConfigFile)) {
+    const cfgFile = path.join(folderPath, Consts.configFileName);
+    if (fs.existsSync(cfgFile)) {
         try {
-            return JSON.parse(fs.readFileSync(impConfigFile).toString());
+            return JSON.parse(fs.readFileSync(cfgFile).toString());
         } catch (err) {
             vscode.window.showErrorMessage(`Cannot read project file: ${err}`);
             return undefined;
@@ -129,46 +129,50 @@ function getWorkspaceData(doNotDisplayNotExist) {
 }
 module.exports.getWorkspaceData = getWorkspaceData;
 
+function createProjectFiles(folderPath, cfgFile, dgID) {
+    const options = {
+        deviceGroupId: dgID,
+        device_code: Consts.deviceSourceFileName,
+        agent_code: Consts.agentSourceFileName,
+    };
+
+    try {
+        const agentPath = path.join(folderPath, Consts.agentSourceFileName);
+        const devPath = path.join(folderPath, Consts.deviceSourceFileName);
+
+        fs.writeFileSync(cfgFile, JSON.stringify(options));
+        fs.writeFileSync(agentPath, Consts.agentSourceHeader);
+        fs.writeFileSync(devPath, Consts.deviceSourceHeader);
+    } catch (err) {
+        vscode.window.showErrorMessage(`Project files: ${err}`);
+    }
+}
+
 // Initialize vscode workspace, create plugin conlfiguration file in the directory.
 //
 // Parameters:
 //     none
-function newProjectDialog() {
+function newProjectDGExistDialog() {
     Auth.authorize().then((accessToken) => {
         const folderPath = getCurrentFolderPath();
-        const impConfigFile = path.join(folderPath, Consts.configFileName);
+        const cfgFile = path.join(folderPath, Consts.configFileName);
         if (getWorkspaceData(true)) {
             vscode.window.showErrorMessage('An imp configuration file already exists.');
-            const document = vscode.workspace.openTextDocument(impConfigFile);
+            const document = vscode.workspace.openTextDocument(cfgFile);
             vscode.window.showTextDocument(document);
         } else {
-            vscode.window.showInputBox({ prompt: 'Enter an exist device group Id:' })
+            vscode.window.showInputBox({ prompt: 'Enter an exist device group ID:' })
                 .then((deviceGroupId) => {
                     if (!deviceGroupId) {
-                        vscode.window.showErrorMessage('The device group Id is empty');
+                        vscode.window.showErrorMessage('The device group ID is empty');
                         return;
                     }
 
                     const api = new ImpCentralApi();
                     api.auth.accessToken = accessToken;
                     api.deviceGroups.get(deviceGroupId)
-                        .then((/* result */) => {
-                            const options = {
-                                deviceGroupId,
-                                device_code: Consts.deviceSourceFileName,
-                                agent_code: Consts.agentSourceFileName,
-                            };
-
-                            try {
-                                const agentPath = path.join(folderPath, Consts.agentSourceFileName);
-                                const devPath = path.join(folderPath, Consts.deviceSourceFileName);
-
-                                fs.writeFileSync(impConfigFile, JSON.stringify(options));
-                                fs.writeFileSync(agentPath, Consts.agentSourceHeader);
-                                fs.writeFileSync(devPath, Consts.deviceSourceHeader);
-                            } catch (err) {
-                                vscode.window.showErrorMessage(`Project files: ${err}`);
-                            }
+                        .then((dg) => {
+                            createProjectFiles(folderPath, cfgFile, dg.data.id);
                         }, (err) => {
                             vscode.window.showErrorMessage(`Cannot use DG: ${err}`);
                         });
@@ -178,7 +182,102 @@ function newProjectDialog() {
         vscode.window.showErrorMessage(`Auth error: ${err}`);
     });
 }
-module.exports.newProjectDialog = newProjectDialog;
+module.exports.newProjectDGExistDialog = newProjectDGExistDialog;
+
+function newProjectDGNewDialog() {
+    Auth.authorize().then((accessToken) => {
+        const folderPath = getCurrentFolderPath();
+        const cfgFile = path.join(folderPath, Consts.configFileName);
+        if (getWorkspaceData(true)) {
+            vscode.window.showErrorMessage('An imp configuration file already exists.');
+            const document = vscode.workspace.openTextDocument(cfgFile);
+            vscode.window.showTextDocument(document);
+        } else {
+            vscode.window.showInputBox({ prompt: 'Enter an exist product ID:' })
+                .then((productID) => {
+                    if (!productID) {
+                        vscode.window.showErrorMessage('The product ID is empty');
+                        return;
+                    }
+
+                    vscode.window.showInputBox({ prompt: 'Enter a new DG name:' })
+                        .then((dgName) => {
+                            if (!dgName) {
+                                vscode.window.showErrorMessage('The DG name is empty');
+                                return;
+                            }
+
+                            const attrs = {
+                                name: dgName,
+                            };
+
+                            const api = new ImpCentralApi();
+                            api.auth.accessToken = accessToken;
+                            api.deviceGroups.create(productID, DevGroups.TYPE_DEVELOPMENT, attrs)
+                                .then((dg) => {
+                                    createProjectFiles(folderPath, cfgFile, dg.data.id);
+                                }, (err) => {
+                                    vscode.window.showErrorMessage(`Cannot create DG ${err}`);
+                                });
+                        });
+                });
+        }
+    }, (err) => {
+        vscode.window.showErrorMessage(`Auth error: ${err}`);
+    });
+}
+module.exports.newProjectDGNewDialog = newProjectDGNewDialog;
+
+function newProjectProductNewDialog() {
+    Auth.authorize().then((accessToken) => {
+        const folderPath = getCurrentFolderPath();
+        const cfgFile = path.join(folderPath, Consts.configFileName);
+        if (getWorkspaceData(true)) {
+            vscode.window.showErrorMessage('An imp configuration file already exists.');
+            const document = vscode.workspace.openTextDocument(cfgFile);
+            vscode.window.showTextDocument(document);
+        } else {
+            vscode.window.showInputBox({ prompt: 'Enter a new product name:' })
+                .then((productName) => {
+                    if (!productName) {
+                        vscode.window.showErrorMessage('The product name is empty');
+                        return;
+                    }
+
+                    vscode.window.showInputBox({ prompt: 'Enter a new DG name:' })
+                        .then((dgName) => {
+                            if (!dgName) {
+                                vscode.window.showErrorMessage('The DG name is empty');
+                                return;
+                            }
+
+                            const attrs = {
+                                name: productName,
+                            };
+
+                            const api = new ImpCentralApi();
+                            api.auth.accessToken = accessToken;
+                            api.products.create(attrs)
+                                .then((product) => {
+                                    const pID = product.data.id;
+                                    attrs.name = dgName;
+                                    api.deviceGroups.create(pID, DevGroups.TYPE_DEVELOPMENT, attrs)
+                                        .then((dg) => {
+                                            createProjectFiles(folderPath, cfgFile, dg.data.id);
+                                        }, (err) => {
+                                            vscode.window.showErrorMessage(`Cannot create DG ${err}`);
+                                        });
+                                }, (err) => {
+                                    vscode.window.showErrorMessage(`Cannot create new product ${err}`);
+                                });
+                        });
+                });
+        }
+    }, (err) => {
+        vscode.window.showErrorMessage(`Auth error: ${err}`);
+    });
+}
+module.exports.newProjectProductNewDialog = newProjectProductNewDialog;
 
 function applyBuilder(inputFileName, input) {
     const builder = new Builder();
@@ -234,7 +333,7 @@ function deploy() {
 
         const api = new ImpCentralApi();
         api.auth.accessToken = accessToken;
-        api.deployments.create(config.deviceGroupId, DevGoups.TYPE_DEVELOPMENT, attrs)
+        api.deployments.create(config.deviceGroupId, DevGroups.TYPE_DEVELOPMENT, attrs)
             .then((/* result */) => {
                 // TODO: Move all devices related logic to not-exist devices.js file.
                 api.deviceGroups.restartDevices(config.deviceGroupId)

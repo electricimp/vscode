@@ -18,7 +18,9 @@
   ],
   "activationEvents": [
     "onCommand:imp.auth.creds",
-    "onCommand:imp.workspace.project.new",
+    "onCommand:imp.workspace.project.dg.exist",
+    "onCommand:imp.workspace.project.dg.new",
+    "onCommand:imp.workspace.project.product.new",
     "onCommand:imp.workspace.project.deploy",
     "onCommand:imp.logstream.add",
     "onCommand:imp.logstream.remove",
@@ -35,8 +37,16 @@
         "title": "imp: Auth User Password"
       },
       {
-        "command": "imp.workspace.project.new",
-        "title": "imp: New Project"
+        "command": "imp.workspace.project.dg.exist",
+        "title": "imp: New Project, exist DG"
+      },
+      {
+        "command": "imp.workspace.project.dg.new",
+        "title": "imp: New Project, new DG"
+      },
+      {
+        "command": "imp.workspace.project.product.new",
+        "title": "imp: New Project, new Product"
       },
       {
         "command": "imp.workspace.project.deploy",
