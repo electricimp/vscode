@@ -95,7 +95,9 @@ module.exports.getCurrentFolderPath = getCurrentFolderPath;
 // Parameters:
 //     none
 function isWorkspaceFolderOpened() {
-    if (getCurrentFolderPath()) return true;
+    if (getCurrentFolderPath()) {
+        return true;
+    }
 
     vscode.window.showErrorMessage('Please select the workspace folder proceed.');
     return false;
@@ -114,14 +116,15 @@ function getWorkspaceData(doNotDisplayNotExist) {
         try {
             return JSON.parse(fs.readFileSync(impConfigFile).toString());
         } catch (err) {
-            if (doNotDisplayNotExist === undefined) {
-                vscode.window.showErrorMessage(`Cannot read project file: ${err}`);
-            }
+            vscode.window.showErrorMessage(`Cannot read project file: ${err}`);
             return undefined;
         }
     }
 
-    vscode.window.showErrorMessage('Project file does not exist');
+    if (doNotDisplayNotExist === undefined) {
+        vscode.window.showErrorMessage('Project file does not exist');
+    }
+
     return undefined;
 }
 module.exports.getWorkspaceData = getWorkspaceData;
@@ -194,41 +197,41 @@ function deploy() {
         return;
     }
 
-    let agentSource;
-    let deviceSource;
-
-    try {
-        const agentSourcePath = path.join(getCurrentFolderPath(), Helper.agentSourceFileName);
-        const deviceSourcePath = path.join(getCurrentFolderPath(), Helper.deviceSourceFileName);
-
-        agentSource = fs.readFileSync(agentSourcePath).toString();
-        deviceSource = fs.readFileSync(deviceSourcePath).toString();
-    } catch (err) {
-        vscode.window.showErrorMessage(`Cannot read source files: ${err}`);
-        return;
-    }
-
-    agentSource = agentSource.replace(/\\/g, '/');
-    deviceSource = deviceSource.replace(/\\/g, '/');
-
-    try {
-        agentSource = applyBuilder(Helper.agentSourceFileName, agentSource);
-        deviceSource = applyBuilder(Helper.deviceSourceFileName, deviceSource);
-    } catch (err) {
-        /*
-         * TODO: Seems like, it is part of sources processing errors.
-         * Find a way to report it to user correctly.
-         */
-        vscode.window.showErrorMessage(`Cannot apply Builder: ${err}`);
-        return;
-    }
-
-    const attrs = {
-        device_code: agentSource.replace(/\\/g, '/'),
-        agent_code: deviceSource.replace(/\\/g, '/'),
-    };
-
     Auth.authorize().then((accessToken) => {
+        let agentSource;
+        let deviceSource;
+
+        try {
+            const agentSourcePath = path.join(getCurrentFolderPath(), Helper.agentSourceFileName);
+            const deviceSourcePath = path.join(getCurrentFolderPath(), Helper.deviceSourceFileName);
+
+            agentSource = fs.readFileSync(agentSourcePath).toString();
+            deviceSource = fs.readFileSync(deviceSourcePath).toString();
+        } catch (err) {
+            vscode.window.showErrorMessage(`Cannot read source files: ${err}`);
+            return;
+        }
+
+        agentSource = agentSource.replace(/\\/g, '/');
+        deviceSource = deviceSource.replace(/\\/g, '/');
+
+        try {
+            agentSource = applyBuilder(Helper.agentSourceFileName, agentSource);
+            deviceSource = applyBuilder(Helper.deviceSourceFileName, deviceSource);
+        } catch (err) {
+            /*
+             * TODO: Seems like, it is part of sources processing errors.
+             * Find a way to report it to user correctly.
+             */
+            vscode.window.showErrorMessage(`Cannot apply Builder: ${err}`);
+            return;
+        }
+
+        const attrs = {
+            device_code: agentSource.replace(/\\/g, '/'),
+            agent_code: deviceSource.replace(/\\/g, '/'),
+        };
+
         const impCentralApi = new ImpCentralApi();
         impCentralApi.auth.accessToken = accessToken;
         impCentralApi.deployments.create(config.deviceGroupId, DevGoups.TYPE_DEVELOPMENT, attrs)

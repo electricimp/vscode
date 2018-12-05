@@ -51,6 +51,14 @@
         "title": "imp: Remove Device Logs"
       },
       {
+        "command": "imp.logstream.pause",
+        "title": "imp: Pause Logs"
+      },
+      {
+        "command": "imp.logstream.clean",
+        "title": "imp: Clean Logs"
+      },
+      {
         "command": "imp.device.add",
         "title": "imp: Add Device to current DG"
       },

@@ -29,26 +29,21 @@ const Auth = require('./auth');
 const Workspace = require('./workspace');
 
 function getAgentURLDialog() {
-    vscode.window.showInputBox({ prompt: 'Enter a valid device Id:' })
-        .then((deviceId) => {
-            if (!deviceId) {
-                vscode.window.showErrorMessage('The device Id is empty');
-                return;
-            }
-
-            Auth.authorize()
-                .then((accessToken) => {
+    Auth.authorize()
+        .then((accessToken) => {
+            vscode.window.showInputBox({ prompt: 'Enter a valid device Id:' })
+                .then((deviceID) => {
                     const impCentralApi = new ImpCentralApi();
                     impCentralApi.auth.accessToken = accessToken;
-                    impCentralApi.devices.get(deviceId)
+                    impCentralApi.devices.get(deviceID)
                         .then((device) => {
                             vscode.window.showInformationMessage(device.data.attributes.agent_url);
                         }, (err) => {
                             vscode.window.showErrorMessage(`Cannot get device: ${err}`);
                         });
-                }, (err) => {
-                    vscode.window.showErrorMessage(`Cannot get device: ${err}`);
                 });
+        }, (err) => {
+            vscode.window.showErrorMessage(`Auth error: ${err}`);
         });
 }
 module.exports.getAgentURLDialog = getAgentURLDialog;
@@ -59,26 +54,26 @@ function addDeviceToDGDialog() {
         return;
     }
 
-    vscode.window.showInputBox({ prompt: 'Enter a valid device Id:' })
-        .then((deviceId) => {
-            if (!deviceId) {
-                vscode.window.showErrorMessage('The device Id is empty');
-                return;
-            }
+    Auth.authorize()
+        .then((accessToken) => {
+            vscode.window.showInputBox({ prompt: 'Enter a valid device ID:' })
+                .then((deviceID) => {
+                    if (!deviceID) {
+                        vscode.window.showErrorMessage('The device Id is empty');
+                        return;
+                    }
 
-            Auth.authorize()
-                .then((accessToken) => {
                     const impCentralApi = new ImpCentralApi();
                     impCentralApi.auth.accessToken = accessToken;
-                    impCentralApi.deviceGroups.addDevices(config.deviceGroupId, deviceId)
+                    impCentralApi.deviceGroups.addDevices(config.deviceGroupId, deviceID)
                         .then(() => {
-                            vscode.window.showInformationMessage(`The ${deviceId} is added to ${config.deviceGroupId}`);
+                            vscode.window.showInformationMessage(`The ${deviceID} is added to ${config.deviceGroupId}`);
                         }, (err) => {
                             vscode.window.showErrorMessage(`Can not add device: ${err}`);
                         });
-                }, (err) => {
-                    vscode.window.showErrorMessage(`Can not add device: ${err}`);
                 });
+        }, (err) => {
+            vscode.window.showErrorMessage(`Auth error: ${err}`);
         });
 }
 module.exports.addDeviceToDGDialog = addDeviceToDGDialog;
@@ -89,26 +84,26 @@ function removeDeviceFromDGDialog() {
         return;
     }
 
-    vscode.window.showInputBox({ prompt: 'Enter a valid device Id:' })
-        .then((deviceId) => {
-            if (!deviceId) {
-                vscode.window.showErrorMessage('The device Id is empty');
-                return;
-            }
+    Auth.authorize()
+        .then((accessToken) => {
+            vscode.window.showInputBox({ prompt: 'Enter a valid device Id:' })
+                .then((deviceID) => {
+                    if (!deviceID) {
+                        vscode.window.showErrorMessage('The device Id is empty');
+                        return;
+                    }
 
-            Auth.authorize()
-                .then((accessToken) => {
                     const impCentralApi = new ImpCentralApi();
                     impCentralApi.auth.accessToken = accessToken;
-                    impCentralApi.deviceGroups.removeDevices(config.deviceGroupId, null, deviceId)
+                    impCentralApi.deviceGroups.removeDevices(config.deviceGroupId, null, deviceID)
                         .then(() => {
-                            vscode.window.showInformationMessage(`The ${deviceId} is removed from ${config.deviceGroupId}`);
+                            vscode.window.showInformationMessage(`The ${deviceID} is removed from ${config.deviceGroupId}`);
                         }, (err) => {
                             vscode.window.showErrorMessage(`Can not remove device: ${err}`);
                         });
-                }, (err) => {
-                    vscode.window.showErrorMessage(`Can not remove device: ${err}`);
                 });
+        }, (err) => {
+            vscode.window.showErrorMessage(`Auth error: ${err}`);
         });
 }
 module.exports.removeDeviceFromDGDialog = removeDeviceFromDGDialog;

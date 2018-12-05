@@ -61,6 +61,18 @@ function activate(context) {
         }
     }));
 
+    context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.pause', () => {
+        if (Workspace.isWorkspaceFolderOpened()) {
+            vscode.window.showErrorMessage('The command is not implemented');
+        }
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.clean', () => {
+        if (Workspace.isWorkspaceFolderOpened()) {
+            vscode.window.showErrorMessage('The command is not implemented');
+        }
+    }));
+
     context.subscriptions.push(vscode.commands.registerCommand('imp.device.add', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
             Devices.addDeviceToDGDialog();
