@@ -191,8 +191,8 @@ module.exports.newProjectDGExistDialog = newProjectDGExistDialog;
 function promptDGNew() {
     return new Promise(((resolve, reject) => {
         vscode.window.showInputBox({ prompt: User.MESSAGES.WORKSPACE_PROMPT_PRODUCT_EXIST })
-            .then((prod) => {
-                if (!prod) {
+            .then((product) => {
+                if (!product) {
                     vscode.window.showErrorMessage(User.ERRORS.PRODUCT_ID_EMPTY);
                     reject();
                 }
@@ -205,7 +205,7 @@ function promptDGNew() {
                         }
 
                         const newDGOptions = {
-                            productID: prod,
+                            productID: product,
                             dgName: dg,
                         };
 
@@ -367,6 +367,11 @@ function deploy() {
         try {
             agentSource = applyBuilder(Consts.agentSourceFileName, agentSource);
             deviceSource = applyBuilder(Consts.deviceSourceFileName, deviceSource);
+            const storePostprocessed = false;
+            if (storePostprocessed) {
+                fs.writeFileSync(path.join(getCurrentFolderPath(), 'postprocessed.agent'), agentSource);
+                fs.writeFileSync(path.join(getCurrentFolderPath(), 'postprocessed.device'), deviceSource);
+            }
         } catch (err) {
             /*
              * TODO: Seems like, it is part of sources processing errors.
