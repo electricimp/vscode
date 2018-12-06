@@ -94,7 +94,7 @@ class LogStream {
                             this.logStreamID = logStream.data.id;
                             this.outputChannel =
                                 vscode.window.createOutputChannel(User.NAMES.OUTPUT_CHANNEL);
-                            this.impAddDevice(api, logStream, deviceID);
+                            this.impAddDevice(api, deviceID);
                         }, (err) => {
                             vscode.window.showErrorMessage(`Cannot open ${User.NAMES.OUTPUT_CHANNEL}: ${err}`);
                         });
