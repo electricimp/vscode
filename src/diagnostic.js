@@ -39,16 +39,16 @@ class Diagnostic {
     }
 
     static parseBuilderError(msg) {
-        const regex = /\(([^)]+)\)/;
+        const regex = /(\S.*)\((.*):(\d+)\)/;
         const result = msg.match(regex);
         if (result == null) {
             return null;
         }
 
         return {
-            msg: result.input.split('(')[0],
-            file: result[1].split(':')[0],
-            line: result[1].split(':')[1],
+            msg: result[1],
+            file: result[2],
+            line: result[3],
         };
     }
 
