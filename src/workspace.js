@@ -332,7 +332,7 @@ module.exports.newProjectProductNewDialog = newProjectProductNewDialog;
 function applyBuilder(inputFileName, input) {
     const builder = new Builder();
 
-    builder.file = inputFileName;
+    builder.machine.file = inputFileName;
     return builder.machine.execute(input.toString());
 }
 
@@ -340,11 +340,13 @@ function applyBuilder(inputFileName, input) {
 //
 // Parameters:
 //     none
-function deploy() {
+function deploy(diagnostic) {
     const config = getWorkspaceData();
     if (config === undefined) {
         return;
     }
+
+    diagnostic.clearDiagnostic();
 
     Auth.authorize().then((accessToken) => {
         let agentSource;
@@ -367,16 +369,24 @@ function deploy() {
         try {
             agentSource = applyBuilder(Consts.agentSourceFileName, agentSource);
             deviceSource = applyBuilder(Consts.deviceSourceFileName, deviceSource);
+
+            /*
+             * The code below is only for debug purposes.
+             * Write postprocessed files to workspace directory for future analyzes.
+             */
             const storePostprocessed = false;
             if (storePostprocessed) {
                 fs.writeFileSync(path.join(getCurrentFolderPath(), 'postprocessed.agent'), agentSource);
                 fs.writeFileSync(path.join(getCurrentFolderPath(), 'postprocessed.device'), deviceSource);
+                const outputChannel = vscode.window.createOutputChannel('BUILDER');
+                outputChannel.show(true);
+                outputChannel.append(deviceSource);
+
+                vscode.window.showInformationMessage('RETURNED FROM DEPLOY');
+                return;
             }
         } catch (err) {
-            /*
-             * TODO: Seems like, it is part of sources processing errors.
-             * Find a way to report it to user correctly.
-             */
+            diagnostic.addBuilderError(err.message);
             vscode.window.showErrorMessage(`Cannot apply Builder: ${err}`);
             return;
         }

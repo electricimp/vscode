@@ -28,7 +28,9 @@ const Auth = require('./auth');
 const Workspace = require('./workspace');
 const LogStream = require('./logstream');
 const Devices = require('./devices');
+const Diagnostic = require('./diagnostic');
 
+const diagnostic = new Diagnostic();
 const logstream = new LogStream();
 
 function activate(context) {
@@ -58,7 +60,7 @@ function activate(context) {
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.deploy', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
-            Workspace.deploy();
+            Workspace.deploy(diagnostic);
         }
     }));
 
@@ -108,5 +110,6 @@ exports.activate = activate;
 
 // this method is called when your extension is deactivated
 function deactivate() {
+    // TODO: Do not forget close all outputChannels and device LogStreams here.
 }
 exports.deactivate = deactivate;
