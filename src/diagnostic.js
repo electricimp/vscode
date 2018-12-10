@@ -72,8 +72,45 @@ class Diagnostic {
         vscode.window.showTextDocument(uri);
     }
 
-    addDeployError(document, error) {
-        this.diagnosticCollection.set(document, error);
+    static getSourceFile(source) {
+        if (source === 'device_code') {
+            return Workspace.Consts.agentSourceFileName;
+        } else if (source === 'agent_code') {
+            return Workspace.Consts.deviceSourceFileName;
+        }
+
+        return undefined;
+    }
+
+    addDeployError(deployError) {
+        if (deployError.body.errors === undefined) {
+            return;
+        }
+
+        deployError.body.errors.forEach((err) => {
+            if (err.meta === undefined) {
+                return;
+            }
+
+            err.meta.forEach((meta) => {
+                const file = Diagnostic.getSourceFile(meta.file);
+                if (file === undefined) {
+                    return;
+                }
+
+                const sourceFile = path.join(Workspace.getCurrentFolderPath(), file);
+                const uri = vscode.Uri.file(sourceFile);
+                const pos = new vscode.Position(meta.row - 1, meta.column - 1);
+                this.diagnosticCollection.set(uri, [{
+                    code: '',
+                    message: meta.text,
+                    range: new vscode.Range(pos, pos),
+                    severity: vscode.DiagnosticSeverity.Error,
+                    source: 'Deploy',
+                    relatedInformation: [],
+                }]);
+            });
+        });
     }
 
     addLogStreamError(document, error) {

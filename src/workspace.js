@@ -408,6 +408,7 @@ function deploy(diagnostic) {
                         vscode.window.showErrorMessage(`Reset devices: ${err}`);
                     });
             }, (err) => {
+                diagnostic.addDeployError(err);
                 vscode.window.showErrorMessage(`Deploy failed: ${err}`);
             });
     }, (err) => {
