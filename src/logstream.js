@@ -83,24 +83,33 @@ class LogStream {
             });
     }
 
-    addDevice(accessToken) {
+    addDevice(accessToken, deviceID) {
+        return new Promise(((resolve, reject) => {
+            const api = new ImpCentralApi();
+            api.auth.accessToken = accessToken;
+            if (this.isOpened() === undefined) {
+                api.logStreams.create(this.logMsg.bind(this), this.logState.bind(this))
+                    .then((logStream) => {
+                        this.logStreamID = logStream.data.id;
+                        this.outputChannel =
+                            vscode.window.createOutputChannel(User.NAMES.OUTPUT_CHANNEL);
+                        this.impAddDevice(api, deviceID);
+                        resolve();
+                    }, (err) => {
+                        vscode.window.showErrorMessage(`Cannot open ${User.NAMES.OUTPUT_CHANNEL}: ${err}`);
+                        reject();
+                    });
+            } else {
+                this.impAddDevice(api, deviceID);
+                resolve();
+            }
+        }));
+    }
+
+    addDevicePrompt(accessToken) {
         LogStream.promptDeviceID()
             .then((deviceID) => {
-                const api = new ImpCentralApi();
-                api.auth.accessToken = accessToken;
-                if (this.isOpened() === undefined) {
-                    api.logStreams.create(this.logMsg.bind(this), this.logState.bind(this))
-                        .then((logStream) => {
-                            this.logStreamID = logStream.data.id;
-                            this.outputChannel =
-                                vscode.window.createOutputChannel(User.NAMES.OUTPUT_CHANNEL);
-                            this.impAddDevice(api, deviceID);
-                        }, (err) => {
-                            vscode.window.showErrorMessage(`Cannot open ${User.NAMES.OUTPUT_CHANNEL}: ${err}`);
-                        });
-                } else {
-                    this.impAddDevice(api, deviceID);
-                }
+                this.addDevice(accessToken, deviceID);
             });
     }
 
@@ -110,7 +119,7 @@ class LogStream {
     //     none
     addDeviceDialog() {
         Auth.authorize()
-            .then(this.addDevice.bind(this), (err) => {
+            .then(this.addDevicePrompt.bind(this), (err) => {
                 vscode.window.showErrorMessage(`${User.ERRORS.AUTH_LOGIN} ${err}`);
             });
     }

@@ -32,6 +32,7 @@ const Auth = require('./auth');
 const User = require('./user');
 
 const DevGroups = ImpCentralApi.DeviceGroups;
+const Devs = ImpCentralApi.Devices;
 
 // This class provides the constants required for workspace manipulation.
 class Consts {
@@ -352,7 +353,7 @@ function applyBuilder(inputFileName, input) {
 //
 // Parameters:
 //     none
-function deploy(diagnostic) {
+function deploy(logstream, diagnostic) {
     const config = getWorkspaceData();
     if (config === undefined) {
         return;
@@ -412,13 +413,39 @@ function deploy(diagnostic) {
         api.auth.accessToken = accessToken;
         api.deployments.create(config.deviceGroupId, DevGroups.TYPE_DEVELOPMENT, attrs)
             .then((/* result */) => {
-                // TODO: Move all devices related logic to not-exist devices.js file.
-                api.deviceGroups.restartDevices(config.deviceGroupId)
-                    .then(() => {
-                        vscode.window.showInformationMessage(`Successfully deployed on ${config.deviceGroupId}`);
-                    }, (err) => {
-                        vscode.window.showErrorMessage(`Reset devices: ${err}`);
-                    });
+                /*
+                 * Here is a developer's knob below.
+                 * It is possible to open some device LogStream after successful deployment.
+                 */
+                const openLogStream = true;
+                if (openLogStream) {
+                    const dg = config.deviceGroupId;
+                    api.devices.list({ [Devs.FILTER_DEVICE_GROUP_ID]: dg })
+                        .then((devs) => {
+                            if (devs.data.length >= 1) {
+                                logstream.addDevice(accessToken, devs.data[0].id)
+                                    .then(() => {
+                                        api.deviceGroups.restartDevices(config.deviceGroupId)
+                                            .then(() => {
+                                                vscode.window.showInformationMessage(`Successfully deployed on ${dg}`);
+                                            }, (err) => {
+                                                vscode.window.showErrorMessage(`Reset devices: ${err}`);
+                                            });
+                                    });
+                            } else {
+                                vscode.window.showWarningMessage(`The DG ${dg} have no devices`);
+                            }
+                        }, (err) => {
+                            vscode.window.showErrorMessage(`Cannot list DG devices: ${err}`);
+                        });
+                } else {
+                    api.deviceGroups.restartDevices(config.deviceGroupId)
+                        .then(() => {
+                            vscode.window.showInformationMessage(`Successfully deployed on ${config.deviceGroupId}`);
+                        }, (err) => {
+                            vscode.window.showErrorMessage(`Reset devices: ${err}`);
+                        });
+                }
             }, (err) => {
                 diagnostic.addDeployError(err);
                 vscode.window.showErrorMessage(`Deploy failed: ${err}`);

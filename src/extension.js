@@ -60,7 +60,7 @@ function activate(context) {
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.deploy', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
-            Workspace.deploy(diagnostic);
+            Workspace.deploy(logstream, diagnostic);
         }
     }));
 
