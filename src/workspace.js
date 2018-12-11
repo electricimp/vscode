@@ -100,7 +100,19 @@ function isWorkspaceFolderOpened() {
         return true;
     }
 
-    vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_FOLDER_SELECT);
+    /*
+     * It is possible to choise user interaction action below.
+     * In case of workspace folder is not opened,
+     * we can display message with appropriate error or
+     * display working directory selection dialog.
+     */
+    const displayOpenDirectoryDialog = undefined;
+    if (displayOpenDirectoryDialog) {
+        vscode.commands.executeCommand('workbench.action.files.openFolder');
+    } else {
+        vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_FOLDER_SELECT);
+    }
+
     return false;
 }
 module.exports.isWorkspaceFolderOpened = isWorkspaceFolderOpened;

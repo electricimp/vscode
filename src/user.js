@@ -36,7 +36,7 @@ const ERRORS = {
     PRODUCT_ID_EMPTY: 'The product ID is empty',
     PRODUCT_CREATE: 'Cannot create new product:',
     WORKSPACE_MULTIROOT: 'Multi-root workspaces are not supported',
-    WORKSPACE_FOLDER_SELECT: 'Please select the workspace folder proceed',
+    WORKSPACE_FOLDER_SELECT: 'Please select the workspace folder to proceed',
     WORSPACE_CFG_FILE: 'Project file:',
     WORSPACE_CFG_NONE: 'Project file does not exist',
     WORKSPACE_CFG_EXIST: 'An imp configuration file already exists',
