@@ -27,6 +27,7 @@
     "onCommand:imp.device.add",
     "onCommand:imp.device.remove",
     "onCommand:imp.device.agenturl",
+    "onCommand:imp.show.commands",
     "onLanguage:squirrel"
   ],
   "main": "./src/extension",
@@ -79,6 +80,11 @@
       {
         "command": "imp.device.agenturl",
         "title": "imp: Get agent URL"
+      },
+      {
+        "command": "imp.show.commands",
+        "title": "imp: Show All Commands...",
+        "description": "Shows all commands from the imp extension in the quick pick"
       }
     ],
     "keybindings": [

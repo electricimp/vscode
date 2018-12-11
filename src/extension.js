@@ -105,6 +105,23 @@ function activate(context) {
             Devices.getAgentURLDialog();
         }
     }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('imp.show.commands', () => {
+        const extensionId = 'Electric Imp.vscode-imp';
+        const pkgJSON = vscode.extensions.getExtension(extensionId).packageJSON;
+        if (!pkgJSON.contributes || !pkgJSON.contributes.commands) {
+            return;
+        }
+
+        const extCmds = vscode.extensions.getExtension(extensionId)
+            .packageJSON.contributes.commands.filter(x => x.command !== 'imp.show.commands');
+        vscode.window.showQuickPick(extCmds.map(x => x.title)).then((cmd) => {
+            const selectedCmd = extCmds.find(x => x.title === cmd);
+            if (selectedCmd) {
+                vscode.commands.executeCommand(selectedCmd.command);
+            }
+        });
+    }));
 }
 exports.activate = activate;
 
