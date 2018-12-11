@@ -23,6 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
+const colors = require('colors/safe');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
 const User = require('./user');
@@ -42,15 +43,141 @@ class LogStream {
         this.pause = false;
     }
 
+    static getTypeInfo(type) {
+        const typeInfo = {
+            name: undefined,
+            className: '',
+        };
+
+        switch (type) {
+        case 'server.log':
+            typeInfo.name = 'Device';
+            typeInfo.className = 'device-log';
+            break;
+        case 'server.error':
+            typeInfo.name = 'Device';
+            typeInfo.className = 'device-error';
+            break;
+        case 'server.sleep':
+            typeInfo.name = 'Device';
+            typeInfo.className = 'device-sleep';
+            break;
+        case 'agent.log':
+            typeInfo.name = 'Agent';
+            typeInfo.className = 'agent-log';
+            break;
+        case 'agent.error':
+            typeInfo.name = 'Agent';
+            typeInfo.className = 'agent-error';
+            break;
+        case 'status':
+            typeInfo.name = 'Status';
+            typeInfo.className = 'status';
+            break;
+        case 'powerstate':
+            typeInfo.name = 'Power State';
+            typeInfo.className = 'power-state';
+            break;
+        case 'lastexitcode':
+            typeInfo.name = 'Exit Code';
+            typeInfo.className = 'last-exit-code';
+            break;
+        case 'firmware':
+            typeInfo.name = 'Firmware';
+            typeInfo.className = 'firmware';
+            break;
+        case 'IDE.log':
+            typeInfo.name = 'IDE';
+            typeInfo.className = 'ide-log';
+            break;
+        default:
+            return undefined;
+        }
+
+        return typeInfo;
+    }
+
+    static getTypeString(typeInfo) {
+        switch (typeInfo.className) {
+        case 'device-log':
+            return `[${typeInfo.name}]`;
+        case 'device-sleep':
+            return `[${typeInfo.name}]`;
+        case 'device-error':
+            return `[${typeInfo.name}]`;
+        case 'agent-log':
+            return `[${typeInfo.name}] `;
+        case 'agent-error':
+            return `[${typeInfo.name}] `;
+        case 'status':
+            return `[${typeInfo.name}]`;
+        case 'power-state':
+            return `[${typeInfo.name}]`;
+        case 'last-exit-code':
+            return `[${typeInfo.name}]`;
+        case 'firmware':
+            return `[${typeInfo.name}]`;
+        case 'ide-log':
+            return `[${typeInfo.name}]`;
+        default:
+            return undefined;
+        }
+    }
+
+    static getTypeStringColorized(typeInfo) {
+        switch (typeInfo.className) {
+        case 'device-log':
+            return colors.blue(`[${typeInfo.name}]`);
+        case 'device-sleep':
+            return colors.blue(`[${typeInfo.name}]`);
+        case 'device-error':
+            return colors.bgBlack.white(`[${typeInfo.name}]`);
+        case 'agent-log':
+            return colors.cyan(`[${typeInfo.name}]`);
+        case 'agent-error':
+            return colors.bgCyan.black(`[${typeInfo.name}]`);
+        case 'status':
+            return colors.yellow(`[${typeInfo.name}]`);
+        case 'power-state':
+            return colors.green(`[${typeInfo.name}]`);
+        case 'last-exit-code':
+            return colors.red(`[${typeInfo.name}]`);
+        case 'firmware':
+            return colors.magenta(`[${typeInfo.name}]`);
+        case 'ide-log':
+            return colors.yellow(`[${typeInfo.name}]`);
+        default:
+            return undefined;
+        }
+    }
+
+    static getDeviceLogMessage(message) {
+        const regex = /\b[0-9a-f]{16}\s(.*)\s(?:development|production)\s([a-z.]+)\s(.*)/;
+        const result = message.match(regex);
+        if (result == null) {
+            // If we can not parse the message, return it as is.
+            return message;
+        }
+
+        const ts = result[1];
+        const type = LogStream.getTypeString(LogStream.getTypeInfo(result[2]));
+        const msg = result[3];
+
+        return `${ts} ${type} ${msg}`;
+    }
+
     logMsg(message) {
         if (this.pause === false) {
-            this.outputChannel.appendLine(message);
+            this.outputChannel.appendLine(LogStream.getDeviceLogMessage(message));
         }
     }
 
     logState(message) {
-        if (this.pause === false) {
-            this.outputChannel.appendLine(message);
+        const printState = false;
+        if (printState) {
+            if (this.pause === false) {
+                this.outputChannel.appendLine(message);
+            }
         }
     }
 
