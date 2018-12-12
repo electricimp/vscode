@@ -177,7 +177,7 @@ class LogStream {
         }
 
         const errMsg = result[3];
-        const reg = /(.*):(\d)/;
+        const reg = /(.*):(\d+)/;
         const res = errMsg.match(reg);
         if (errMsg.indexOf('agent_code') > -1) {
             return {
