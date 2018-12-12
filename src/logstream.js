@@ -28,6 +28,7 @@ const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
 const User = require('./user');
 const Auth = require('./auth');
+const Diagnostic = require('./diagnostic');
 
 /*
  * Here we will have all logic related with logstreams manipulation.
@@ -36,7 +37,8 @@ const Auth = require('./auth');
  */
 
 class LogStream {
-    constructor() {
+    constructor(diagnostic) {
+        this.diagnostic = diagnostic;
         this.logStreamID = undefined;
         this.outputChannel = undefined;
         this.devices = new Set();
@@ -166,8 +168,38 @@ class LogStream {
         return `${ts} ${type} ${msg}`;
     }
 
+    static getErrorMessage(message) {
+        const regex = /\b[0-9a-f]{16}\s(.*)\s(?:development|production)\s([a-z.]+)\sERROR:(.*)/;
+        const result = message.match(regex);
+        if (result == null) {
+            return undefined;
+        }
+
+        const errMsg = result[3];
+        const reg = /(.*):(\d)/;
+        const res = errMsg.match(reg);
+        if (errMsg.indexOf('agent_code') > -1) {
+            return {
+                file: Diagnostic.getSourceFile('agent_code'),
+                line: res[2],
+            };
+        } else if (errMsg.indexOf('device_code') > -1) {
+            return {
+                file: Diagnostic.getSourceFile('device_code'),
+                line: res[2],
+            };
+        }
+
+        return undefined;
+    }
+
     logMsg(message) {
         if (this.pause === false) {
+            const err = LogStream.getErrorMessage(message);
+            if (err) {
+                this.diagnostic.addLogStreamError(err);
+            }
+
             this.outputChannel.appendLine(LogStream.getDeviceLogMessage(message));
         }
     }

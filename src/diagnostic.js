@@ -113,8 +113,22 @@ class Diagnostic {
         });
     }
 
-    addLogStreamError(document, logStreamError) {
-        this.diagnosticCollection.set(document, logStreamError);
+    addLogStreamError(logStreamError) {
+        if (logStreamError.file === undefined) {
+            return;
+        }
+
+        const sourceFile = path.join(Workspace.getCurrentFolderPath(), logStreamError.file);
+        const uri = vscode.Uri.file(sourceFile);
+        const pos = new vscode.Position(logStreamError.line - 1, 0);
+        this.diagnosticCollection.set(uri, [{
+            code: '',
+            message: 'Error',
+            range: new vscode.Range(pos, pos),
+            severity: vscode.DiagnosticSeverity.Error,
+            source: 'Run-time',
+            relatedInformation: [],
+        }]);
     }
 }
 module.exports = Diagnostic;

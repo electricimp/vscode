@@ -31,7 +31,7 @@ const Devices = require('./devices');
 const Diagnostic = require('./diagnostic');
 
 const diagnostic = new Diagnostic();
-const logstream = new LogStream();
+const logstream = new LogStream(diagnostic);
 
 function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('imp.auth.creds', () => {
