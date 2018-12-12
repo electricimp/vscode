@@ -183,7 +183,7 @@ function newProjectDGExist(accessToken) {
                     .then((dg) => {
                         createProjectFiles(folderPath, cfgFile, dg.data.id);
                     }, (err) => {
-                        vscode.window.showErrorMessage(`${User.ERRORS.DG_RETRIEVE} ${err}`);
+                        User.showImpApiError(`${User.ERRORS.DG_RETRIEVE}`, err);
                     });
             });
     }
@@ -195,9 +195,7 @@ function newProjectDGExist(accessToken) {
 // Parameters:
 //     none
 function newProjectDGExistDialog() {
-    Auth.authorize().then(newProjectDGExist, (err) => {
-        vscode.window.showErrorMessage(`${User.ERRORS.AUTH_LOGIN} ${err}`);
-    });
+    Auth.authorize().then(newProjectDGExist);
 }
 module.exports.newProjectDGExistDialog = newProjectDGExistDialog;
 
@@ -253,7 +251,7 @@ function newProjectDGNew(accessToken) {
                     .then((dg) => {
                         createProjectFiles(folderPath, cfgFile, dg.data.id);
                     }, (err) => {
-                        vscode.window.showErrorMessage(`${User.ERRORS.DG_CREATE} ${err}`);
+                        User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
                     });
             });
     }
@@ -265,9 +263,7 @@ function newProjectDGNew(accessToken) {
 // Parameters:
 //     none
 function newProjectDGNewDialog() {
-    Auth.authorize().then(newProjectDGNew, (err) => {
-        vscode.window.showErrorMessage(`${User.ERRORS.AUTH_LOGIN} ${err}`);
-    });
+    Auth.authorize().then(newProjectDGNew);
 }
 module.exports.newProjectDGNewDialog = newProjectDGNewDialog;
 
@@ -321,10 +317,10 @@ function newProjectProductNew(accessToken) {
                         .then((dg) => {
                             createProjectFiles(folderPath, cfgFile, dg.data.id);
                         }, (err) => {
-                            vscode.window.showErrorMessage(`${User.ERRORS.DG_CREATE} ${err}`);
+                            User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
                         });
                 }, (err) => {
-                    vscode.window.showErrorMessage(`${User.ERRORS.PRODUCT_CREATE} ${err}`);
+                    User.showImpApiError(`${User.ERRORS.PRODUCT_CREATE}`, err);
                 });
         });
     }
@@ -336,9 +332,7 @@ function newProjectProductNew(accessToken) {
 // Parameters:
 //     none
 function newProjectProductNewDialog() {
-    Auth.authorize().then(newProjectProductNew, (err) => {
-        vscode.window.showErrorMessage(`${User.ERRORS.AUTH_LOGIN} ${err}`);
-    });
+    Auth.authorize().then(newProjectProductNew);
 }
 module.exports.newProjectProductNewDialog = newProjectProductNewDialog;
 
@@ -429,29 +423,27 @@ function deploy(logstream, diagnostic) {
                                             .then(() => {
                                                 vscode.window.showInformationMessage(`Successfully deployed on ${dg}`);
                                             }, (err) => {
-                                                vscode.window.showErrorMessage(`Reset devices: ${err}`);
+                                                User.showImpApiError('Reset devices:', err);
                                             });
                                     });
                             } else {
                                 vscode.window.showWarningMessage(`The DG ${dg} have no devices`);
                             }
                         }, (err) => {
-                            vscode.window.showErrorMessage(`Cannot list DG devices: ${err}`);
+                            User.showImpApiError('Cannot list DG devices:', err);
                         });
                 } else {
                     api.deviceGroups.restartDevices(config.deviceGroupId)
                         .then(() => {
                             vscode.window.showInformationMessage(`Successfully deployed on ${config.deviceGroupId}`);
                         }, (err) => {
-                            vscode.window.showErrorMessage(`Reset devices: ${err}`);
+                            User.showImpApiError('Reset devices:', err);
                         });
                 }
             }, (err) => {
                 diagnostic.addDeployError(err);
-                vscode.window.showErrorMessage(`Deploy failed: ${err}`);
+                User.showImpApiError('Deploy failed:', err);
             });
-    }, (err) => {
-        vscode.window.showErrorMessage(`${User.ERRORS.AUTH_LOGIN} ${err}`);
     });
 }
 module.exports.deploy = deploy;

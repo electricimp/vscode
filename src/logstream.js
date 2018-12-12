@@ -206,12 +206,12 @@ class LogStream {
                 this.devices.add(deviceID);
                 vscode.window.showInformationMessage(`Device added: ${deviceID}`);
             }, (err) => {
-                vscode.window.showErrorMessage(`The device ${deviceID} cannot be added: ${err}`);
+                User.showImpApiError(`The device ${deviceID} cannot be added:`, err);
             });
     }
 
     addDevice(accessToken, deviceID) {
-        return new Promise(((resolve, reject) => {
+        return new Promise(((resolve) => {
             const api = new ImpCentralApi();
             api.auth.accessToken = accessToken;
             if (this.isOpened() === undefined) {
@@ -223,8 +223,7 @@ class LogStream {
                         this.impAddDevice(api, deviceID);
                         resolve();
                     }, (err) => {
-                        vscode.window.showErrorMessage(`Cannot open ${User.NAMES.OUTPUT_CHANNEL}: ${err}`);
-                        reject();
+                        User.showImpApiError(`Cannot open ${User.NAMES.OUTPUT_CHANNEL}`, err);
                     });
             } else {
                 this.impAddDevice(api, deviceID);
@@ -245,10 +244,7 @@ class LogStream {
     // Parameters:
     //     none
     addDeviceDialog() {
-        Auth.authorize()
-            .then(this.addDevicePrompt.bind(this), (err) => {
-                vscode.window.showErrorMessage(`${User.ERRORS.AUTH_LOGIN} ${err}`);
-            });
+        Auth.authorize().then(this.addDevicePrompt.bind(this));
     }
 
     impRemoveDevice(impCentralApi, deviceID) {
@@ -257,7 +253,7 @@ class LogStream {
                 this.devices.delete(deviceID);
                 vscode.window.showInformationMessage(`Device removed: ${deviceID}`);
             }, (err) => {
-                vscode.window.showErrorMessage(`The device ${deviceID} cannot be removed: ${err}`);
+                User.showImpApiError(`The device ${deviceID} cannot be removed:`, err);
             });
     }
 
@@ -280,10 +276,7 @@ class LogStream {
     // Parameters:
     //     none
     removeDeviceDialog() {
-        Auth.authorize()
-            .then(this.removeDevice.bind(this), (err) => {
-                vscode.window.showErrorMessage(`${User.ERRORS.AUTH_LOGIN} ${err}`);
-            });
+        Auth.authorize().then(this.removeDevice.bind(this));
     }
 
     // Clear LogStream output window.

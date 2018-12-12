@@ -43,7 +43,7 @@ function getAgentURL(accessToken) {
                 .then((device) => {
                     vscode.window.showInformationMessage(device.data.attributes.agent_url);
                 }, (err) => {
-                    vscode.window.showErrorMessage(`${User.ERRORS.DEVICE_RETRIEVE} ${err}`);
+                    User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err);
                 });
         });
 }
@@ -57,10 +57,7 @@ function getAgentURL(accessToken) {
 // Returns:
 //     none
 function getAgentURLDialog() {
-    Auth.authorize()
-        .then(getAgentURL, (err) => {
-            vscode.window.showErrorMessage(`${User.ERRORS.AUTH_LOGIN} ${err}`);
-        });
+    Auth.authorize().then(getAgentURL);
 }
 module.exports.getAgentURLDialog = getAgentURLDialog;
 
@@ -83,7 +80,7 @@ function addDeviceToDG(accessToken) {
                 .then(() => {
                     vscode.window.showInformationMessage(`The ${deviceID} is added to ${config.deviceGroupId}`);
                 }, (err) => {
-                    vscode.window.showErrorMessage(`Can not add device: ${err}`);
+                    User.showImpApiError('Cannot add device:', err);
                 });
         });
 }
@@ -96,10 +93,7 @@ function addDeviceToDG(accessToken) {
 // Returns:
 //     none
 function addDeviceToDGDialog() {
-    Auth.authorize()
-        .then(addDeviceToDG, (err) => {
-            vscode.window.showErrorMessage(`${User.ERRORS.AUTH_LOGIN} ${err}`);
-        });
+    Auth.authorize().then(addDeviceToDG);
 }
 module.exports.addDeviceToDGDialog = addDeviceToDGDialog;
 
@@ -122,7 +116,7 @@ function removeDeviceFromDG(accessToken) {
                 .then(() => {
                     vscode.window.showInformationMessage(`The ${deviceID} is removed from ${config.deviceGroupId}`);
                 }, (err) => {
-                    vscode.window.showErrorMessage(`Cannot remove device: ${err}`);
+                    User.showImpApiError('Cannot remove device:', err);
                 });
         });
 }
@@ -135,9 +129,6 @@ function removeDeviceFromDG(accessToken) {
 // Returns:
 //     none
 function removeDeviceFromDGDialog() {
-    Auth.authorize()
-        .then(removeDeviceFromDG, (err) => {
-            vscode.window.showErrorMessage(`${User.ERRORS.AUTH_LOGIN} ${err}`);
-        });
+    Auth.authorize().then(removeDeviceFromDG);
 }
 module.exports.removeDeviceFromDGDialog = removeDeviceFromDGDialog;

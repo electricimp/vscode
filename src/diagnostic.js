@@ -83,7 +83,7 @@ class Diagnostic {
     }
 
     addDeployError(deployError) {
-        if (deployError.body.errors === undefined) {
+        if (deployError.body === undefined) {
             return;
         }
 
@@ -113,8 +113,8 @@ class Diagnostic {
         });
     }
 
-    addLogStreamError(document, error) {
-        this.diagnosticCollection.set(document, error);
+    addLogStreamError(document, logStreamError) {
+        this.diagnosticCollection.set(document, logStreamError);
     }
 }
 module.exports = Diagnostic;

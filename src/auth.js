@@ -74,6 +74,7 @@ function promptUserPassword() {
 //
 // Returns:
 //     none
+//
 function loginCredsDialog() {
     promptUserPassword()
         .then((creds) => {
@@ -113,7 +114,7 @@ module.exports.loginCredsDialog = loginCredsDialog;
 //                              or rejects with an error
 //
 function authorize() {
-    return new Promise(((resolve, reject) => {
+    return new Promise(((resolve) => {
         const authName = Workspace.Consts.authFileName;
         const authFile = path.join(Workspace.getCurrentFolderPath(), authName);
         try {
@@ -122,8 +123,25 @@ function authorize() {
             resolve(auth.access_token);
         } catch (err) {
             vscode.window.showErrorMessage(`${User.ERRORS.AUTH_FILE} ${err}`);
-            reject(err);
         }
     }));
 }
 module.exports.authorize = authorize;
+
+// Check if 401 error was returned and call auth extension command if true.
+//
+// Parameters:
+//     err    : Error returned from imp-central-api
+//
+// Returns:                     ture if auth error
+//
+function reloginIfAuthError(err) {
+    if (typeof err.statusCode !== 'undefined' && err.statusCode === 401) {
+        vscode.window.showErrorMessage('Authorization error, please login.');
+        vscode.commands.executeCommand('imp.auth.creds');
+        return true;
+    }
+
+    return false;
+}
+module.exports.reloginIfAuthError = reloginIfAuthError;

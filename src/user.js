@@ -23,6 +23,9 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
+const vscode = require('vscode');
+const Auth = require('./auth');
+
 const ERRORS = {
     AUTH_USERNAME_EMPTY: 'The username is empty',
     AUTH_PASSWORD_EMPTY: 'The password is empty',
@@ -59,3 +62,20 @@ const NAMES = {
     OUTPUT_CHANNEL: 'imp: LogStream',
 };
 module.exports.NAMES = NAMES;
+
+// Display imp-central-api error as pop-up message.
+//
+// Parameters:
+//     err    : Error returned from imp-central-api
+//
+// Returns:
+//     none
+//
+function showImpApiError(msg, err) {
+    if (Auth.reloginIfAuthError(err)) {
+        return;
+    }
+
+    vscode.window.showErrorMessage(`${msg} ${err}`);
+}
+module.exports.showImpApiError = showImpApiError;
