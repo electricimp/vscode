@@ -24,6 +24,7 @@
 
 
 const colors = require('colors/safe');
+const strftime = require('strftime');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
 const User = require('./user');
@@ -153,7 +154,7 @@ class LogStream {
         }
     }
 
-    static getDeviceLogMessage(message) {
+    static getLogStreamLogMessage(message) {
         const regex = /\b[0-9a-f]{16}\s(.*)\s(?:development|production)\s([a-z.]+)\s(.*)/;
         const result = message.match(regex);
         if (result == null) {
@@ -161,7 +162,7 @@ class LogStream {
             return message;
         }
 
-        const ts = result[1];
+        const ts = strftime('%Y-%m-%d %H:%M:%S%z');
         const type = LogStream.getTypeString(LogStream.getTypeInfo(result[2]));
         const msg = result[3];
 
@@ -200,7 +201,7 @@ class LogStream {
                 this.diagnostic.addLogStreamError(err);
             }
 
-            this.outputChannel.appendLine(LogStream.getDeviceLogMessage(message));
+            this.outputChannel.appendLine(LogStream.getLogStreamLogMessage(message));
         }
     }
 
