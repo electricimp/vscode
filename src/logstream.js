@@ -23,6 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
+const path = require('path');
 const colors = require('colors/safe');
 const strftime = require('strftime');
 const vscode = require('vscode');
@@ -30,6 +31,7 @@ const ImpCentralApi = require('imp-central-api');
 const User = require('./user');
 const Auth = require('./auth');
 const Diagnostic = require('./diagnostic');
+const Workspace = require('./workspace');
 
 /*
  * Here we will have all logic related with logstreams manipulation.
@@ -154,6 +156,22 @@ class LogStream {
         }
     }
 
+    static replaceFileNameToLink(msg) {
+        if (msg.indexOf('agent_code') > -1) {
+            const folderPath = Workspace.getCurrentFolderPath();
+            const agentFile = path.join(folderPath, Diagnostic.getSourceFile('agent_code'));
+
+            return `${msg.replace('agent_code', agentFile)}:0`;
+        } else if (msg.indexOf('device_code') > -1) {
+            const folderPath = Workspace.getCurrentFolderPath();
+            const agentFile = path.join(folderPath, Diagnostic.getSourceFile('device_code'));
+
+            return `${msg.replace('device_code', agentFile)}:0`;
+        }
+
+        return msg;
+    }
+
     static getLogStreamLogMessage(message) {
         const regex = /\b[0-9a-f]{16}\s(.*)\s(?:development|production)\s([a-z.]+)\s(.*)/;
         const result = message.match(regex);
@@ -164,7 +182,7 @@ class LogStream {
 
         const ts = strftime('%Y-%m-%d %H:%M:%S%z');
         const type = LogStream.getTypeString(LogStream.getTypeInfo(result[2]));
-        const msg = result[3];
+        const msg = LogStream.replaceFileNameToLink(result[3]);
 
         return `${ts} ${type} ${msg}`;
     }
