@@ -27,8 +27,8 @@ const path = require('path');
 const fs = require('fs');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
-const Builder = require('Builder');
 const Auth = require('./auth');
+const Preproc = require('./preprocessor');
 const User = require('./user');
 
 const DevGroups = ImpCentralApi.DeviceGroups;
@@ -336,13 +336,6 @@ function newProjectProductNewDialog() {
 }
 module.exports.newProjectProductNewDialog = newProjectProductNewDialog;
 
-function applyBuilder(inputFileName, input) {
-    const builder = new Builder();
-
-    builder.machine.file = inputFileName;
-    return builder.machine.execute(input.toString());
-}
-
 // Deploy the source code (agent.nut, device.nut) on device group.
 //
 // Parameters:
@@ -356,6 +349,8 @@ function deploy(logstream, diagnostic) {
     diagnostic.clearDiagnostic();
 
     Auth.authorize().then((accessToken) => {
+        const agentPre = new Preproc();
+        const devicePre = new Preproc();
         let agentSource;
         let deviceSource;
 
@@ -374,8 +369,8 @@ function deploy(logstream, diagnostic) {
         deviceSource = deviceSource.replace(/\\/g, '/');
 
         try {
-            agentSource = applyBuilder(Consts.agentSourceFileName, agentSource);
-            deviceSource = applyBuilder(Consts.deviceSourceFileName, deviceSource);
+            agentSource = agentPre.preprocess(Consts.agentSourceFileName, agentSource);
+            deviceSource = devicePre.preprocess(Consts.deviceSourceFileName, deviceSource);
 
             /*
              * The code below is only for debug purposes.
@@ -385,11 +380,7 @@ function deploy(logstream, diagnostic) {
             if (storePostprocessed) {
                 fs.writeFileSync(path.join(getCurrentFolderPath(), 'postprocessed.agent'), agentSource);
                 fs.writeFileSync(path.join(getCurrentFolderPath(), 'postprocessed.device'), deviceSource);
-                const outputChannel = vscode.window.createOutputChannel('BUILDER');
-                outputChannel.show(true);
-                outputChannel.append(deviceSource);
-
-                vscode.window.showInformationMessage('RETURNED FROM DEPLOY');
+                vscode.window.showInformationMessage('Postprocessed files were saved.');
                 return;
             }
         } catch (err) {
@@ -441,7 +432,7 @@ function deploy(logstream, diagnostic) {
                         });
                 }
             }, (err) => {
-                diagnostic.addDeployError(err);
+                diagnostic.addDeployError(agentPre, devicePre, err);
                 User.showImpApiError('Deploy failed:', err);
             });
     });

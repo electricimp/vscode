@@ -38,7 +38,7 @@ class Diagnostic {
         this.diagnosticCollection.clear();
     }
 
-    static parseBuilderError(msg) {
+    static parseBuilderError(agentPre, devicePre, msg) {
         const regex = /(\S.*)\((.*):(\d+)\)/;
         const result = msg.match(regex);
         if (result == null) {
@@ -82,7 +82,23 @@ class Diagnostic {
         return undefined;
     }
 
-    addDeployError(deployError) {
+    static getSourceFileWithPre(agentPre, devicePre, source) {
+        if (source === 'device_code') {
+            return {
+                file: Workspace.Consts.agentSourceFileName,
+                pre: agentPre,
+            };
+        } else if (source === 'agent_code') {
+            return {
+                file: Workspace.Consts.deviceSourceFileName,
+                pre: devicePre,
+            };
+        }
+
+        return undefined;
+    }
+
+    addDeployError(agentPre, devicePre, deployError) {
         if (deployError.body === undefined) {
             return;
         }
@@ -93,17 +109,22 @@ class Diagnostic {
             }
 
             err.meta.forEach((meta) => {
-                const file = Diagnostic.getSourceFile(meta.file);
-                if (file === undefined) {
+                const data = Diagnostic.getSourceFileWithPre(agentPre, devicePre, meta.file);
+                if (data === undefined) {
                     return;
                 }
 
-                const sourceFile = path.join(Workspace.getCurrentFolderPath(), file);
+                const sourceFile = path.join(Workspace.getCurrentFolderPath(), data.file);
                 const uri = vscode.Uri.file(sourceFile);
-                const pos = new vscode.Position(meta.row - 1, meta.column - 1);
+                const rowData = data.pre.getErrorLocation(parseInt(meta.row, 10) - 1);
+                if (data === undefined) {
+                    return;
+                }
+
+                const pos = new vscode.Position(rowData[1] - 1, meta.column - 1);
                 this.diagnosticCollection.set(uri, [{
                     code: '',
-                    message: meta.text,
+                    message: `${meta.text} in ${rowData[0]}`,
                     range: new vscode.Range(pos, pos),
                     severity: vscode.DiagnosticSeverity.Error,
                     source: 'Deploy',
@@ -120,7 +141,11 @@ class Diagnostic {
 
         const sourceFile = path.join(Workspace.getCurrentFolderPath(), logStreamError.file);
         const uri = vscode.Uri.file(sourceFile);
-        const pos = new vscode.Position(logStreamError.line - 1, 0);
+        /*
+         * TODO: Remove one -1 below sublime after
+         * error location fix will be applied to LogStream errors.
+         */
+        const pos = new vscode.Position(logStreamError.line - 1 - 1, 0);
         this.diagnosticCollection.set(uri, [{
             code: '',
             message: 'Error',
