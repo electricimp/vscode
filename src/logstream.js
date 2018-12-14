@@ -199,11 +199,13 @@ class LogStream {
         const res = errMsg.match(reg);
         if (errMsg.indexOf('agent_code') > -1) {
             return {
+                source: 'agent_code',
                 file: Diagnostic.getSourceFile('agent_code'),
                 line: res[2],
             };
         } else if (errMsg.indexOf('device_code') > -1) {
             return {
+                source: 'device_code',
                 file: Diagnostic.getSourceFile('device_code'),
                 line: res[2],
             };

@@ -29,6 +29,7 @@ const Workspace = require('./workspace');
 
 class Diagnostic {
     constructor() {
+        this.pre = undefined;
         if (!this.diagnosticCollection) {
             this.diagnosticCollection = vscode.languages.createDiagnosticCollection('imp');
         }
@@ -72,10 +73,13 @@ class Diagnostic {
         vscode.window.showTextDocument(uri);
     }
 
+    /*
+     * Merge functions below to single function.
+     */
     static getSourceFile(source) {
-        if (source === 'device_code') {
+        if (source === 'agent_code') {
             return Workspace.Consts.agentSourceFileName;
-        } else if (source === 'agent_code') {
+        } else if (source === 'device_code') {
             return Workspace.Consts.deviceSourceFileName;
         }
 
@@ -83,12 +87,12 @@ class Diagnostic {
     }
 
     static getSourceFileWithPre(agentPre, devicePre, source) {
-        if (source === 'device_code') {
+        if (source === 'agent_code') {
             return {
                 file: Workspace.Consts.agentSourceFileName,
                 pre: agentPre,
             };
-        } else if (source === 'agent_code') {
+        } else if (source === 'device_code') {
             return {
                 file: Workspace.Consts.deviceSourceFileName,
                 pre: devicePre,
@@ -98,7 +102,14 @@ class Diagnostic {
         return undefined;
     }
 
-    addDeployError(agentPre, devicePre, deployError) {
+    setPreprocessors(agentPre, devicePre) {
+        this.pre = {
+            agent: agentPre,
+            device: devicePre,
+        };
+    }
+
+    addDeployError(deployError) {
         if (deployError.body === undefined) {
             return;
         }
@@ -109,7 +120,8 @@ class Diagnostic {
             }
 
             err.meta.forEach((meta) => {
-                const data = Diagnostic.getSourceFileWithPre(agentPre, devicePre, meta.file);
+                const data =
+                    Diagnostic.getSourceFileWithPre(this.pre.agent, this.pre.device, meta.file);
                 if (data === undefined) {
                     return;
                 }
@@ -139,13 +151,27 @@ class Diagnostic {
             return;
         }
 
+        let pos;
         const sourceFile = path.join(Workspace.getCurrentFolderPath(), logStreamError.file);
         const uri = vscode.Uri.file(sourceFile);
-        /*
-         * TODO: Remove one -1 below sublime after
-         * error location fix will be applied to LogStream errors.
-         */
-        const pos = new vscode.Position(logStreamError.line - 1 - 1, 0);
+        if (this.pre) {
+            let pre;
+            if (logStreamError.source === 'agent_code') {
+                pre = this.pre.agent;
+            } else if (logStreamError.source === 'device_code') {
+                pre = this.pre.device;
+            }
+
+            pos = new vscode.Position(pre.getErrorLocation(logStreamError.line - 1)[1] - 1, 0);
+        } else {
+            /*
+             * TODO: Here, we have a hack in case if preprocessor was not defined previosly.
+             * Handle this situation more correctly.
+             * The second -1 below mean that we shold compensate "#line 1"
+             * preprocessor derictive in on the top of source file.
+             */
+            pos = new vscode.Position(logStreamError.line - 1 - 1, 0);
+        }
         this.diagnosticCollection.set(uri, [{
             code: '',
             message: 'Error',

@@ -365,12 +365,10 @@ function deploy(logstream, diagnostic) {
             return;
         }
 
-        agentSource = agentSource.replace(/\\/g, '/');
-        deviceSource = deviceSource.replace(/\\/g, '/');
-
         try {
             agentSource = agentPre.preprocess(Consts.agentSourceFileName, agentSource);
             deviceSource = devicePre.preprocess(Consts.deviceSourceFileName, deviceSource);
+            diagnostic.setPreprocessors(agentPre, devicePre);
 
             /*
              * The code below is only for debug purposes.
@@ -390,8 +388,8 @@ function deploy(logstream, diagnostic) {
         }
 
         const attrs = {
-            device_code: agentSource.replace(/\\/g, '/'),
-            agent_code: deviceSource.replace(/\\/g, '/'),
+            device_code: deviceSource,
+            agent_code: agentSource,
         };
 
         const api = new ImpCentralApi();
@@ -432,7 +430,7 @@ function deploy(logstream, diagnostic) {
                         });
                 }
             }, (err) => {
-                diagnostic.addDeployError(agentPre, devicePre, err);
+                diagnostic.addDeployError(err);
                 User.showImpApiError('Deploy failed:', err);
             });
     });
