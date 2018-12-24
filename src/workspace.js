@@ -34,42 +34,6 @@ const User = require('./user');
 const DevGroups = ImpCentralApi.DeviceGroups;
 const Devs = ImpCentralApi.Devices;
 
-// This class provides the constants required for workspace manipulation.
-class Consts {
-    static get authFileName() {
-        return 'auth.info';
-    }
-
-    static get gitIgnoreFileName() {
-        return '.gitignore';
-    }
-
-    static get gitIgnoreFileContent() {
-        return Consts.authFileName;
-    }
-
-    static get configFileName() {
-        return 'imp.config';
-    }
-
-    static get agentSourceFileName() {
-        return 'agent.nut';
-    }
-
-    static get agentSourceHeader() {
-        return '// This is agent code';
-    }
-
-    static get deviceSourceFileName() {
-        return 'device.nut';
-    }
-
-    static get deviceSourceHeader() {
-        return '// This is device code';
-    }
-}
-module.exports.Consts = Consts;
-
 // Get path to workspace working directory.
 //
 // Parameters:
@@ -118,58 +82,219 @@ function isWorkspaceFolderOpened() {
 }
 module.exports.isWorkspaceFolderOpened = isWorkspaceFolderOpened;
 
-// Get workspace config object.
-// If it is not possible, return undefined.
-//
-// Parameters:
-//     none
-function getWorkspaceData(doNotDisplayNotExist) {
-    const folderPath = getCurrentFolderPath();
-    const cfgFile = path.join(folderPath, Consts.configFileName);
-    if (fs.existsSync(cfgFile)) {
-        try {
-            return JSON.parse(fs.readFileSync(cfgFile).toString());
-        } catch (err) {
-            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${err}`);
-            return undefined;
-        }
+// This class provides the constants required for workspace manipulation.
+class Consts {
+    static get gitIgnoreFileName() {
+        return '.gitignore';
     }
 
-    if (doNotDisplayNotExist === undefined) {
-        vscode.window.showErrorMessage(User.ERRORS.WORSPACE_CFG_NONE);
+    static get settingsDirName() {
+        return 'settings';
     }
 
-    return undefined;
+    static get authFileName() {
+        return 'auth.info';
+    }
+
+    static get gitIgnoreFileContent() {
+        return Consts.authFileName;
+    }
+
+    static get authFileLocalPath() {
+        return path.join(Consts.settingsDirName, Consts.authFileName);
+    }
+
+    static get configFileName() {
+        return 'imp.config';
+    }
+
+    static get configFileLocalPath() {
+        return path.join(Consts.settingsDirName, Consts.configFileName);
+    }
+
+    static get srcDirName() {
+        return 'src';
+    }
+
+    static get agentSourceFileName() {
+        return 'agent.nut';
+    }
+
+    static get deviceSourceFileName() {
+        return 'device.nut';
+    }
+
+    static get agentSourceHeader() {
+        return '// This is agent code';
+    }
+
+    static get deviceSourceHeader() {
+        return '// This is device code';
+    }
 }
-module.exports.getWorkspaceData = getWorkspaceData;
+
+// This class is required to hide all project files interaction logic.
+class Data {
+    static storeAuthInfo(authInfo) {
+        return new Promise((resolve, reject) => {
+            if (!isWorkspaceFolderOpened()) {
+                reject(User.ERRORS.WORKSPACE_FOLDER_SELECT);
+                return;
+            }
+
+            const settingsDirPath = path.join(getCurrentFolderPath(), Consts.settingsDirName);
+            if (!fs.existsSync(settingsDirPath)) {
+                fs.mkdirSync(settingsDirPath);
+            }
+
+            const authFile = path.join(getCurrentFolderPath(), Consts.authFileLocalPath);
+            const gitIgnoreFile = path.join(getCurrentFolderPath(), Consts.gitIgnoreFileName);
+            try {
+                fs.writeFileSync(authFile, JSON.stringify(authInfo));
+                fs.writeFileSync(gitIgnoreFile, Consts.gitIgnoreFileContent);
+                resolve();
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    static getAuthInfo() {
+        return new Promise((resolve, reject) => {
+            if (!isWorkspaceFolderOpened()) {
+                reject(User.ERRORS.WORKSPACE_FOLDER_SELECT);
+                return;
+            }
+
+            const authFile = path.join(getCurrentFolderPath(), Consts.authFileLocalPath);
+            if (!fs.existsSync(authFile)) {
+                reject(User.ERRORS.AUTH_FILE_NONE);
+                return;
+            }
+
+            try {
+                const data = fs.readFileSync(authFile);
+                const auth = JSON.parse(data);
+                resolve(auth);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    static storeWorkspaceInfo(info) {
+        return new Promise((resolve, reject) => {
+            if (!isWorkspaceFolderOpened()) {
+                reject(User.ERRORS.WORKSPACE_FOLDER_SELECT);
+                return;
+            }
+
+            const settingsDirPath = path.join(getCurrentFolderPath(), Consts.settingsDirName);
+            if (!fs.existsSync(settingsDirPath)) {
+                fs.mkdirSync(settingsDirPath);
+            }
+
+            const cfgFile = path.join(getCurrentFolderPath(), Consts.configFileLocalPath);
+            try {
+                fs.writeFileSync(cfgFile, JSON.stringify(info));
+                resolve();
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    static getWorkspaceInfo() {
+        return new Promise((resolve, reject) => {
+            if (!isWorkspaceFolderOpened()) {
+                reject(User.ERRORS.WORKSPACE_FOLDER_SELECT);
+                return;
+            }
+
+            const cfgFile = path.join(getCurrentFolderPath(), Consts.configFileLocalPath);
+            if (!fs.existsSync(cfgFile)) {
+                reject(User.ERRORS.WORSPACE_CFG_NONE);
+                return;
+            }
+
+            try {
+                const info = JSON.parse(fs.readFileSync(cfgFile).toString());
+                resolve(info);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    static getSources() {
+        return new Promise((resolve, reject) => {
+            if (!isWorkspaceFolderOpened()) {
+                reject(User.ERRORS.WORKSPACE_FOLDER_SELECT);
+                return;
+            }
+
+            Data.getWorkspaceInfo().then((config) => {
+                try {
+                    const folderPath = getCurrentFolderPath();
+                    const agentSourcePath = path.join(folderPath, config.agent_code);
+                    const agentSource = fs.readFileSync(agentSourcePath).toString();
+                    const deviceSourcePath = path.join(folderPath, config.device_code);
+                    const deviceSource = fs.readFileSync(deviceSourcePath).toString();
+                    const sources = {
+                        agent_source: agentSource,
+                        device_source: deviceSource,
+                    };
+
+                    resolve(sources);
+                } catch (err) {
+                    reject(err);
+                }
+            }, (err) => {
+                reject(err);
+            });
+        });
+    }
+}
+module.exports.Data = Data;
 
 function createProjectFiles(folderPath, cfgFile, dgID) {
+    const srcPath = path.join(folderPath, Consts.srcDirName);
+    if (!fs.existsSync(srcPath)) {
+        fs.mkdirSync(srcPath);
+    }
+
     const options = {
         deviceGroupId: dgID,
-        device_code: Consts.deviceSourceFileName,
-        agent_code: Consts.agentSourceFileName,
+        device_code: path.join(Consts.srcDirName, Consts.deviceSourceFileName),
+        agent_code: path.join(Consts.srcDirName, Consts.agentSourceFileName),
     };
-
-    try {
-        const agentPath = path.join(folderPath, Consts.agentSourceFileName);
-        const devPath = path.join(folderPath, Consts.deviceSourceFileName);
-
-        fs.writeFileSync(cfgFile, JSON.stringify(options));
-        fs.writeFileSync(agentPath, Consts.agentSourceHeader);
-        fs.writeFileSync(devPath, Consts.deviceSourceHeader);
-    } catch (err) {
+    Data.storeWorkspaceInfo(options).then(() => {
+        try {
+            const devPath = path.join(folderPath, options.device_code);
+            const agentPath = path.join(folderPath, options.agent_code);
+            fs.writeFileSync(agentPath, Consts.agentSourceHeader);
+            fs.writeFileSync(devPath, Consts.deviceSourceHeader);
+        } catch (err) {
+            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_SRC_FILE} ${err}`);
+        }
+    }, (err) => {
         vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${err}`);
-    }
+    });
 }
 
 function newProjectDGExist(accessToken) {
     const folderPath = getCurrentFolderPath();
     const cfgFile = path.join(folderPath, Consts.configFileName);
-    if (getWorkspaceData(true)) {
+    Data.getWorkspaceInfo().then(() => {
         vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_CFG_EXIST);
         const document = vscode.workspace.openTextDocument(cfgFile);
         vscode.window.showTextDocument(document);
-    } else {
+    }, (workspaceErr) => {
+        if (workspaceErr !== User.ERRORS.WORSPACE_CFG_NONE) {
+            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${workspaceErr}`);
+            return;
+        }
+
         vscode.window.showInputBox({ prompt: User.MESSAGES.WORKSPACE_PROMPT_DG_EXIST })
             .then((deviceGroupId) => {
                 if (!deviceGroupId) {
@@ -186,7 +311,7 @@ function newProjectDGExist(accessToken) {
                         User.showImpApiError(`${User.ERRORS.DG_RETRIEVE}`, err);
                     });
             });
-    }
+    });
 }
 
 // Initialize vscode workspace,
@@ -229,32 +354,36 @@ function promptDGNew() {
 function newProjectDGNew(accessToken) {
     const folderPath = getCurrentFolderPath();
     const cfgFile = path.join(folderPath, Consts.configFileName);
-    if (getWorkspaceData(true)) {
+    Data.getWorkspaceInfo().then(() => {
         vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_CFG_EXIST);
         const document = vscode.workspace.openTextDocument(cfgFile);
         vscode.window.showTextDocument(document);
-    } else {
-        promptDGNew()
-            .then((newDGOptions) => {
-                if (!newDGOptions.dgName) {
-                    vscode.window.showErrorMessage(User.MESSAGES.DG_ID_EMPTY);
-                    return;
-                }
+    }, (workspaceErr) => {
+        if (workspaceErr !== User.ERRORS.WORSPACE_CFG_NONE) {
+            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${workspaceErr}`);
+            return;
+        }
 
-                const attrs = {
-                    name: newDGOptions.dgName,
-                };
+        promptDGNew().then((newDGOptions) => {
+            if (!newDGOptions.dgName) {
+                vscode.window.showErrorMessage(User.MESSAGES.DG_ID_EMPTY);
+                return;
+            }
 
-                const api = new ImpCentralApi();
-                api.auth.accessToken = accessToken;
-                api.deviceGroups.create(newDGOptions.productID, DevGroups.TYPE_DEVELOPMENT, attrs)
-                    .then((dg) => {
-                        createProjectFiles(folderPath, cfgFile, dg.data.id);
-                    }, (err) => {
-                        User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
-                    });
-            });
-    }
+            const attrs = {
+                name: newDGOptions.dgName,
+            };
+
+            const api = new ImpCentralApi();
+            api.auth.accessToken = accessToken;
+            api.deviceGroups.create(newDGOptions.productID, DevGroups.TYPE_DEVELOPMENT, attrs)
+                .then((dg) => {
+                    createProjectFiles(folderPath, cfgFile, dg.data.id);
+                }, (err) => {
+                    User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
+                });
+        });
+    });
 }
 
 // Initialize vscode workspace,
@@ -297,11 +426,16 @@ function promptProductNew() {
 function newProjectProductNew(accessToken) {
     const folderPath = getCurrentFolderPath();
     const cfgFile = path.join(folderPath, Consts.configFileName);
-    if (getWorkspaceData(true)) {
+    Data.getWorkspaceInfo().then(() => {
         vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_CFG_EXIST);
         const document = vscode.workspace.openTextDocument(cfgFile);
         vscode.window.showTextDocument(document);
-    } else {
+    }, (workspaceErr) => {
+        if (workspaceErr !== User.ERRORS.WORSPACE_CFG_NONE) {
+            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${workspaceErr}`);
+            return;
+        }
+
         promptProductNew().then((newProductOptions) => {
             const attrs = {
                 name: newProductOptions.productName,
@@ -323,7 +457,7 @@ function newProjectProductNew(accessToken) {
                     User.showImpApiError(`${User.ERRORS.PRODUCT_CREATE}`, err);
                 });
         });
-    }
+    });
 }
 
 // Initialize vscode workspace,
@@ -341,98 +475,87 @@ module.exports.newProjectProductNewDialog = newProjectProductNewDialog;
 // Parameters:
 //     none
 function deploy(logstream, diagnostic) {
-    const config = getWorkspaceData();
-    if (config === undefined) {
-        return;
-    }
-
-    diagnostic.clearDiagnostic();
-
     Auth.authorize().then((accessToken) => {
-        const agentPre = new Preproc();
-        const devicePre = new Preproc();
-        let agentSource;
-        let deviceSource;
-
-        try {
-            const agentSourcePath = path.join(getCurrentFolderPath(), Consts.agentSourceFileName);
-            const deviceSourcePath = path.join(getCurrentFolderPath(), Consts.deviceSourceFileName);
-
-            agentSource = fs.readFileSync(agentSourcePath).toString();
-            deviceSource = fs.readFileSync(deviceSourcePath).toString();
-        } catch (err) {
-            vscode.window.showErrorMessage(`Cannot read source files: ${err}`);
-            return;
-        }
-
-        try {
-            agentSource = agentPre.preprocess(Consts.agentSourceFileName, agentSource);
-            deviceSource = devicePre.preprocess(Consts.deviceSourceFileName, deviceSource);
+        Data.getWorkspaceInfo().then((cfg) => {
+            const agentPre = new Preproc();
+            const devicePre = new Preproc();
             diagnostic.setPreprocessors(agentPre, devicePre);
+            Data.getSources().then((src) => {
+                let agentSource;
+                let deviceSource;
+                try {
+                    agentSource = agentPre.preprocess(cfg.agent_code, src.agent_source);
+                    deviceSource = devicePre.preprocess(cfg.device_code, src.device_source);
 
-            /*
-             * The code below is only for debug purposes.
-             * Write postprocessed files to workspace directory for future analyzes.
-             */
-            const storePostprocessed = false;
-            if (storePostprocessed) {
-                fs.writeFileSync(path.join(getCurrentFolderPath(), 'postprocessed.agent'), agentSource);
-                fs.writeFileSync(path.join(getCurrentFolderPath(), 'postprocessed.device'), deviceSource);
-                vscode.window.showInformationMessage('Postprocessed files were saved.');
-                return;
-            }
-        } catch (err) {
-            diagnostic.addBuilderError(err.message);
-            vscode.window.showErrorMessage(`Cannot apply Builder: ${err}`);
-            return;
-        }
-
-        const attrs = {
-            device_code: deviceSource,
-            agent_code: agentSource,
-        };
-
-        const api = new ImpCentralApi();
-        api.auth.accessToken = accessToken;
-        api.deployments.create(config.deviceGroupId, DevGroups.TYPE_DEVELOPMENT, attrs)
-            .then((/* result */) => {
-                /*
-                 * Here is a developer's knob below.
-                 * It is possible to open some device LogStream after successful deployment.
-                 */
-                const openLogStream = true;
-                if (openLogStream) {
-                    const dg = config.deviceGroupId;
-                    api.devices.list({ [Devs.FILTER_DEVICE_GROUP_ID]: dg })
-                        .then((devs) => {
-                            if (devs.data.length >= 1) {
-                                logstream.addDevice(accessToken, devs.data[0].id)
-                                    .then(() => {
-                                        api.deviceGroups.restartDevices(config.deviceGroupId)
-                                            .then(() => {
-                                                vscode.window.showInformationMessage(`Successfully deployed on ${dg}`);
-                                            }, (err) => {
-                                                User.showImpApiError('Reset devices:', err);
-                                            });
-                                    });
-                            } else {
-                                vscode.window.showWarningMessage(`The DG ${dg} have no devices`);
-                            }
-                        }, (err) => {
-                            User.showImpApiError('Cannot list DG devices:', err);
-                        });
-                } else {
-                    api.deviceGroups.restartDevices(config.deviceGroupId)
-                        .then(() => {
-                            vscode.window.showInformationMessage(`Successfully deployed on ${config.deviceGroupId}`);
-                        }, (err) => {
-                            User.showImpApiError('Reset devices:', err);
-                        });
+                    /*
+                     * The code below is only for debug purposes.
+                     * Write postprocessed files to workspace directory for future analyzes.
+                     */
+                    const storePostprocessed = false;
+                    if (storePostprocessed) {
+                        fs.writeFileSync(path.join(getCurrentFolderPath(), 'postprocessed.agent'), agentSource);
+                        fs.writeFileSync(path.join(getCurrentFolderPath(), 'postprocessed.device'), deviceSource);
+                        vscode.window.showInformationMessage('Postprocessed files were saved.');
+                        return;
+                    }
+                } catch (err) {
+                    diagnostic.addBuilderError(err.message);
+                    vscode.window.showErrorMessage(`Cannot apply Builder: ${err}`);
+                    return;
                 }
+
+                const attrs = {
+                    device_code: deviceSource,
+                    agent_code: agentSource,
+                };
+
+                const api = new ImpCentralApi();
+                api.auth.accessToken = accessToken;
+                api.deployments.create(cfg.deviceGroupId, DevGroups.TYPE_DEVELOPMENT, attrs)
+                    .then((/* result */) => {
+                        /*
+                         * Here is a developer's knob below.
+                         * It is possible to open some device LogStream after successful deployment.
+                         */
+                        const openLogStream = true;
+                        if (openLogStream) {
+                            const dg = cfg.deviceGroupId;
+                            api.devices.list({ [Devs.FILTER_DEVICE_GROUP_ID]: dg })
+                                .then((devs) => {
+                                    if (devs.data.length >= 1) {
+                                        logstream.addDevice(accessToken, devs.data[0].id)
+                                            .then(() => {
+                                                api.deviceGroups.restartDevices(cfg.deviceGroupId)
+                                                    .then(() => {
+                                                        vscode.window.showInformationMessage(`Successfully deployed on ${dg}`);
+                                                    }, (err) => {
+                                                        User.showImpApiError('Reset devices:', err);
+                                                    });
+                                            });
+                                    } else {
+                                        vscode.window.showWarningMessage(`The DG ${dg} have no devices`);
+                                    }
+                                }, (err) => {
+                                    User.showImpApiError('Cannot list DG devices:', err);
+                                });
+                        } else {
+                            api.deviceGroups.restartDevices(cfg.deviceGroupId)
+                                .then(() => {
+                                    vscode.window.showInformationMessage(`Successfully deployed on ${cfg.deviceGroupId}`);
+                                }, (err) => {
+                                    User.showImpApiError('Reset devices:', err);
+                                });
+                        }
+                    }, (err) => {
+                        diagnostic.addDeployError(err);
+                        User.showImpApiError('Deploy failed:', err);
+                    });
             }, (err) => {
-                diagnostic.addDeployError(err);
-                User.showImpApiError('Deploy failed:', err);
+                vscode.window.showErrorMessage(`Cannot read source files: ${err}`);
             });
+        }, (workspaceErr) => {
+            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${workspaceErr}`);
+        });
     });
 }
 module.exports.deploy = deploy;

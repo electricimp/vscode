@@ -23,8 +23,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
-const fs = require('fs');
-const path = require('path');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
 const User = require('./user');
@@ -81,23 +79,12 @@ function loginCredsDialog() {
             const api = new ImpCentralApi();
             api.auth.login(creds.username, creds.password)
                 .then((authInfo) => {
-                    const currentPath = Workspace.getCurrentFolderPath();
-                    const authName = Workspace.Consts.authFileName;
-                    const gitIgnoreName = Workspace.Consts.gitIgnoreFileName;
-                    const authFile = path.join(currentPath, authName);
-                    const gitIgnoreFile = path.join(currentPath, gitIgnoreName);
-                    try {
-                        fs.writeFileSync(authFile, JSON.stringify(authInfo));
-                        fs.writeFileSync(gitIgnoreFile, JSON.stringify(authInfo));
-                    } catch (err) {
-                        /*
-                         * TODO: Possibly it is required to split
-                         * json and fs errors handling.
-                         */
-                        vscode.window.showErrorMessage(`${User.ERRORS.AUTH_FILE} ${err}`);
-                        return;
-                    }
-                    vscode.window.showInformationMessage(User.MESSAGES.AUTH_SUCCESS);
+                    Workspace.Data.storeAuthInfo(authInfo)
+                        .then(() => {
+                            vscode.window.showInformationMessage(User.MESSAGES.AUTH_SUCCESS);
+                        }, (err) => {
+                            vscode.window.showErrorMessage(`${User.ERRORS.AUTH_FILE} ${err}`);
+                        });
                 }, (err) => {
                     vscode.window.showErrorMessage(`${User.ERRORS.AUTH_LOGIN} ${err}`);
                 });
@@ -114,16 +101,15 @@ module.exports.loginCredsDialog = loginCredsDialog;
 //                              or rejects with an error
 //
 function authorize() {
-    return new Promise(((resolve) => {
-        const authName = Workspace.Consts.authFileName;
-        const authFile = path.join(Workspace.getCurrentFolderPath(), authName);
-        try {
-            const data = fs.readFileSync(authFile);
-            const auth = JSON.parse(data);
-            resolve(auth.access_token);
-        } catch (err) {
-            vscode.window.showErrorMessage(`${User.ERRORS.AUTH_FILE} ${err}`);
-        }
+    return new Promise(((resolve, reject) => {
+        Workspace.Data.getAuthInfo()
+            .then((auth) => {
+                resolve(auth.access_token);
+            }, (err) => {
+                vscode.window.showErrorMessage(`${User.ERRORS.AUTH_FILE} ${err}. Please Login.`);
+                vscode.commands.executeCommand('imp.auth.creds');
+                reject(err);
+            });
     }));
 }
 module.exports.authorize = authorize;

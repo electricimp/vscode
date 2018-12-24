@@ -78,9 +78,9 @@ class Diagnostic {
      */
     static getSourceFile(source) {
         if (source === 'agent_code') {
-            return Workspace.Consts.agentSourceFileName;
+            return 'agent.nut';
         } else if (source === 'device_code') {
-            return Workspace.Consts.deviceSourceFileName;
+            return 'device.nut';
         }
 
         return undefined;
@@ -89,12 +89,12 @@ class Diagnostic {
     static getSourceFileWithPre(agentPre, devicePre, source) {
         if (source === 'agent_code') {
             return {
-                file: Workspace.Consts.agentSourceFileName,
+                file: 'agent.nut',
                 pre: agentPre,
             };
         } else if (source === 'device_code') {
             return {
-                file: Workspace.Consts.deviceSourceFileName,
+                file: 'device.nut',
                 pre: devicePre,
             };
         }

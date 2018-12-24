@@ -30,7 +30,8 @@ const ERRORS = {
     AUTH_USERNAME_EMPTY: 'The username is empty',
     AUTH_PASSWORD_EMPTY: 'The password is empty',
     AUTH_LOGIN: 'Auth failed:',
-    AUTH_FILE: 'Auth file error:',
+    AUTH_FILE: 'Auth file:',
+    AUTH_FILE_NONE: 'Auth file does not exist',
     DEVICE_ID_EMPTY: 'The device ID is empty',
     DEVICE_RETRIEVE: 'Cannot retrieve device:',
     DG_ID_EMPTY: 'The device group ID is empty',
@@ -43,6 +44,7 @@ const ERRORS = {
     WORSPACE_CFG_FILE: 'Project file:',
     WORSPACE_CFG_NONE: 'Project file does not exist',
     WORKSPACE_CFG_EXIST: 'An imp configuration file already exists',
+    WORSPACE_SRC_FILE: 'Source file:',
 };
 module.exports.ERRORS = ERRORS;
 
