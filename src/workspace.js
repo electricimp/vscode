@@ -34,54 +34,6 @@ const User = require('./user');
 const DevGroups = ImpCentralApi.DeviceGroups;
 const Devs = ImpCentralApi.Devices;
 
-// Get path to workspace working directory.
-//
-// Parameters:
-//     none
-function getCurrentFolderPath() {
-    const folders = vscode.workspace.workspaceFolders;
-    let folder;
-    if (!folders) {
-        return undefined;
-    }
-
-    if (folders.length === 1) {
-        [folder] = folders;
-    } else {
-        vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_MULTIROOT);
-        return undefined;
-    }
-
-    return folder.uri.fsPath;
-}
-module.exports.getCurrentFolderPath = getCurrentFolderPath;
-
-// Check, if workspace working directory was selected by user.
-//
-// Parameters:
-//     none
-function isWorkspaceFolderOpened() {
-    if (getCurrentFolderPath()) {
-        return true;
-    }
-
-    /*
-     * It is possible to choise user interaction action below.
-     * In case of workspace folder is not opened,
-     * we can display message with appropriate error or
-     * display working directory selection dialog.
-     */
-    const displayOpenDirectoryDialog = undefined;
-    if (displayOpenDirectoryDialog) {
-        vscode.commands.executeCommand('workbench.action.files.openFolder');
-    } else {
-        vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_FOLDER_SELECT);
-    }
-
-    return false;
-}
-module.exports.isWorkspaceFolderOpened = isWorkspaceFolderOpened;
-
 // This class provides the constants required for workspace manipulation.
 class Consts {
     static get gitIgnoreFileName() {
@@ -133,6 +85,57 @@ class Consts {
     }
 }
 
+// Get paths to different project files.
+class Path {
+    static getPWD() {
+        const folders = vscode.workspace.workspaceFolders;
+        let folder;
+        if (!folders) {
+            return undefined;
+        }
+
+        if (folders.length === 1) {
+            [folder] = folders;
+        } else {
+            vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_MULTIROOT);
+            return undefined;
+        }
+
+        return folder.uri.fsPath;
+    }
+
+    static getConfig() {
+        return path.join(Path.getPWD(), Consts.configFileLocalPath);
+    }
+}
+module.exports.Path = Path;
+
+// Check, if workspace working directory was selected by user.
+//
+// Parameters:
+//     none
+function isWorkspaceFolderOpened() {
+    if (Path.getPWD()) {
+        return true;
+    }
+
+    /*
+     * It is possible to choise user interaction action below.
+     * In case of workspace folder is not opened,
+     * we can display message with appropriate error or
+     * display working directory selection dialog.
+     */
+    const displayOpenDirectoryDialog = undefined;
+    if (displayOpenDirectoryDialog) {
+        vscode.commands.executeCommand('workbench.action.files.openFolder');
+    } else {
+        vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_FOLDER_SELECT);
+    }
+
+    return false;
+}
+module.exports.isWorkspaceFolderOpened = isWorkspaceFolderOpened;
+
 // This class is required to hide all project files interaction logic.
 class Data {
     static storeAuthInfo(authInfo) {
@@ -142,13 +145,13 @@ class Data {
                 return;
             }
 
-            const settingsDirPath = path.join(getCurrentFolderPath(), Consts.settingsDirName);
+            const settingsDirPath = path.join(Path.getPWD(), Consts.settingsDirName);
             if (!fs.existsSync(settingsDirPath)) {
                 fs.mkdirSync(settingsDirPath);
             }
 
-            const authFile = path.join(getCurrentFolderPath(), Consts.authFileLocalPath);
-            const gitIgnoreFile = path.join(getCurrentFolderPath(), Consts.gitIgnoreFileName);
+            const authFile = path.join(Path.getPWD(), Consts.authFileLocalPath);
+            const gitIgnoreFile = path.join(Path.getPWD(), Consts.gitIgnoreFileName);
             try {
                 fs.writeFileSync(authFile, JSON.stringify(authInfo));
                 fs.writeFileSync(gitIgnoreFile, Consts.gitIgnoreFileContent);
@@ -166,7 +169,7 @@ class Data {
                 return;
             }
 
-            const authFile = path.join(getCurrentFolderPath(), Consts.authFileLocalPath);
+            const authFile = path.join(Path.getPWD(), Consts.authFileLocalPath);
             if (!fs.existsSync(authFile)) {
                 reject(User.ERRORS.AUTH_FILE_NONE);
                 return;
@@ -182,6 +185,10 @@ class Data {
         });
     }
 
+    static getWorkspaceInfoFilePath() {
+        return path.join(Path.getPWD(), Consts.configFileLocalPath);
+    }
+
     static storeWorkspaceInfo(info) {
         return new Promise((resolve, reject) => {
             if (!isWorkspaceFolderOpened()) {
@@ -189,19 +196,23 @@ class Data {
                 return;
             }
 
-            const settingsDirPath = path.join(getCurrentFolderPath(), Consts.settingsDirName);
+            const settingsDirPath = path.join(Path.getPWD(), Consts.settingsDirName);
             if (!fs.existsSync(settingsDirPath)) {
                 fs.mkdirSync(settingsDirPath);
             }
 
-            const cfgFile = path.join(getCurrentFolderPath(), Consts.configFileLocalPath);
             try {
-                fs.writeFileSync(cfgFile, JSON.stringify(info));
+                fs.writeFileSync(Data.getWorkspaceInfoFilePath(), JSON.stringify(info));
                 resolve();
             } catch (err) {
                 reject(err);
             }
         });
+    }
+
+    static getWorkspaceInfoSync() {
+        const cfgFile = Data.getWorkspaceInfoFilePath();
+        return JSON.parse(fs.readFileSync(cfgFile).toString());
     }
 
     static getWorkspaceInfo() {
@@ -211,14 +222,14 @@ class Data {
                 return;
             }
 
-            const cfgFile = path.join(getCurrentFolderPath(), Consts.configFileLocalPath);
+            const cfgFile = Data.getWorkspaceInfoFilePath();
             if (!fs.existsSync(cfgFile)) {
                 reject(User.ERRORS.WORSPACE_CFG_NONE);
                 return;
             }
 
             try {
-                const info = JSON.parse(fs.readFileSync(cfgFile).toString());
+                const info = Data.getWorkspaceInfoSync();
                 resolve(info);
             } catch (err) {
                 reject(err);
@@ -235,10 +246,9 @@ class Data {
 
             Data.getWorkspaceInfo().then((config) => {
                 try {
-                    const folderPath = getCurrentFolderPath();
-                    const agentSourcePath = path.join(folderPath, config.agent_code);
+                    const agentSourcePath = path.join(Path.getPWD(), config.agent_code);
                     const agentSource = fs.readFileSync(agentSourcePath).toString();
-                    const deviceSourcePath = path.join(folderPath, config.device_code);
+                    const deviceSourcePath = path.join(Path.getPWD(), config.device_code);
                     const deviceSource = fs.readFileSync(deviceSourcePath).toString();
                     const sources = {
                         agent_source: agentSource,
@@ -254,11 +264,19 @@ class Data {
             });
         });
     }
+
+    static getSourcesPathsSync() {
+        const config = Data.getWorkspaceInfoSync();
+        return {
+            agent_path: path.join(Path.getPWD(), config.agent_code),
+            device_path: path.join(Path.getPWD(), config.device_code),
+        };
+    }
 }
 module.exports.Data = Data;
 
-function createProjectFiles(folderPath, cfgFile, dgID) {
-    const srcPath = path.join(folderPath, Consts.srcDirName);
+function createProjectFiles(dgID) {
+    const srcPath = path.join(Path.getPWD(), Consts.srcDirName);
     if (!fs.existsSync(srcPath)) {
         fs.mkdirSync(srcPath);
     }
@@ -270,8 +288,8 @@ function createProjectFiles(folderPath, cfgFile, dgID) {
     };
     Data.storeWorkspaceInfo(options).then(() => {
         try {
-            const devPath = path.join(folderPath, options.device_code);
-            const agentPath = path.join(folderPath, options.agent_code);
+            const devPath = path.join(Path.getPWD(), options.device_code);
+            const agentPath = path.join(Path.getPWD(), options.agent_code);
             fs.writeFileSync(agentPath, Consts.agentSourceHeader);
             fs.writeFileSync(devPath, Consts.deviceSourceHeader);
         } catch (err) {
@@ -283,7 +301,6 @@ function createProjectFiles(folderPath, cfgFile, dgID) {
 }
 
 function newProjectDGExist(accessToken) {
-    const folderPath = getCurrentFolderPath();
     const cfgFile = path.join(folderPath, Consts.configFileName);
     Data.getWorkspaceInfo().then(() => {
         vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_CFG_EXIST);
@@ -306,7 +323,7 @@ function newProjectDGExist(accessToken) {
                 api.auth.accessToken = accessToken;
                 api.deviceGroups.get(deviceGroupId)
                     .then((dg) => {
-                        createProjectFiles(folderPath, cfgFile, dg.data.id);
+                        createProjectFiles(dg.data.id);
                     }, (err) => {
                         User.showImpApiError(`${User.ERRORS.DG_RETRIEVE}`, err);
                     });
@@ -352,11 +369,9 @@ function promptDGNew() {
 }
 
 function newProjectDGNew(accessToken) {
-    const folderPath = getCurrentFolderPath();
-    const cfgFile = path.join(folderPath, Consts.configFileName);
     Data.getWorkspaceInfo().then(() => {
         vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_CFG_EXIST);
-        const document = vscode.workspace.openTextDocument(cfgFile);
+        const document = vscode.workspace.openTextDocument(Path.getConfig());
         vscode.window.showTextDocument(document);
     }, (workspaceErr) => {
         if (workspaceErr !== User.ERRORS.WORSPACE_CFG_NONE) {
@@ -378,7 +393,7 @@ function newProjectDGNew(accessToken) {
             api.auth.accessToken = accessToken;
             api.deviceGroups.create(newDGOptions.productID, DevGroups.TYPE_DEVELOPMENT, attrs)
                 .then((dg) => {
-                    createProjectFiles(folderPath, cfgFile, dg.data.id);
+                    createProjectFiles(dg.data.id);
                 }, (err) => {
                     User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
                 });
@@ -424,11 +439,9 @@ function promptProductNew() {
 }
 
 function newProjectProductNew(accessToken) {
-    const folderPath = getCurrentFolderPath();
-    const cfgFile = path.join(folderPath, Consts.configFileName);
     Data.getWorkspaceInfo().then(() => {
         vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_CFG_EXIST);
-        const document = vscode.workspace.openTextDocument(cfgFile);
+        const document = vscode.workspace.openTextDocument(Path.getConfig());
         vscode.window.showTextDocument(document);
     }, (workspaceErr) => {
         if (workspaceErr !== User.ERRORS.WORSPACE_CFG_NONE) {
@@ -449,7 +462,7 @@ function newProjectProductNew(accessToken) {
                     attrs.name = newProductOptions.dgName;
                     api.deviceGroups.create(pID, DevGroups.TYPE_DEVELOPMENT, attrs)
                         .then((dg) => {
-                            createProjectFiles(folderPath, cfgFile, dg.data.id);
+                            createProjectFiles(dg.data.id);
                         }, (err) => {
                             User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
                         });
@@ -493,8 +506,8 @@ function deploy(logstream, diagnostic) {
                      */
                     const storePostprocessed = false;
                     if (storePostprocessed) {
-                        fs.writeFileSync(path.join(getCurrentFolderPath(), 'postprocessed.agent'), agentSource);
-                        fs.writeFileSync(path.join(getCurrentFolderPath(), 'postprocessed.device'), deviceSource);
+                        fs.writeFileSync(path.join(Path.getPWD(), 'postprocessed.agent'), agentSource);
+                        fs.writeFileSync(path.join(Path.getPWD(), 'postprocessed.device'), deviceSource);
                         vscode.window.showInformationMessage('Postprocessed files were saved.');
                         return;
                     }

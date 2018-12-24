@@ -59,7 +59,7 @@ class Diagnostic {
             return;
         }
 
-        const sourceFile = path.join(Workspace.getCurrentFolderPath(), parsedError.file);
+        const sourceFile = path.join(Workspace.Path.getPWD(), parsedError.file);
         const uri = vscode.Uri.file(sourceFile);
         const pos = new vscode.Position(parsedError.line - 1, 0);
         this.diagnosticCollection.set(uri, [{
@@ -126,7 +126,7 @@ class Diagnostic {
                     return;
                 }
 
-                const sourceFile = path.join(Workspace.getCurrentFolderPath(), data.file);
+                const sourceFile = path.join(Workspace.Path.getPWD(), data.file);
                 const uri = vscode.Uri.file(sourceFile);
                 const rowData = data.pre.getErrorLocation(parseInt(meta.row, 10) - 1);
                 if (data === undefined) {
@@ -152,7 +152,7 @@ class Diagnostic {
         }
 
         let pos;
-        const sourceFile = path.join(Workspace.getCurrentFolderPath(), logStreamError.file);
+        const sourceFile = path.join(Workspace.Path.getPWD(), logStreamError.file);
         const uri = vscode.Uri.file(sourceFile);
         if (this.pre) {
             let pre;

@@ -157,16 +157,11 @@ class LogStream {
     }
 
     static replaceFileNameToLink(msg) {
+        const paths = Workspace.Data.getSourcesPathsSync();
         if (msg.indexOf('agent_code') > -1) {
-            const folderPath = Workspace.getCurrentFolderPath();
-            const agentFile = path.join(folderPath, Diagnostic.getSourceFile('agent_code'));
-
-            return `${msg.replace('agent_code', agentFile)}:0`;
+            return `${msg.replace('agent_code', paths.agent_path)}:0`;
         } else if (msg.indexOf('device_code') > -1) {
-            const folderPath = Workspace.getCurrentFolderPath();
-            const agentFile = path.join(folderPath, Diagnostic.getSourceFile('device_code'));
-
-            return `${msg.replace('device_code', agentFile)}:0`;
+            return `${msg.replace('device_code', paths.device_path)}:0`;
         }
 
         return msg;
