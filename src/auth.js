@@ -39,6 +39,7 @@ function promptUserPassword() {
                 if (!user) {
                     vscode.window.showErrorMessage(User.ERRORS.AUTH_USERNAME_EMPTY);
                     reject();
+                    return;
                 }
 
                 const passwordOptions = {
@@ -51,6 +52,7 @@ function promptUserPassword() {
                         if (!pass) {
                             vscode.window.showErrorMessage(User.ERRORS.AUTH_PASSWORD_EMPTY);
                             reject();
+                            return;
                         }
 
                         const creds = {

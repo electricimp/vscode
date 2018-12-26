@@ -305,10 +305,9 @@ function createProjectFiles(dgID) {
 }
 
 function newProjectDGExist(accessToken) {
-    const cfgFile = path.join(folderPath, Consts.configFileName);
     Data.getWorkspaceInfo().then(() => {
         vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_CFG_EXIST);
-        const document = vscode.workspace.openTextDocument(cfgFile);
+        const document = vscode.workspace.openTextDocument(Path.getConfig());
         vscode.window.showTextDocument(document);
     }, (workspaceErr) => {
         if (workspaceErr !== User.ERRORS.WORSPACE_CFG_NONE) {
@@ -352,6 +351,7 @@ function promptDGNew() {
                 if (!product) {
                     vscode.window.showErrorMessage(User.ERRORS.PRODUCT_ID_EMPTY);
                     reject();
+                    return;
                 }
 
                 vscode.window.showInputBox({ prompt: User.MESSAGES.WORKSPACE_PROMPT_DG_NEW })
@@ -359,6 +359,7 @@ function promptDGNew() {
                         if (!dg) {
                             vscode.window.showErrorMessage(User.MESSAGES.DG_ID_EMPTY);
                             reject();
+                            return;
                         }
 
                         const newDGOptions = {
@@ -422,6 +423,7 @@ function promptProductNew() {
                 if (!product) {
                     vscode.window.showErrorMessage(User.ERRORS.PRODUCT_ID_EMPTY);
                     reject();
+                    return;
                 }
 
                 vscode.window.showInputBox({ prompt: User.MESSAGES.WORKSPACE_PROMPT_DG_NEW })
@@ -429,6 +431,7 @@ function promptProductNew() {
                         if (!dg) {
                             vscode.window.showErrorMessage(User.ERRORS.DEVICE_ID_EMPTY);
                             reject();
+                            return;
                         }
 
                         const newProductOptions = {
@@ -501,19 +504,25 @@ function deploy(logstream, diagnostic) {
                 let agentSource;
                 let deviceSource;
                 try {
-                    agentSource = agentPre.preprocess(cfg.agent_code, src.agent_source, Path.getSrcDir());
-                    deviceSource = devicePre.preprocess(cfg.device_code, src.device_source, Path.getSrcDir());
+                    const includeDir = Path.getSrcDir();
+                    const agentCode = path.basename(cfg.agent_code);
+                    const deviceCode = path.basename(cfg.device_code);
+                    agentSource = agentPre.preprocess(agentCode, src.agent_source, includeDir);
+                    deviceSource = devicePre.preprocess(deviceCode, src.device_source, includeDir);
 
                     /*
                      * The code below is only for debug purposes.
                      * Write postprocessed files to workspace directory for future analyzes.
                      */
-                    const storePostprocessed = false;
+                    const storePostprocessed = true;
                     if (storePostprocessed) {
-                        fs.writeFileSync(path.join(Path.getPWD(), 'postprocessed.agent'), agentSource);
-                        fs.writeFileSync(path.join(Path.getPWD(), 'postprocessed.device'), deviceSource);
+                        const buildPath = path.join(Path.getPWD(), 'build');
+                        if (!fs.existsSync(buildPath)) {
+                            fs.mkdirSync(buildPath);
+                        }
+                        fs.writeFileSync(path.join(buildPath, 'postprocessed_agent.nut'), agentSource);
+                        fs.writeFileSync(path.join(buildPath, 'postprocessed_device.nut'), deviceSource);
                         vscode.window.showInformationMessage('Postprocessed files were saved.');
-                        return;
                     }
                 } catch (err) {
                     diagnostic.addBuilderError(err.message);

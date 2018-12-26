@@ -30,7 +30,6 @@ const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
 const User = require('./user');
 const Auth = require('./auth');
-const Diagnostic = require('./diagnostic');
 const Workspace = require('./workspace');
 
 /*
@@ -156,18 +155,38 @@ class LogStream {
         }
     }
 
-    static replaceFileNameToLink(msg) {
+    replaceFileNameToLink(msg) {
+        const haveAgent = msg.indexOf('agent_code') > -1;
+        const haveDevice = msg.indexOf('device_code') > -1;
+        if (haveAgent === false && haveDevice === false) {
+            return msg;
+        }
+
+        if (this.diagnostic.pre) {
+            const regex = /.*((?:device_code|agent_code)):(\d+)/;
+            const result = msg.match(regex);
+            if (result == null) {
+                return msg;
+            }
+
+            const src = this.diagnostic.getSource(result[1]);
+            const loc = src.pre.getErrorLocation(parseInt(result[2], 10) - 1);
+            const fullPath = path.join(Workspace.Path.getSrcDir(), loc[0]);
+
+            return `${msg.replace(`${result[1]}:${result[2]}`, `${fullPath}:${loc[1]}`)}:0`;
+        }
+
         const paths = Workspace.Data.getSourcesPathsSync();
-        if (msg.indexOf('agent_code') > -1) {
+        if (haveAgent) {
             return `${msg.replace('agent_code', paths.agent_path)}:0`;
-        } else if (msg.indexOf('device_code') > -1) {
+        } else if (haveDevice) {
             return `${msg.replace('device_code', paths.device_path)}:0`;
         }
 
         return msg;
     }
 
-    static getLogStreamLogMessage(message) {
+    getLogStreamLogMessage(message) {
         const regex = /\b[0-9a-f]{16}\s(.*)\s(?:development|production)\s([a-z.]+)\s(.*)/;
         const result = message.match(regex);
         if (result == null) {
@@ -177,7 +196,7 @@ class LogStream {
 
         const ts = strftime('%Y-%m-%d %H:%M:%S%z');
         const type = LogStream.getTypeString(LogStream.getTypeInfo(result[2]));
-        const msg = LogStream.replaceFileNameToLink(result[3]);
+        const msg = this.replaceFileNameToLink(result[3]);
 
         return `${ts} ${type} ${msg}`;
     }
@@ -185,7 +204,7 @@ class LogStream {
     getErrorMessage(message) {
         const regex = /\b[0-9a-f]{16}\s(.*)\s(?:development|production)\s([a-z.]+)\sERROR:(.*)/;
         const result = message.match(regex);
-        if (result == null) {
+        if (result == null || this.diagnostic.pre === undefined) {
             return undefined;
         }
 
@@ -210,23 +229,43 @@ class LogStream {
     }
 
     logMsg(message) {
-        if (this.pause === false) {
-            const err = this.getErrorMessage(message);
-            if (err) {
-                this.diagnostic.addLogStreamError(err);
-            }
-
-            this.outputChannel.appendLine(LogStream.getLogStreamLogMessage(message));
+        if (this.pause) {
+            return;
         }
+
+        const err = this.getErrorMessage(message);
+        if (err) {
+            this.diagnostic.addLogStreamError(err);
+        }
+
+        /*
+            * If we get message like 'Downloading new code'.
+            * It mean that we should clean the diagnostic collection
+            * to report the actual problems from fresh deploy.
+            */
+        const regex = /.*(Downloading new code).*(program storage used)/;
+        const result = message.match(regex);
+        if (result) {
+            this.diagnostic.clearDiagnostic();
+        }
+
+        this.outputChannel.appendLine(this.getLogStreamLogMessage(message));
     }
 
     logState(message) {
-        const printState = false;
-        if (printState) {
-            if (this.pause === false) {
-                this.outputChannel.appendLine(message);
-            }
+        /*
+         * Do not print state messages for now.
+         */
+        const doNotPrintState = true;
+        if (doNotPrintState) {
+            return;
         }
+
+        if (this.pause) {
+            return;
+        }
+
+        this.outputChannel.appendLine(message);
     }
 
     isOpened() {
@@ -240,6 +279,7 @@ class LogStream {
                     if (!deviceID) {
                         vscode.window.showErrorMessage(User.ERRORS.DEVICE_ID_EMPTY);
                         reject();
+                        return;
                     }
 
                     resolve(deviceID);

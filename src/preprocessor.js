@@ -31,7 +31,7 @@ class Preprocessor {
     }
 
     buildLineTable(fileName, processedData) {
-        const regex = /.*\/\/line (\d+) \"(.+)\"/;
+        const regex = /.*\/\/line (\d+) "(.+)"/;
         let origFile = fileName;
         let currLine = 0;
         let origLine = 0;

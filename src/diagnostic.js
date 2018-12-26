@@ -35,6 +35,14 @@ class Diagnostic {
         }
     }
 
+    setPreprocessors(agentPre, devicePre) {
+        this.clearDiagnostic();
+        this.pre = {
+            agent: agentPre,
+            device: devicePre,
+        };
+    }
+
     clearDiagnostic() {
         this.diagnosticCollection.clear();
     }
@@ -53,26 +61,6 @@ class Diagnostic {
         };
     }
 
-    addBuilderError(builderError) {
-        const parsedError = Diagnostic.parseBuilderError(builderError);
-        if (parsedError == null) {
-            return;
-        }
-
-        const sourceFile = path.join(Workspace.Path.getSrcDir(), parsedError.file);
-        const uri = vscode.Uri.file(sourceFile);
-        const pos = new vscode.Position(parsedError.line - 1, 0);
-        this.diagnosticCollection.set(uri, [{
-            code: '',
-            message: parsedError.msg,
-            range: new vscode.Range(pos, pos),
-            severity: vscode.DiagnosticSeverity.Error,
-            source: 'Builder',
-            relatedInformation: [],
-        }]);
-        vscode.window.showTextDocument(uri);
-    }
-
     getSource(source) {
         if (source === 'agent_code') {
             return {
@@ -89,12 +77,27 @@ class Diagnostic {
         return undefined;
     }
 
-    setPreprocessors(agentPre, devicePre) {
-        this.clearDiagnostic();
-        this.pre = {
-            agent: agentPre,
-            device: devicePre,
-        };
+    addBuilderError(builderError) {
+        const parsedError = Diagnostic.parseBuilderError(builderError);
+        if (parsedError == null) {
+            return;
+        }
+
+        const sourceFile = path.join(Workspace.Path.getSrcDir(), parsedError.file);
+        const uri = vscode.Uri.file(sourceFile);
+        const pos = new vscode.Position(parsedError.line - 1, 0);
+        if (!this.diagnosticCollection.has(uri)) {
+            this.diagnosticCollection.set(uri, [{
+                code: '',
+                message: parsedError.msg,
+                range: new vscode.Range(pos, pos),
+                severity: vscode.DiagnosticSeverity.Error,
+                source: 'Builder',
+                relatedInformation: [],
+            }]);
+            vscode.window.showTextDocument(uri);
+            vscode.commands.executeCommand('workbench.action.problems.focus');
+        }
     }
 
     addDeployError(deployError) {
@@ -116,14 +119,18 @@ class Diagnostic {
                 const rowData = data.pre.getErrorLocation(parseInt(meta.row, 10) - 1);
                 const uri = vscode.Uri.file(path.join(Workspace.Path.getSrcDir(), rowData[0]));
                 const pos = new vscode.Position(rowData[1] - 1, meta.column - 1);
-                this.diagnosticCollection.set(uri, [{
-                    code: '',
-                    message: `${meta.text} in ${rowData[0]}`,
-                    range: new vscode.Range(pos, pos),
-                    severity: vscode.DiagnosticSeverity.Error,
-                    source: 'Deploy',
-                    relatedInformation: [],
-                }]);
+                if (!this.diagnosticCollection.has(uri)) {
+                    this.diagnosticCollection.set(uri, [{
+                        code: '',
+                        message: `${meta.text} in ${rowData[0]}`,
+                        range: new vscode.Range(pos, pos),
+                        severity: vscode.DiagnosticSeverity.Error,
+                        source: 'Deploy',
+                        relatedInformation: [],
+                    }]);
+                    vscode.window.showTextDocument(uri);
+                    vscode.commands.executeCommand('workbench.action.problems.focus');
+                }
             });
         });
     }
@@ -158,14 +165,17 @@ class Diagnostic {
             uri = vscode.Uri.file(sourceFile);
             pos = new vscode.Position(logStreamError.line - 1 - 1, 0);
         }
-        this.diagnosticCollection.set(uri, [{
-            code: '',
-            message: 'Error',
-            range: new vscode.Range(pos, pos),
-            severity: vscode.DiagnosticSeverity.Error,
-            source: 'Run-time',
-            relatedInformation: [],
-        }]);
+        if (!this.diagnosticCollection.has(uri)) {
+            this.diagnosticCollection.set(uri, [{
+                code: '',
+                message: 'Error',
+                range: new vscode.Range(pos, pos),
+                severity: vscode.DiagnosticSeverity.Error,
+                source: 'Run-time',
+                relatedInformation: [],
+            }]);
+            vscode.window.showTextDocument(uri);
+        }
     }
 }
 module.exports = Diagnostic;
