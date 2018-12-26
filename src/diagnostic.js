@@ -39,7 +39,7 @@ class Diagnostic {
         this.diagnosticCollection.clear();
     }
 
-    static parseBuilderError(agentPre, devicePre, msg) {
+    static parseBuilderError(msg) {
         const regex = /(\S.*)\((.*):(\d+)\)/;
         const result = msg.match(regex);
         if (result == null) {
@@ -59,7 +59,7 @@ class Diagnostic {
             return;
         }
 
-        const sourceFile = path.join(Workspace.Path.getPWD(), parsedError.file);
+        const sourceFile = path.join(Workspace.Path.getSrcDir(), parsedError.file);
         const uri = vscode.Uri.file(sourceFile);
         const pos = new vscode.Position(parsedError.line - 1, 0);
         this.diagnosticCollection.set(uri, [{
@@ -73,29 +73,16 @@ class Diagnostic {
         vscode.window.showTextDocument(uri);
     }
 
-    /*
-     * Merge functions below to single function.
-     */
-    static getSourceFile(source) {
-        if (source === 'agent_code') {
-            return 'agent.nut';
-        } else if (source === 'device_code') {
-            return 'device.nut';
-        }
-
-        return undefined;
-    }
-
-    static getSourceFileWithPre(agentPre, devicePre, source) {
+    getSource(source) {
         if (source === 'agent_code') {
             return {
-                file: 'agent.nut',
-                pre: agentPre,
+                file: Workspace.Data.getSourcesPathsSync().agent_path,
+                pre: this.pre.agent,
             };
         } else if (source === 'device_code') {
             return {
-                file: 'device.nut',
-                pre: devicePre,
+                file: Workspace.Data.getSourcesPathsSync().device_path,
+                pre: this.pre.device,
             };
         }
 
@@ -103,6 +90,7 @@ class Diagnostic {
     }
 
     setPreprocessors(agentPre, devicePre) {
+        this.clearDiagnostic();
         this.pre = {
             agent: agentPre,
             device: devicePre,
@@ -120,19 +108,13 @@ class Diagnostic {
             }
 
             err.meta.forEach((meta) => {
-                const data =
-                    Diagnostic.getSourceFileWithPre(this.pre.agent, this.pre.device, meta.file);
+                const data = this.getSource(meta.file);
                 if (data === undefined) {
                     return;
                 }
 
-                const sourceFile = path.join(Workspace.Path.getPWD(), data.file);
-                const uri = vscode.Uri.file(sourceFile);
                 const rowData = data.pre.getErrorLocation(parseInt(meta.row, 10) - 1);
-                if (data === undefined) {
-                    return;
-                }
-
+                const uri = vscode.Uri.file(path.join(Workspace.Path.getSrcDir(), rowData[0]));
                 const pos = new vscode.Position(rowData[1] - 1, meta.column - 1);
                 this.diagnosticCollection.set(uri, [{
                     code: '',
@@ -152,8 +134,7 @@ class Diagnostic {
         }
 
         let pos;
-        const sourceFile = path.join(Workspace.Path.getPWD(), logStreamError.file);
-        const uri = vscode.Uri.file(sourceFile);
+        let uri;
         if (this.pre) {
             let pre;
             if (logStreamError.source === 'agent_code') {
@@ -162,6 +143,9 @@ class Diagnostic {
                 pre = this.pre.device;
             }
 
+            const location = pre.getErrorLocation(logStreamError.line - 1)[0];
+            const sourceFile = path.join(Workspace.Path.getSrcDir(), location);
+            uri = vscode.Uri.file(sourceFile);
             pos = new vscode.Position(pre.getErrorLocation(logStreamError.line - 1)[1] - 1, 0);
         } else {
             /*
@@ -170,6 +154,8 @@ class Diagnostic {
              * The second -1 below mean that we shold compensate "#line 1"
              * preprocessor derictive in on the top of source file.
              */
+            const sourceFile = path.join(Workspace.Path.getPWD(), logStreamError.file);
+            uri = vscode.Uri.file(sourceFile);
             pos = new vscode.Position(logStreamError.line - 1 - 1, 0);
         }
         this.diagnosticCollection.set(uri, [{

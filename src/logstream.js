@@ -182,7 +182,7 @@ class LogStream {
         return `${ts} ${type} ${msg}`;
     }
 
-    static getErrorMessage(message) {
+    getErrorMessage(message) {
         const regex = /\b[0-9a-f]{16}\s(.*)\s(?:development|production)\s([a-z.]+)\sERROR:(.*)/;
         const result = message.match(regex);
         if (result == null) {
@@ -195,13 +195,13 @@ class LogStream {
         if (errMsg.indexOf('agent_code') > -1) {
             return {
                 source: 'agent_code',
-                file: Diagnostic.getSourceFile('agent_code'),
+                file: this.diagnostic.getSource('agent_code').file,
                 line: res[2],
             };
         } else if (errMsg.indexOf('device_code') > -1) {
             return {
                 source: 'device_code',
-                file: Diagnostic.getSourceFile('device_code'),
+                file: this.diagnostic.getSource('device_code').file,
                 line: res[2],
             };
         }
@@ -211,7 +211,7 @@ class LogStream {
 
     logMsg(message) {
         if (this.pause === false) {
-            const err = LogStream.getErrorMessage(message);
+            const err = this.getErrorMessage(message);
             if (err) {
                 this.diagnostic.addLogStreamError(err);
             }

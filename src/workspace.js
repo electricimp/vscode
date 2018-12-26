@@ -107,6 +107,10 @@ class Path {
     static getConfig() {
         return path.join(Path.getPWD(), Consts.configFileLocalPath);
     }
+
+    static getSrcDir() {
+        return path.join(Path.getPWD(), Consts.srcDirName);
+    }
 }
 module.exports.Path = Path;
 
@@ -497,8 +501,8 @@ function deploy(logstream, diagnostic) {
                 let agentSource;
                 let deviceSource;
                 try {
-                    agentSource = agentPre.preprocess(cfg.agent_code, src.agent_source);
-                    deviceSource = devicePre.preprocess(cfg.device_code, src.device_source);
+                    agentSource = agentPre.preprocess(cfg.agent_code, src.agent_source, Path.getSrcDir());
+                    deviceSource = devicePre.preprocess(cfg.device_code, src.device_source, Path.getSrcDir());
 
                     /*
                      * The code below is only for debug purposes.
