@@ -32,6 +32,7 @@ const ERRORS = {
     AUTH_LOGIN: 'Auth failed:',
     AUTH_FILE: 'Auth file:',
     AUTH_FILE_NONE: 'Auth file does not exist',
+    BUILDER_FAIL: 'Cannot apply Builder:',
     DEVICE_ID_EMPTY: 'The device ID is empty',
     DEVICE_RETRIEVE: 'Cannot retrieve device:',
     DG_ID_EMPTY: 'The device group ID is empty',
@@ -43,11 +44,13 @@ const ERRORS = {
     WORKSPACE_FOLDER_SELECT: 'Please select the workspace folder to proceed',
     WORSPACE_CFG_FILE: 'Project file:',
     WORSPACE_CFG_NONE: 'Project file does not exist',
-    WORKSPACE_CFG_EXIST: 'A project file already exists',
+    WORKSPACE_CFG_EXIST: 'A project file already exist',
     WORKSPACE_CFG_CORRUPTED: 'A project file is corrupted',
     WORSPACE_SRC_FILE: 'Source file:',
     WORKSPACE_SRC_AGENT_NONE: 'Agent source cannot be found',
+    WORKSPACE_SRC_AGENT_EXIST: 'Agent source already exist',
     WORKSPACE_SRC_DEVICE_NONE: 'Device source cannot be found',
+    WORKSPACE_SRC_DEVICE_EXIST: 'Device source already exist',
 };
 module.exports.ERRORS = ERRORS;
 

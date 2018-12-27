@@ -170,8 +170,12 @@ class LogStream {
             }
 
             const src = this.diagnostic.getSource(result[1]);
+            if (src === undefined) {
+                return msg;
+            }
+
             const loc = src.pre.getErrorLocation(parseInt(result[2], 10) - 1);
-            const fullPath = path.join(Workspace.Path.getSrcDir(), loc[0]);
+            const fullPath = path.join(path.dirname(src.file), loc[0]);
 
             return `${msg.replace(`${result[1]}:${result[2]}`, `${fullPath}:${loc[1]}`)}:0`;
         }

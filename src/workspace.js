@@ -108,7 +108,11 @@ class Path {
         return path.join(Path.getPWD(), Consts.configFileLocalPath);
     }
 
-    static getSrcDir() {
+    static getAuth() {
+        return path.join(Path.getPWD(), Consts.authFileLocalPath);
+    }
+
+    static getDefaultSrcDir() {
         return path.join(Path.getPWD(), Consts.srcDirName);
     }
 }
@@ -173,7 +177,7 @@ class Data {
                 return;
             }
 
-            const authFile = path.join(Path.getPWD(), Consts.authFileLocalPath);
+            const authFile = Path.getAuth();
             if (!fs.existsSync(authFile)) {
                 reject(User.ERRORS.AUTH_FILE_NONE);
                 return;
@@ -235,18 +239,21 @@ class Data {
             try {
                 const config = Data.getWorkspaceInfoSync();
                 if (config.deviceGroupId === undefined) {
+                    vscode.window.showTextDocument(vscode.workspace.openTextDocument(cfgFile));
                     reject(User.ERRORS.WORKSPACE_CFG_CORRUPTED);
                     return;
                 }
 
                 const agentSrc = path.join(Path.getPWD(), config.agent_code);
                 if (!fs.existsSync(agentSrc)) {
+                    vscode.window.showTextDocument(vscode.workspace.openTextDocument(cfgFile));
                     reject(User.ERRORS.WORKSPACE_SRC_AGENT_NONE);
                     return;
                 }
 
                 const deviceSrc = path.join(Path.getPWD(), config.device_code);
                 if (!fs.existsSync(deviceSrc)) {
+                    vscode.window.showTextDocument(vscode.workspace.openTextDocument(cfgFile));
                     reject(User.ERRORS.WORKSPACE_SRC_DEVICE_NONE);
                     return;
                 }
@@ -290,7 +297,9 @@ class Data {
                     const deviceSource = fs.readFileSync(deviceSourcePath).toString();
                     const sources = {
                         agent_source: agentSource,
+                        agent_path: agentSourcePath,
                         device_source: deviceSource,
+                        device_path: deviceSourcePath,
                     };
 
                     resolve(sources);
@@ -306,27 +315,45 @@ class Data {
 module.exports.Data = Data;
 
 function createProjectFiles(dgID) {
-    const srcPath = path.join(Path.getPWD(), Consts.srcDirName);
-    if (!fs.existsSync(srcPath)) {
-        fs.mkdirSync(srcPath);
-    }
+    return new Promise((resolve, reject) => {
+        const defaultOptions = {
+            deviceGroupId: dgID,
+            device_code: path.join(Consts.srcDirName, Consts.deviceSourceFileName),
+            agent_code: path.join(Consts.srcDirName, Consts.agentSourceFileName),
+        };
 
-    const defaultOptions = {
-        deviceGroupId: dgID,
-        device_code: path.join(Consts.srcDirName, Consts.deviceSourceFileName),
-        agent_code: path.join(Consts.srcDirName, Consts.agentSourceFileName),
-    };
-    Data.storeWorkspaceInfo(defaultOptions).then(() => {
+        const agentPath = path.join(Path.getPWD(), defaultOptions.agent_code);
+        if (fs.existsSync(agentPath)) {
+            vscode.window.showTextDocument(vscode.workspace.openTextDocument(agentPath));
+            reject(User.ERRORS.WORKSPACE_SRC_AGENT_EXIST);
+            return;
+        }
+
+        const devPath = path.join(Path.getPWD(), defaultOptions.device_code);
+        if (fs.existsSync(devPath)) {
+            vscode.window.showTextDocument(vscode.workspace.openTextDocument(devPath));
+            reject(User.ERRORS.WORKSPACE_SRC_DEVICE_EXIST);
+            return;
+        }
+
+        if (!fs.existsSync(Path.getDefaultSrcDir())) {
+            fs.mkdirSync(Path.getDefaultSrcDir());
+        }
+
         try {
-            const devPath = path.join(Path.getPWD(), defaultOptions.device_code);
-            const agentPath = path.join(Path.getPWD(), defaultOptions.agent_code);
             fs.writeFileSync(agentPath, Consts.agentSourceHeader);
             fs.writeFileSync(devPath, Consts.deviceSourceHeader);
+            resolve();
         } catch (err) {
             vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_SRC_FILE} ${err}`);
+            reject(err);
+            return;
         }
-    }, (err) => {
-        vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${err}`);
+
+        Data.storeWorkspaceInfo(defaultOptions).then(() => {}, (err) => {
+            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${err}`);
+            reject(err);
+        });
     });
 }
 
@@ -352,7 +379,9 @@ function newProjectDGExist(accessToken) {
                 api.auth.accessToken = accessToken;
                 api.deviceGroups.get(deviceGroupId)
                     .then((dg) => {
-                        createProjectFiles(dg.data.id);
+                        createProjectFiles(dg.data.id).then(() => {}, (err) => {
+                            vscode.window.showErrorMessage(`Cannot create project: ${err}`);
+                        });
                     }, (err) => {
                         User.showImpApiError(`${User.ERRORS.DG_RETRIEVE}`, err);
                     });
@@ -424,7 +453,9 @@ function newProjectDGNew(accessToken) {
             api.auth.accessToken = accessToken;
             api.deviceGroups.create(newDGOptions.productID, DevGroups.TYPE_DEVELOPMENT, attrs)
                 .then((dg) => {
-                    createProjectFiles(dg.data.id);
+                    createProjectFiles(dg.data.id).then(() => {}, (err) => {
+                        vscode.window.showErrorMessage(`Cannot create project: ${err}`);
+                    });
                 }, (err) => {
                     User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
                 });
@@ -495,7 +526,9 @@ function newProjectProductNew(accessToken) {
                     attrs.name = newProductOptions.dgName;
                     api.deviceGroups.create(pID, DevGroups.TYPE_DEVELOPMENT, attrs)
                         .then((dg) => {
-                            createProjectFiles(dg.data.id);
+                            createProjectFiles(dg.data.id).then(() => {}, (err) => {
+                                vscode.window.showErrorMessage(`Cannot create project: ${err}`);
+                            });
                         }, (err) => {
                             User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
                         });
@@ -528,19 +561,34 @@ function deploy(logstream, diagnostic) {
             diagnostic.setPreprocessors(agentPre, devicePre);
             Data.getSources().then((src) => {
                 let agentSource;
-                let deviceSource;
+                const agentInc = path.dirname(src.agent_path);
                 try {
-                    const includeDir = Path.getSrcDir();
-                    const agentCode = path.basename(cfg.agent_code);
-                    const deviceCode = path.basename(cfg.device_code);
-                    agentSource = agentPre.preprocess(agentCode, src.agent_source, includeDir);
-                    deviceSource = devicePre.preprocess(deviceCode, src.device_source, includeDir);
+                    const agentName = path.basename(cfg.agent_code);
+                    agentSource = agentPre.preprocess(agentName, src.agent_source, agentInc);
+                } catch (err) {
+                    diagnostic.addBuilderError(agentInc, err.message);
+                    vscode.window.showErrorMessage(`${User.ERRORS.BUILDER_FAIL} ${err}`);
+                    return;
+                }
 
+
+                let deviceSource;
+                const deviceInc = path.dirname(src.device_path);
+                try {
+                    const deviceName = path.basename(cfg.device_code);
+                    deviceSource = devicePre.preprocess(deviceName, src.device_source, deviceInc);
+                } catch (err) {
+                    diagnostic.addBuilderError(deviceInc, err.message);
+                    vscode.window.showErrorMessage(`${User.ERRORS.BUILDER_FAIL} ${err}`);
+                    return;
+                }
+
+                try {
                     /*
                      * The code below is only for debug purposes.
                      * Write postprocessed files to workspace directory for future analyzes.
                      */
-                    const storePostprocessed = true;
+                    const storePostprocessed = false;
                     if (storePostprocessed) {
                         const buildPath = path.join(Path.getPWD(), 'build');
                         if (!fs.existsSync(buildPath)) {
@@ -551,14 +599,13 @@ function deploy(logstream, diagnostic) {
                         vscode.window.showInformationMessage('Postprocessed files were saved.');
                     }
                 } catch (err) {
-                    diagnostic.addBuilderError(err.message);
-                    vscode.window.showErrorMessage(`Cannot apply Builder: ${err}`);
+                    vscode.window.showErrorMessage(`Postprocessed files error: ${err}`);
                     return;
                 }
 
                 const attrs = {
-                    device_code: deviceSource,
                     agent_code: agentSource,
+                    device_code: deviceSource,
                 };
 
                 const api = new ImpCentralApi();
