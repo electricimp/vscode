@@ -174,10 +174,14 @@ class LogStream {
                 return msg;
             }
 
-            const loc = src.pre.getErrorLocation(parseInt(result[2], 10) - 1);
-            const fullPath = path.join(path.dirname(src.file), loc[0]);
+            const errData = src.pre.getErrorLocation(parseInt(result[2], 10) - 1);
+            if (errData === undefined) {
+                return msg;
+            }
 
-            return `${msg.replace(`${result[1]}:${result[2]}`, `${fullPath}:${loc[1]}`)}:0`;
+            const fullPath = path.join(path.dirname(src.file), errData[0]);
+
+            return `${msg.replace(`${result[1]}:${result[2]}`, `${fullPath}:${errData[1]}`)}:0`;
         }
 
         const paths = Workspace.Data.getSourcesPathsSync();

@@ -133,13 +133,17 @@ class Diagnostic {
                     return;
                 }
 
-                const rowData = data.pre.getErrorLocation(parseInt(meta.row, 10) - 1);
-                const uri = vscode.Uri.file(path.join(path.dirname(data.file), rowData[0]));
-                const pos = new vscode.Position(rowData[1] - 1, meta.column - 1);
+                const errData = data.pre.getErrorLocation(parseInt(meta.row, 10) - 1);
+                if (errData === undefined) {
+                    return;
+                }
+
+                const uri = vscode.Uri.file(path.join(path.dirname(data.file), errData[0]));
+                const pos = new vscode.Position(errData[1] - 1, meta.column - 1);
                 if (!this.diagnosticCollection.has(uri)) {
                     this.diagnosticCollection.set(uri, [{
                         code: '',
-                        message: `${meta.text} in ${rowData[0]}`,
+                        message: `${meta.text} in ${errData[0]}`,
                         range: new vscode.Range(pos, pos),
                         severity: vscode.DiagnosticSeverity.Error,
                         source: 'Deploy',
@@ -165,9 +169,14 @@ class Diagnostic {
                 return;
             }
 
-            const location = src.pre.getErrorLocation(logStreamError.line - 1)[0];
+            const errData = src.pre.getErrorLocation(logStreamError.line - 1);
+            if (errData === undefined) {
+                return;
+            }
+
+            const location = errData[0];
             uri = vscode.Uri.file(path.join(path.dirname(src.file), location));
-            pos = new vscode.Position(src.pre.getErrorLocation(logStreamError.line - 1)[1] - 1, 0);
+            pos = new vscode.Position(errData[1] - 1, 0);
         } else {
             /*
              * TODO: Here, we have a hack in case if preprocessor was not defined previosly.
