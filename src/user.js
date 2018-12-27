@@ -43,8 +43,11 @@ const ERRORS = {
     WORKSPACE_FOLDER_SELECT: 'Please select the workspace folder to proceed',
     WORSPACE_CFG_FILE: 'Project file:',
     WORSPACE_CFG_NONE: 'Project file does not exist',
-    WORKSPACE_CFG_EXIST: 'An imp configuration file already exists',
+    WORKSPACE_CFG_EXIST: 'A project file already exists',
+    WORKSPACE_CFG_CORRUPTED: 'A project file is corrupted',
     WORSPACE_SRC_FILE: 'Source file:',
+    WORKSPACE_SRC_AGENT_NONE: 'Agent source cannot be found',
+    WORKSPACE_SRC_DEVICE_NONE: 'Device source cannot be found',
 };
 module.exports.ERRORS = ERRORS;
 

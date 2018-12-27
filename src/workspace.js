@@ -233,12 +233,46 @@ class Data {
             }
 
             try {
-                const info = Data.getWorkspaceInfoSync();
-                resolve(info);
+                const config = Data.getWorkspaceInfoSync();
+                if (config.deviceGroupId === undefined) {
+                    reject(User.ERRORS.WORKSPACE_CFG_CORRUPTED);
+                    return;
+                }
+
+                const agentSrc = path.join(Path.getPWD(), config.agent_code);
+                if (!fs.existsSync(agentSrc)) {
+                    reject(User.ERRORS.WORKSPACE_SRC_AGENT_NONE);
+                    return;
+                }
+
+                const deviceSrc = path.join(Path.getPWD(), config.device_code);
+                if (!fs.existsSync(deviceSrc)) {
+                    reject(User.ERRORS.WORKSPACE_SRC_DEVICE_NONE);
+                    return;
+                }
+
+                resolve(config);
             } catch (err) {
                 reject(err);
             }
         });
+    }
+
+    static workspaceInfoFileExist() {
+        const cfgFile = Data.getWorkspaceInfoFilePath();
+        if (fs.existsSync(cfgFile)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    static getSourcesPathsSync() {
+        const config = Data.getWorkspaceInfoSync();
+        return {
+            agent_path: path.join(Path.getPWD(), config.agent_code),
+            device_path: path.join(Path.getPWD(), config.device_code),
+        };
     }
 
     static getSources() {
@@ -268,14 +302,6 @@ class Data {
             });
         });
     }
-
-    static getSourcesPathsSync() {
-        const config = Data.getWorkspaceInfoSync();
-        return {
-            agent_path: path.join(Path.getPWD(), config.agent_code),
-            device_path: path.join(Path.getPWD(), config.device_code),
-        };
-    }
 }
 module.exports.Data = Data;
 
@@ -285,15 +311,15 @@ function createProjectFiles(dgID) {
         fs.mkdirSync(srcPath);
     }
 
-    const options = {
+    const defaultOptions = {
         deviceGroupId: dgID,
         device_code: path.join(Consts.srcDirName, Consts.deviceSourceFileName),
         agent_code: path.join(Consts.srcDirName, Consts.agentSourceFileName),
     };
-    Data.storeWorkspaceInfo(options).then(() => {
+    Data.storeWorkspaceInfo(defaultOptions).then(() => {
         try {
-            const devPath = path.join(Path.getPWD(), options.device_code);
-            const agentPath = path.join(Path.getPWD(), options.agent_code);
+            const devPath = path.join(Path.getPWD(), defaultOptions.device_code);
+            const agentPath = path.join(Path.getPWD(), defaultOptions.agent_code);
             fs.writeFileSync(agentPath, Consts.agentSourceHeader);
             fs.writeFileSync(devPath, Consts.deviceSourceHeader);
         } catch (err) {
