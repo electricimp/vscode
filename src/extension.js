@@ -29,6 +29,7 @@ const Workspace = require('./workspace');
 const LogStream = require('./logstream');
 const Devices = require('./devices');
 const Diagnostic = require('./diagnostic');
+const Project = require('./project');
 
 const diagnostic = new Diagnostic();
 const logstream = new LogStream(diagnostic);
@@ -103,6 +104,12 @@ function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('imp.device.agenturl', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
             Devices.getAgentURLDialog();
+        }
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.new', () => {
+        if (Workspace.isWorkspaceFolderOpened()) {
+            Project.newProjectDialog();
         }
     }));
 

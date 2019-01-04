@@ -24,45 +24,37 @@
 
 
 const vscode = require('vscode');
-const ImpCentralApi = require('imp-central-api');
+const Api = require('./api');
 const User = require('./user');
 const Workspace = require('./workspace');
 
-
 function promptUserPassword() {
+    const usernameOptions = {
+        prompt: User.MESSAGES.AUTH_PROMPT_ENTER_CREDS,
+    };
+
+    const passwordOptions = {
+        password: true,
+        prompt: User.MESSAGES.AUTH_PROMPT_ENTER_PWD,
+    };
+
     return new Promise(((resolve, reject) => {
-        const usernameOptions = {
-            prompt: User.MESSAGES.AUTH_PROMPT_ENTER_CREDS,
-        };
-        vscode.window.showInputBox(usernameOptions)
-            .then((user) => {
-                if (!user) {
-                    vscode.window.showErrorMessage(User.ERRORS.AUTH_USERNAME_EMPTY);
-                    reject();
+        vscode.window.showInputBox(usernameOptions).then((user) => {
+            if (!user) {
+                reject(new Error(`${User.ERRORS.AUTH_USERNAME_EMPTY}`));
+                return;
+            }
+            vscode.window.showInputBox(passwordOptions).then((pass) => {
+                if (!pass) {
+                    reject(new Error(`${User.ERRORS.AUTH_PASSWORD_EMPTY}`));
                     return;
                 }
-
-                const passwordOptions = {
-                    password: true,
-                    prompt: User.MESSAGES.AUTH_PROMPT_ENTER_PWD,
-                };
-
-                vscode.window.showInputBox(passwordOptions)
-                    .then((pass) => {
-                        if (!pass) {
-                            vscode.window.showErrorMessage(User.ERRORS.AUTH_PASSWORD_EMPTY);
-                            reject();
-                            return;
-                        }
-
-                        const creds = {
-                            username: user,
-                            password: pass,
-                        };
-
-                        resolve(creds);
-                    });
+                resolve({
+                    username: user,
+                    password: pass,
+                });
             });
+        });
     }));
 }
 
@@ -77,20 +69,10 @@ function promptUserPassword() {
 //
 function loginCredsDialog() {
     promptUserPassword()
-        .then((creds) => {
-            const api = new ImpCentralApi();
-            api.auth.login(creds.username, creds.password)
-                .then((authInfo) => {
-                    Workspace.Data.storeAuthInfo(authInfo)
-                        .then(() => {
-                            vscode.window.showInformationMessage(User.MESSAGES.AUTH_SUCCESS);
-                        }, (err) => {
-                            vscode.window.showErrorMessage(`${User.ERRORS.AUTH_FILE} ${err}`);
-                        });
-                }, (err) => {
-                    vscode.window.showErrorMessage(`${User.ERRORS.AUTH_LOGIN} ${err}`);
-                });
-        });
+        .then(Api.login)
+        .then(Workspace.Data.storeAuthInfo)
+        .then(() => vscode.window.showInformationMessage(User.MESSAGES.AUTH_SUCCESS))
+        .catch(err => vscode.window.showErrorMessage(err.message));
 }
 module.exports.loginCredsDialog = loginCredsDialog;
 

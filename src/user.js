@@ -38,8 +38,11 @@ const ERRORS = {
     DG_ID_EMPTY: 'The device group ID is empty',
     DG_RETRIEVE: 'Cannot retrieve DG:',
     DG_CREATE: 'Cannot create DG:',
+    DG_LIST: 'Cannot retrieve DG list:',
     PRODUCT_ID_EMPTY: 'The product ID is empty',
     PRODUCT_CREATE: 'Cannot create new product:',
+    PRODUCT_LIST: 'Cannot retrieve product list:',
+    VSCODE_API: 'IMP API:',
     WORKSPACE_MULTIROOT: 'Multi-root workspaces are not supported',
     WORKSPACE_FOLDER_SELECT: 'Please select the workspace folder to proceed',
     WORSPACE_CFG_FILE: 'Project file:',
@@ -70,6 +73,13 @@ const NAMES = {
     OUTPUT_CHANNEL: 'imp: LogStream',
 };
 module.exports.NAMES = NAMES;
+
+const CONSTS = {
+    NEW_PROJECT_EXIST_DG: 'New Project, exist DG',
+    NEW_PROJECT_NEW_DG: 'New Project, new DG',
+    NEW_PROJECT_NEW_PRODUCT: 'New Project, new Product',
+};
+module.exports.CONSTS = CONSTS;
 
 // Display imp-central-api error as pop-up message.
 //

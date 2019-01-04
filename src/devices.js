@@ -29,6 +29,22 @@ const Auth = require('./auth');
 const User = require('./user');
 const Workspace = require('./workspace');
 
+/*
+function getDeviceIDPrompt() {
+    return new Promise((resolve, reject) => {
+        vscode.window.showInputBox({ prompt: User.MESSAGES.DEVICE_PROMPT_DEVICE_ID })
+            .then((deviceID) => {
+                if (!deviceID) {
+                    reject(new Error(`${User.ERRORS.DEVICE_ID_EMPTY}`));
+                    return;
+                }
+
+                resolve(deviceID);
+            });
+    });
+}
+*/
+
 function getAgentURL(accessToken) {
     vscode.window.showInputBox({ prompt: User.MESSAGES.DEVICE_PROMPT_DEVICE_ID })
         .then((deviceID) => {

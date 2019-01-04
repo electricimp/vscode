@@ -27,6 +27,7 @@
     "onCommand:imp.device.add",
     "onCommand:imp.device.remove",
     "onCommand:imp.device.agenturl",
+    "onCommand:imp.workspace.project.new",
     "onCommand:imp.show.commands",
     "onLanguage:squirrel"
   ],
@@ -80,6 +81,10 @@
       {
         "command": "imp.device.agenturl",
         "title": "imp: Get agent URL"
+      },
+      {
+        "command": "imp.workspace.project.new",
+        "title": "imp: New Project"
       },
       {
         "command": "imp.show.commands",
