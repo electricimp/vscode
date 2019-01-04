@@ -184,11 +184,14 @@ class LogStream {
             return `${msg.replace(`${result[1]}:${result[2]}`, `${fullPath}:${errData[1]}`)}:0`;
         }
 
-        const paths = Workspace.Data.getSourcesPathsSync();
-        if (haveAgent) {
-            return `${msg.replace('agent_code', paths.agent_path)}:0`;
-        } else if (haveDevice) {
-            return `${msg.replace('device_code', paths.device_path)}:0`;
+        const replaceIfPreNotDefined = false;
+        if (replaceIfPreNotDefined) {
+            const paths = Workspace.Data.getSourcesPathsSync();
+            if (haveAgent) {
+                return `${msg.replace('agent_code', paths.agent_path)}:0`;
+            } else if (haveDevice) {
+                return `${msg.replace('device_code', paths.device_path)}:0`;
+            }
         }
 
         return msg;
