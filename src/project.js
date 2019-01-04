@@ -206,6 +206,33 @@ async function pickNewProjectType(input, state) {
     }
 }
 
+async function checkIfProjectAlreadyExist(input, state) {
+    try {
+        await Workspace.Data.getWorkspaceInfo();
+        const pick = await input.showQuickPick(
+            getTitle(),
+            0,
+            3,
+            'The project already exist, overwrite it?',
+            ['No', 'Yes'].map(label => ({ label })),
+            typeof state.alreadyExist !== 'string' ? state.projectType : undefined,
+            undefined,
+            shouldResume,
+        );
+
+        if (pick.label === 'Yes') {
+            const nextState = state;
+            return nextIn => pickNewProjectType(nextIn, nextState);
+        }
+    } catch (err) {
+        // Correct behaviour, we cannot read workspace in the cwd.
+        const nextState = state;
+        return nextIn => pickNewProjectType(nextIn, nextState);
+    }
+
+    return undefined;
+}
+
 class FlowAction {
     constructor() {
         this.back = new FlowAction();
@@ -216,6 +243,7 @@ class FlowAction {
 
 class Project {
     constructor() {
+        this.showBackButtonAfterSteps = 2;
         this.current = undefined;
         this.steps = [];
     }
@@ -231,7 +259,8 @@ class Project {
                 input.value = value || '';
                 input.prompt = prompt;
                 input.buttons = [
-                    ...(this.steps.length > 1 ? [vscode.QuickInputButtons.Back] : []),
+                    ...(this.steps.length > this.showBackButtonAfterSteps
+                        ? [vscode.QuickInputButtons.Back] : []),
                     ...(buttons || []),
                 ];
                 let validating = validate('');
@@ -284,7 +313,8 @@ class Project {
                 if (activeItem) {
                     input.activeItems = [activeItem];
                 }
-                input.buttons = (this.steps.length > 1 ? [vscode.QuickInputButtons.Back] : [])
+                input.buttons = (this.steps.length > this.showBackButtonAfterSteps
+                    ? [vscode.QuickInputButtons.Back] : [])
                     .concat((buttons || []));
                 disposables.push(input.onDidTriggerButton(() => {
                     reject(FlowAction.back);
@@ -343,7 +373,7 @@ class Project {
         const state = {
             accessToken: token,
         };
-        await Project.run(input => pickNewProjectType(input, state));
+        await Project.run(input => checkIfProjectAlreadyExist(input, state));
         return state;
     }
 

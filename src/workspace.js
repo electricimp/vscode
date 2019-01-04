@@ -173,13 +173,13 @@ class Data {
     static getAuthInfo() {
         return new Promise((resolve, reject) => {
             if (!isWorkspaceFolderOpened()) {
-                reject(User.ERRORS.WORKSPACE_FOLDER_SELECT);
+                reject(new Error(User.ERRORS.WORKSPACE_FOLDER_SELECT));
                 return;
             }
 
             const authFile = Path.getAuth();
             if (!fs.existsSync(authFile)) {
-                reject(User.ERRORS.AUTH_FILE_NONE);
+                reject(new Error(User.ERRORS.AUTH_FILE_NONE));
                 return;
             }
 
@@ -226,13 +226,13 @@ class Data {
     static getWorkspaceInfo() {
         return new Promise((resolve, reject) => {
             if (!isWorkspaceFolderOpened()) {
-                reject(User.ERRORS.WORKSPACE_FOLDER_SELECT);
+                reject(new Error(User.ERRORS.WORKSPACE_FOLDER_SELECT));
                 return;
             }
 
             const cfgFile = Data.getWorkspaceInfoFilePath();
             if (!fs.existsSync(cfgFile)) {
-                reject(User.ERRORS.WORSPACE_CFG_NONE);
+                reject(new Error(User.ERRORS.WORSPACE_CFG_NONE));
                 return;
             }
 
@@ -240,21 +240,21 @@ class Data {
                 const config = Data.getWorkspaceInfoSync();
                 if (config.deviceGroupId === undefined) {
                     vscode.window.showTextDocument(vscode.workspace.openTextDocument(cfgFile));
-                    reject(User.ERRORS.WORKSPACE_CFG_CORRUPTED);
+                    reject(new Error(User.ERRORS.WORKSPACE_CFG_CORRUPTED));
                     return;
                 }
 
                 const agentSrc = path.join(Path.getPWD(), config.agent_code);
                 if (!fs.existsSync(agentSrc)) {
                     vscode.window.showTextDocument(vscode.workspace.openTextDocument(cfgFile));
-                    reject(User.ERRORS.WORKSPACE_SRC_AGENT_NONE);
+                    reject(new Error(User.ERRORS.WORKSPACE_SRC_AGENT_NONE));
                     return;
                 }
 
                 const deviceSrc = path.join(Path.getPWD(), config.device_code);
                 if (!fs.existsSync(deviceSrc)) {
                     vscode.window.showTextDocument(vscode.workspace.openTextDocument(cfgFile));
-                    reject(User.ERRORS.WORKSPACE_SRC_DEVICE_NONE);
+                    reject(new Error(User.ERRORS.WORKSPACE_SRC_DEVICE_NONE));
                     return;
                 }
 

@@ -50,6 +50,33 @@ function getAgentURL(accessToken, deviceID) {
 }
 module.exports.getAgentURL = getAgentURL;
 
+function addDeviceToDG(accessToken, dgID, deviceID) {
+    return new Promise((resolve, reject) => {
+        const api = new ImpCentralApi();
+        api.auth.accessToken = accessToken;
+        api.deviceGroups.addDevices(dgID, deviceID).then(() => {
+            resolve();
+        }, (err) => {
+            reject(err);
+        });
+    });
+}
+module.exports.addDeviceToDG = addDeviceToDG;
+
+function removeDeviceFromDG(accessToken, dgID, deviceID) {
+    return new Promise((resolve, reject) => {
+        const api = new ImpCentralApi();
+        api.auth.accessToken = accessToken;
+        api.deviceGroups.removeDevices(dgID, null, deviceID)
+            .then(() => {
+                resolve();
+            }, (err) => {
+                reject(err);
+            });
+    });
+}
+module.exports.removeDeviceFromDG = removeDeviceFromDG;
+
 function getProductList(accessToken) {
     return new Promise((resolve, reject) => {
         const api = new ImpCentralApi();
