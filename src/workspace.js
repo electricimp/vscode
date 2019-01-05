@@ -186,6 +186,11 @@ class Data {
             try {
                 const data = fs.readFileSync(authFile);
                 const auth = JSON.parse(data);
+                if (auth.access_token === undefined) {
+                    reject(new Error(User.ERRORS.AUTH_FILE_ERROR));
+                    return;
+                }
+
                 resolve(auth);
             } catch (err) {
                 reject(err);

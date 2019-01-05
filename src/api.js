@@ -32,7 +32,9 @@ function login(creds) {
     return new Promise((resolve, reject) => {
         const api = new ImpCentralApi();
         api.auth.login(creds.username, creds.password)
-            .then(authInfo => resolve(authInfo), err => reject(new Error(`${User.ERRORS.AUTH_LOGIN} ${err}`)));
+            .then(authInfo => resolve(authInfo), (err) => {
+                reject(new Error(`${User.ERRORS.AUTH_LOGIN} ${err}`));
+            });
     });
 }
 module.exports.login = login;
@@ -136,11 +138,51 @@ function newDG(accessToken, productID, dgName) {
     return new Promise((resolve, reject) => {
         const api = new ImpCentralApi();
         api.auth.accessToken = accessToken;
-        api.deviceGroups.create(productID, DeviceGroups.TYPE_DEVELOPMENT, attrs).then((dg) => {
-            resolve(dg);
+        api.deviceGroups.create(productID, DeviceGroups.TYPE_DEVELOPMENT, attrs)
+            .then((dg) => {
+                resolve(dg);
+            }, (err) => {
+                reject(err);
+            });
+    });
+}
+module.exports.newDG = newDG;
+
+function logStreamCreate(accessToken, logMsg, logState) {
+    return new Promise((resolve, reject) => {
+        const api = new ImpCentralApi();
+        api.auth.accessToken = accessToken;
+        api.logStreams.create(logMsg, logState).then((logStream) => {
+            resolve(logStream.data.id);
         }, (err) => {
             reject(err);
         });
     });
 }
-module.exports.newDG = newDG;
+module.exports.logStreamCreate = logStreamCreate;
+
+function logStreamAddDevice(accessToken, logStreamID, deviceID) {
+    return new Promise((resolve, reject) => {
+        const api = new ImpCentralApi();
+        api.auth.accessToken = accessToken;
+        api.logStreams.addDevice(logStreamID, deviceID).then(() => {
+            resolve();
+        }, (err) => {
+            reject(err);
+        });
+    });
+}
+module.exports.logStreamAddDevice = logStreamAddDevice;
+
+function logStreamRemoveDevice(accessToken, logStreamID, deviceID) {
+    return new Promise((resolve, reject) => {
+        const api = new ImpCentralApi();
+        api.auth.accessToken = accessToken;
+        api.logStreams.removeDevice(logStreamID, deviceID).then(() => {
+            resolve();
+        }, (err) => {
+            reject(err);
+        });
+    });
+}
+module.exports.logStreamRemoveDevice = logStreamRemoveDevice;

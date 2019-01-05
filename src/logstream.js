@@ -27,7 +27,8 @@ const path = require('path');
 const colors = require('colors/safe');
 const strftime = require('strftime');
 const vscode = require('vscode');
-const ImpCentralApi = require('imp-central-api');
+const Api = require('./api');
+const Devices = require('./devices');
 const User = require('./user');
 const Auth = require('./auth');
 const Workspace = require('./workspace');
@@ -283,59 +284,36 @@ class LogStream {
         return this.logStreamID && this.outputChannel;
     }
 
-    static promptDeviceID() {
-        return new Promise(((resolve, reject) => {
-            vscode.window.showInputBox({ prompt: User.MESSAGES.DEVICE_PROMPT_DEVICE_ID })
-                .then((deviceID) => {
-                    if (!deviceID) {
-                        vscode.window.showErrorMessage(User.ERRORS.DEVICE_ID_EMPTY);
-                        reject();
-                        return;
-                    }
-
-                    resolve(deviceID);
-                });
-        }));
-    }
-
-    impAddDevice(impCentralApi, deviceID) {
-        impCentralApi.logStreams.addDevice(this.logStreamID, deviceID)
-            .then(() => {
-                this.outputChannel.show(true);
-                this.devices.add(deviceID);
-                vscode.window.showInformationMessage(`Device added: ${deviceID}`);
-            }, (err) => {
-                User.showImpApiError(`The device ${deviceID} cannot be added:`, err);
-            });
-    }
-
     addDevice(accessToken, deviceID) {
         return new Promise(((resolve) => {
-            const api = new ImpCentralApi();
-            api.auth.accessToken = accessToken;
-            if (this.isOpened() === undefined) {
-                api.logStreams.create(this.logMsg.bind(this), this.logState.bind(this))
-                    .then((logStream) => {
-                        this.logStreamID = logStream.data.id;
+            if (this.isOpened()) {
+                Api.logStreamAddDevice(accessToken, this.logStreamID, deviceID)
+                    .then(() => {
+                        this.outputChannel.show(true);
+                        this.devices.add(deviceID);
+                        vscode.window.showInformationMessage(`Device added: ${deviceID}`);
+                        resolve();
+                    }, (err) => {
+                        User.showImpApiError(`Cannot add ${deviceID}`, err);
+                    });
+            } else {
+                Api.logStreamCreate(accessToken, this.logMsg.bind(this), this.logState.bind(this))
+                    .then((logStreamID) => {
+                        this.logStreamID = logStreamID;
                         this.outputChannel =
                             vscode.window.createOutputChannel(User.NAMES.OUTPUT_CHANNEL);
-                        this.impAddDevice(api, deviceID);
-                        resolve();
+                        Api.logStreamAddDevice(accessToken, logStreamID, deviceID)
+                            .then(() => {
+                                this.outputChannel.show(true);
+                                this.devices.add(deviceID);
+                                vscode.window.showInformationMessage(`Device added: ${deviceID}`);
+                                resolve();
+                            });
                     }, (err) => {
                         User.showImpApiError(`Cannot open ${User.NAMES.OUTPUT_CHANNEL}`, err);
                     });
-            } else {
-                this.impAddDevice(api, deviceID);
-                resolve();
             }
         }));
-    }
-
-    addDevicePrompt(accessToken) {
-        LogStream.promptDeviceID()
-            .then((deviceID) => {
-                this.addDevice(accessToken, deviceID);
-            });
     }
 
     // Add device to LogStream and send it's logs to the outputChannel.
@@ -343,31 +321,10 @@ class LogStream {
     // Parameters:
     //     none
     addDeviceDialog() {
-        Auth.authorize().then(this.addDevicePrompt.bind(this));
-    }
-
-    impRemoveDevice(impCentralApi, deviceID) {
-        impCentralApi.logStreams.removeDevice(this.logStreamID, deviceID)
-            .then(() => {
-                this.devices.delete(deviceID);
-                vscode.window.showInformationMessage(`Device removed: ${deviceID}`);
-            }, (err) => {
-                User.showImpApiError(`The device ${deviceID} cannot be removed:`, err);
-            });
-    }
-
-    removeDevice(accessToken) {
-        if (this.isOpened() === undefined) {
-            vscode.window.showErrorMessage(`Cannot remove device from ${User.NAMES.OUTPUT_CHANNEL}`);
-            return;
-        }
-
-        LogStream.promptDeviceID()
-            .then((deviceID) => {
-                const api = new ImpCentralApi();
-                api.auth.accessToken = accessToken;
-                this.impRemoveDevice(api, deviceID);
-            });
+        Promise.all([Auth.authorize(), Devices.getDeviceIDPrompt()])
+            .then(([accessToken, deviceID]) => {
+                this.addDevice(accessToken, deviceID);
+            }).catch(err => vscode.window.showErrorMessage(err.message));
     }
 
     // Remove device from LogStream.
@@ -375,7 +332,16 @@ class LogStream {
     // Parameters:
     //     none
     removeDeviceDialog() {
-        Auth.authorize().then(this.removeDevice.bind(this));
+        Promise.all([Auth.authorize(), Devices.getDeviceIDPrompt()])
+            .then(([accessToken, deviceID]) => {
+                Api.logStreamRemoveDevice(accessToken, this.logStreamID, deviceID)
+                    .then(() => {
+                        this.devices.delete(deviceID);
+                        vscode.window.showInformationMessage(`Device removed: ${deviceID}`);
+                    }, (err) => {
+                        User.showImpApiError(`Cannot remove ${deviceID}`, err);
+                    });
+            }).catch(err => vscode.window.showErrorMessage(err.message));
     }
 
     // Clear LogStream output window.

@@ -32,6 +32,7 @@ const ERRORS = {
     AUTH_LOGIN: 'Auth failed:',
     AUTH_FILE: 'Auth file:',
     AUTH_FILE_NONE: 'Auth file does not exist',
+    AUTH_FILE_ERROR: 'Auth file corrupted',
     BUILDER_FAIL: 'Cannot apply Builder:',
     DEVICE_ID_EMPTY: 'The device ID is empty',
     DEVICE_RETRIEVE: 'Cannot retrieve device:',

@@ -42,6 +42,7 @@ function getDeviceIDPrompt() {
             });
     });
 }
+module.exports.getDeviceIDPrompt = getDeviceIDPrompt;
 
 // Get agent URL related with device.
 // The URL will be displayed in the pop-up message.
@@ -97,7 +98,6 @@ function removeDeviceFromDGDialog() {
                 }, (err) => {
                     User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err);
                 });
-
         }).catch(err => vscode.window.showErrorMessage(err.message));
 }
 module.exports.removeDeviceFromDGDialog = removeDeviceFromDGDialog;
