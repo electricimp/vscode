@@ -40,6 +40,7 @@ const ERRORS = {
     DG_RETRIEVE: 'Cannot retrieve DG:',
     DG_CREATE: 'Cannot create DG:',
     DG_LIST: 'Cannot retrieve DG list:',
+    OWNERS_LIST: 'Cannot retrieve owners list:',
     PRODUCT_ID_EMPTY: 'The product ID is empty',
     PRODUCT_CREATE: 'Cannot create new product:',
     PRODUCT_LIST: 'Cannot retrieve product list:',

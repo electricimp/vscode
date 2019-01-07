@@ -27,6 +27,7 @@ const ImpCentralApi = require('imp-central-api');
 const User = require('./user');
 
 const DeviceGroups = ImpCentralApi.DeviceGroups;
+const Products = ImpCentralApi.Products;
 
 function login(creds) {
     return new Promise((resolve, reject) => {
@@ -79,11 +80,19 @@ function removeDeviceFromDG(accessToken, dgID, deviceID) {
 }
 module.exports.removeDeviceFromDG = removeDeviceFromDG;
 
-function getProductList(accessToken) {
+function getProductList(accessToken, owner) {
     return new Promise((resolve, reject) => {
         const api = new ImpCentralApi();
         api.auth.accessToken = accessToken;
-        api.products.list().then((result) => {
+
+        let filters;
+        if (owner) {
+            filters = {
+                [Products.FILTER_OWNER_ID]: owner,
+            };
+        }
+
+        api.products.list(filters).then((result) => {
             const products = new Map();
             result.data.forEach((item) => {
                 products.set(item.attributes.name, item);
@@ -96,11 +105,44 @@ function getProductList(accessToken) {
 }
 module.exports.getProductList = getProductList;
 
-function getDGList(accessToken) {
+function getOwners(accessToken) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+    return new Promise((resolve, reject) => {
+        getProductList(accessToken, undefined).then((products) => {
+            const accaunts = [];
+            products.forEach((product) => {
+                accaunts.push(api.accounts.get(product.relationships.owner.id));
+            });
+
+            const owners = new Map();
+            Promise.all(accaunts).then((items) => {
+                items.forEach((item) => {
+                    owners.set(item.data.attributes.username, item.data.id);
+                });
+            }).then(() => {
+                resolve(owners);
+            }).catch((err) => { reject(err); });
+        }, (err) => {
+            reject(err);
+        });
+    });
+}
+module.exports.getOwners = getOwners;
+
+function getDGList(accessToken, owner) {
     return new Promise((resolve, reject) => {
         const api = new ImpCentralApi();
         api.auth.accessToken = accessToken;
-        api.deviceGroups.list().then((result) => {
+
+        let filters;
+        if (owner) {
+            filters = {
+                [DeviceGroups.FILTER_OWNER_ID]: owner,
+            };
+        }
+
+        api.deviceGroups.list(filters).then((result) => {
             const deviceGroups = new Map();
             result.data.forEach((item) => {
                 deviceGroups.set(item.attributes.name, item);

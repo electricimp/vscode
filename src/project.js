@@ -61,7 +61,7 @@ const backButton = new Button({
 async function getDGName(input, state) {
     let dgList;
     try {
-        dgList = await Api.getDGList(state.accessToken);
+        dgList = await Api.getDGList(state.accessToken, state.owner);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -89,7 +89,7 @@ async function getDGName(input, state) {
 async function getProductName(input, state) {
     let productList;
     try {
-        productList = await Api.getProductList(state.accessToken);
+        productList = await Api.getProductList(state.accessToken, state.owner);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -119,7 +119,7 @@ async function getProductName(input, state) {
 async function pickDGFromList(input, state) {
     let dgList;
     try {
-        dgList = await Api.getDGList(state.accessToken);
+        dgList = await Api.getDGList(state.accessToken, state.owner);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -146,7 +146,7 @@ async function pickDGFromList(input, state) {
 async function pickProductFromList(input, state) {
     let productList;
     try {
-        productList = await Api.getProductList(state.accessToken);
+        productList = await Api.getProductList(state.accessToken, state.owner);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -206,30 +206,60 @@ async function pickNewProjectType(input, state) {
     }
 }
 
-async function checkIfProjectAlreadyExist(input, state) {
+async function pickOwner(input, state) {
+    let owners;
     try {
-        await Workspace.Data.getWorkspaceInfo();
-        const pick = await input.showQuickPick(
-            getTitle(),
-            0,
-            3,
-            'The project already exist, overwrite it?',
-            ['No', 'Yes'].map(label => ({ label })),
-            typeof state.alreadyExist !== 'string' ? state.projectType : undefined,
-            undefined,
-            shouldResume,
-        );
+        owners = await Api.getOwners(state.accessToken);
+    } catch (err) {
+        const nextState = state;
+        nextState.err = err;
+        User.showImpApiError(`${User.ERRORS.OWNERS_LIST}`, nextState.err);
+        return undefined;
+    }
 
-        if (pick.label === 'Yes') {
-            const nextState = state;
-            return nextIn => pickNewProjectType(nextIn, nextState);
-        }
+    const pick = await input.showQuickPick(
+        getTitle(),
+        0,
+        3,
+        'Pick the owner',
+        Array.from(owners.keys()).map(label => ({ label })),
+        typeof state.owner !== 'string' ? state.owner : undefined,
+        undefined,
+        shouldResume,
+    );
+
+    const nextState = state;
+    nextState.owner = owners.get(pick.label);
+    return nextIn => pickNewProjectType(nextIn, nextState);
+}
+
+async function checkIfProjectAlreadyExist(input, state) {
+    let config;
+    try {
+        config = await Workspace.Data.getWorkspaceInfo();
     } catch (err) {
         // Correct behaviour, we cannot read workspace in the cwd.
         const nextState = state;
-        return nextIn => pickNewProjectType(nextIn, nextState);
+        return nextIn => pickOwner(nextIn, nextState);
     }
 
+    const pick = await input.showQuickPick(
+        getTitle(),
+        0,
+        3,
+        'The project already exist, overwrite it?',
+        ['No', 'Yes'].map(label => ({ label })),
+        typeof state.alreadyExist !== 'string' ? state.projectType : undefined,
+        undefined,
+        shouldResume,
+    );
+
+    const nextState = state;
+    if (pick.label === 'Yes') {
+        return nextIn => pickOwner(nextIn, nextState);
+    }
+
+    nextState.config = config;
     return undefined;
 }
 
@@ -395,6 +425,10 @@ class Project {
          * 4) if state.type == 'New Product':
          * state should contain state.productName and state.dgName.
          * The product and device group could be created later.
+         *
+         * 5) if state.config is defined, it mean that user rejected new project creation.
+         *
+         * 6) The state.owner should be defined in all cases.
          */
         console.log(util.inspect(state, { showHidden: false, depth: null }));
     }
