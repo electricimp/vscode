@@ -64,6 +64,7 @@ const MESSAGES = {
     AUTH_PROMPT_ENTER_PWD: 'Enter password:',
     AUTH_SUCCESS: 'Workspace login is successful',
     DEVICE_PROMPT_DEVICE_ID: 'Enter a valid device ID:',
+    WORKSPACE_CREATED: 'Project created.',
     WORKSPACE_PROMPT_DG_EXIST: 'Enter an exist device group ID:',
     WORKSPACE_PROMPT_DG_NEW: 'Enter a new device group name:',
     WORKSPACE_PROMPT_PRODUCT_EXIST: 'Enter an exist product ID:',

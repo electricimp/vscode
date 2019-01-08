@@ -41,21 +41,9 @@ function activate(context) {
         }
     }));
 
-    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.dg.exist', () => {
+    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.new', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
-            Workspace.newProjectDGExistDialog();
-        }
-    }));
-
-    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.dg.new', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            Workspace.newProjectDGNewDialog();
-        }
-    }));
-
-    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.product.new', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            Workspace.newProjectProductNewDialog();
+            Project.newProjectDialog();
         }
     }));
 
@@ -104,12 +92,6 @@ function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('imp.device.agenturl', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
             Devices.getAgentURLDialog();
-        }
-    }));
-
-    context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.new', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            Project.newProjectDialog();
         }
     }));
 

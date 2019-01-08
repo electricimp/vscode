@@ -59,17 +59,24 @@ const backButton = new Button({
 }, 'Create Resource Group');
 
 async function getDGName(input, state) {
+    let checkName;
     let dgList;
-    try {
-        dgList = await Api.getDGList(state.accessToken, state.owner);
-    } catch (err) {
-        const nextState = state;
-        nextState.err = err;
-        User.showImpApiError(`${User.ERRORS.DG_LIST}`, nextState.err);
-        return;
-    }
-
     function nameIsUnique(name) { return dgList.get(name) ? 'Already exist' : ''; }
+
+    if (state.product) {
+        try {
+            dgList = await Api.getDGList(state.accessToken, state.product.id, state.owner);
+        } catch (err) {
+            const nextState = state;
+            nextState.err = err;
+            User.showImpApiError(`${User.ERRORS.DG_LIST}`, nextState.err);
+            return;
+        }
+
+        checkName = nameIsUnique;
+    } else {
+        checkName = () => {};
+    }
 
     const pick = await input.showInputBox(
         getTitle(),
@@ -77,7 +84,7 @@ async function getDGName(input, state) {
         3,
         state.dgName || '',
         'Choose a unique DG name',
-        nameIsUnique,
+        checkName,
         [backButton],
         shouldResume,
     );
@@ -97,7 +104,7 @@ async function getProductName(input, state) {
         return undefined;
     }
 
-    function nameIsUnique(name) { return productList.get(name); }
+    function nameIsUnique(name) { return productList.get(name) ? 'Already exist' : ''; }
 
     const pick = await input.showInputBox(
         getTitle(),
@@ -119,7 +126,7 @@ async function getProductName(input, state) {
 async function pickDGFromList(input, state) {
     let dgList;
     try {
-        dgList = await Api.getDGList(state.accessToken, state.owner);
+        dgList = await Api.getDGList(state.accessToken, state.product.id, state.owner);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -263,13 +270,11 @@ async function checkIfProjectAlreadyExist(input, state) {
     return undefined;
 }
 
-class FlowAction {
-    constructor() {
-        this.back = new FlowAction();
-        this.cancel = new FlowAction();
-        this.resume = new FlowAction();
-    }
-}
+const FlowAction = {
+    back: 0,
+    cancel: 1,
+    resume: 2,
+};
 
 class Project {
     constructor() {
@@ -431,6 +436,21 @@ class Project {
          * 6) The state.owner should be defined in all cases.
          */
         console.log(util.inspect(state, { showHidden: false, depth: null }));
+        switch (state.type) {
+        case projectTypes.existDG:
+            Workspace.newProjectExistDG(state.dg.id);
+            break;
+        case projectTypes.newDG:
+            Workspace.newProjectNewDG(state.accessToken, state.product, state.dgName);
+            break;
+        case projectTypes.newProduct:
+            Workspace.newProjectNewProduct(state.accessToken, state.productName, state.dgName, state.owner);
+            break;
+        default:
+            return undefined;
+        }
+
+        return undefined;
     }
 }
 

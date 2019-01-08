@@ -27,6 +27,7 @@ const path = require('path');
 const fs = require('fs');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
+const Api = require('./api');
 const Auth = require('./auth');
 const Preproc = require('./preprocessor');
 const User = require('./user');
@@ -319,7 +320,7 @@ class Data {
 }
 module.exports.Data = Data;
 
-function createProjectFiles(dgID) {
+function createProjectFiles(dgID, force = false) {
     return new Promise((resolve, reject) => {
         const defaultOptions = {
             deviceGroupId: dgID,
@@ -328,14 +329,14 @@ function createProjectFiles(dgID) {
         };
 
         const agentPath = path.join(Path.getPWD(), defaultOptions.agent_code);
-        if (fs.existsSync(agentPath)) {
+        if (fs.existsSync(agentPath) && !force) {
             vscode.window.showTextDocument(vscode.workspace.openTextDocument(agentPath));
             reject(User.ERRORS.WORKSPACE_SRC_AGENT_EXIST);
             return;
         }
 
         const devPath = path.join(Path.getPWD(), defaultOptions.device_code);
-        if (fs.existsSync(devPath)) {
+        if (fs.existsSync(devPath) && !force) {
             vscode.window.showTextDocument(vscode.workspace.openTextDocument(devPath));
             reject(User.ERRORS.WORKSPACE_SRC_DEVICE_EXIST);
             return;
@@ -362,197 +363,50 @@ function createProjectFiles(dgID) {
     });
 }
 
-function newProjectDGExist(accessToken) {
-    Data.getWorkspaceInfo().then(() => {
-        vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_CFG_EXIST);
-        const document = vscode.workspace.openTextDocument(Path.getConfig());
-        vscode.window.showTextDocument(document);
-    }, (workspaceErr) => {
-        if (workspaceErr !== User.ERRORS.WORSPACE_CFG_NONE) {
-            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${workspaceErr}`);
-            return;
-        }
+function showCreatedProjectConfig() {
+    vscode.window.showTextDocument(vscode.workspace.openTextDocument(Path.getConfig()));
+    vscode.window.showInformationMessage(`${User.MESSAGES.WORKSPACE_CREATED}`);
+}
 
-        vscode.window.showInputBox({ prompt: User.MESSAGES.WORKSPACE_PROMPT_DG_EXIST })
-            .then((deviceGroupId) => {
-                if (!deviceGroupId) {
-                    vscode.window.showErrorMessage(User.ERRORS.DG_ID_EMPTY);
-                    return;
-                }
-
-                const api = new ImpCentralApi();
-                api.auth.accessToken = accessToken;
-                api.deviceGroups.get(deviceGroupId)
-                    .then((dg) => {
-                        createProjectFiles(dg.data.id).then(() => {}, (err) => {
-                            vscode.window.showErrorMessage(`Cannot create project: ${err}`);
-                        });
-                    }, (err) => {
-                        User.showImpApiError(`${User.ERRORS.DG_RETRIEVE}`, err);
-                    });
-            });
+function newProjectExistDG(dgID) {
+    createProjectFiles(dgID, true).then(() => {
+        showCreatedProjectConfig();
+    }, (err) => {
+        vscode.window.showErrorMessage(`Cannot create project: ${err}`);
     });
 }
+module.exports.newProjectExistDG = newProjectExistDG;
 
-// Initialize vscode workspace,
-// create imp conlfiguration file in the directory based on exist DG.
-//
-// Parameters:
-//     none
-function newProjectDGExistDialog() {
-    Auth.authorize().then(newProjectDGExist);
-}
-module.exports.newProjectDGExistDialog = newProjectDGExistDialog;
-
-function promptDGNew() {
-    return new Promise(((resolve, reject) => {
-        vscode.window.showInputBox({ prompt: User.MESSAGES.WORKSPACE_PROMPT_PRODUCT_EXIST })
-            .then((product) => {
-                if (!product) {
-                    vscode.window.showErrorMessage(User.ERRORS.PRODUCT_ID_EMPTY);
-                    reject();
-                    return;
-                }
-
-                vscode.window.showInputBox({ prompt: User.MESSAGES.WORKSPACE_PROMPT_DG_NEW })
-                    .then((dg) => {
-                        if (!dg) {
-                            vscode.window.showErrorMessage(User.MESSAGES.DG_ID_EMPTY);
-                            reject();
-                            return;
-                        }
-
-                        const newDGOptions = {
-                            productID: product,
-                            dgName: dg,
-                        };
-
-                        resolve(newDGOptions);
-                    });
+function newProjectNewDG(accessToken, product, dgName) {
+    Api.newDG(accessToken, product.id, dgName)
+        .then((dg) => {
+            createProjectFiles(dg.data.id, true).then(() => {
+                showCreatedProjectConfig();
+            }, (err) => {
+                vscode.window.showErrorMessage(`Cannot create project: ${err}`);
             });
-    }));
-}
-
-function newProjectDGNew(accessToken) {
-    Data.getWorkspaceInfo().then(() => {
-        vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_CFG_EXIST);
-        const document = vscode.workspace.openTextDocument(Path.getConfig());
-        vscode.window.showTextDocument(document);
-    }, (workspaceErr) => {
-        if (workspaceErr !== User.ERRORS.WORSPACE_CFG_NONE) {
-            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${workspaceErr}`);
-            return;
-        }
-
-        promptDGNew().then((newDGOptions) => {
-            if (!newDGOptions.dgName) {
-                vscode.window.showErrorMessage(User.MESSAGES.DG_ID_EMPTY);
-                return;
-            }
-
-            const attrs = {
-                name: newDGOptions.dgName,
-            };
-
-            const api = new ImpCentralApi();
-            api.auth.accessToken = accessToken;
-            api.deviceGroups.create(newDGOptions.productID, DevGroups.TYPE_DEVELOPMENT, attrs)
-                .then((dg) => {
-                    createProjectFiles(dg.data.id).then(() => {}, (err) => {
-                        vscode.window.showErrorMessage(`Cannot create project: ${err}`);
-                    });
-                }, (err) => {
-                    User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
-                });
+        }, (err) => {
+            User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
         });
-    });
 }
+module.exports.newProjectNewDG = newProjectNewDG;
 
-// Initialize vscode workspace,
-// create imp conlfiguration file in the directory based on new DG.
-//
-// Parameters:
-//     none
-function newProjectDGNewDialog() {
-    Auth.authorize().then(newProjectDGNew);
-}
-module.exports.newProjectDGNewDialog = newProjectDGNewDialog;
-
-function promptProductNew() {
-    return new Promise(((resolve, reject) => {
-        vscode.window.showInputBox({ prompt: User.MESSAGES.WORKSPACE_PROMPT_PRODUCT_NEW })
-            .then((product) => {
-                if (!product) {
-                    vscode.window.showErrorMessage(User.ERRORS.PRODUCT_ID_EMPTY);
-                    reject();
-                    return;
-                }
-
-                vscode.window.showInputBox({ prompt: User.MESSAGES.WORKSPACE_PROMPT_DG_NEW })
-                    .then((dg) => {
-                        if (!dg) {
-                            vscode.window.showErrorMessage(User.ERRORS.DEVICE_ID_EMPTY);
-                            reject();
-                            return;
-                        }
-
-                        const newProductOptions = {
-                            productName: product,
-                            dgName: dg,
-                        };
-
-                        resolve(newProductOptions);
-                    });
+function newProjectNewProduct(accessToken, productName, dgName, ownerID) {
+    Api.newProduct(accessToken, productName, ownerID).then((product) => {
+        Api.newDG(accessToken, product.data.id, dgName).then((dg) => {
+            createProjectFiles(dg.data.id, true).then(() => {
+                showCreatedProjectConfig();
+            }, (err) => {
+                vscode.window.showErrorMessage(`Cannot create project: ${err}`);
             });
-    }));
-}
-
-function newProjectProductNew(accessToken) {
-    Data.getWorkspaceInfo().then(() => {
-        vscode.window.showErrorMessage(User.ERRORS.WORKSPACE_CFG_EXIST);
-        const document = vscode.workspace.openTextDocument(Path.getConfig());
-        vscode.window.showTextDocument(document);
-    }, (workspaceErr) => {
-        if (workspaceErr !== User.ERRORS.WORSPACE_CFG_NONE) {
-            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${workspaceErr}`);
-            return;
-        }
-
-        promptProductNew().then((newProductOptions) => {
-            const attrs = {
-                name: newProductOptions.productName,
-            };
-
-            const api = new ImpCentralApi();
-            api.auth.accessToken = accessToken;
-            api.products.create(attrs)
-                .then((product) => {
-                    const pID = product.data.id;
-                    attrs.name = newProductOptions.dgName;
-                    api.deviceGroups.create(pID, DevGroups.TYPE_DEVELOPMENT, attrs)
-                        .then((dg) => {
-                            createProjectFiles(dg.data.id).then(() => {}, (err) => {
-                                vscode.window.showErrorMessage(`Cannot create project: ${err}`);
-                            });
-                        }, (err) => {
-                            User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
-                        });
-                }, (err) => {
-                    User.showImpApiError(`${User.ERRORS.PRODUCT_CREATE}`, err);
-                });
+        }, (err) => {
+            User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
         });
+    }, (err) => {
+        User.showImpApiError(`${User.ERRORS.PRODUCT_CREATE}`, err);
     });
 }
-
-// Initialize vscode workspace,
-// create imp conlfiguration file in the directory based on new Product and new DG.
-//
-// Parameters:
-//     none
-function newProjectProductNewDialog() {
-    Auth.authorize().then(newProjectProductNew);
-}
-module.exports.newProjectProductNewDialog = newProjectProductNewDialog;
+module.exports.newProjectNewProduct = newProjectNewProduct;
 
 // Deploy the source code (agent.nut, device.nut) on device group.
 //

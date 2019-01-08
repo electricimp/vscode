@@ -18,16 +18,13 @@
   ],
   "activationEvents": [
     "onCommand:imp.auth.creds",
-    "onCommand:imp.workspace.project.dg.exist",
-    "onCommand:imp.workspace.project.dg.new",
-    "onCommand:imp.workspace.project.product.new",
+    "onCommand:imp.workspace.project.new",
     "onCommand:imp.workspace.project.deploy",
     "onCommand:imp.logstream.add",
     "onCommand:imp.logstream.remove",
     "onCommand:imp.device.add",
     "onCommand:imp.device.remove",
     "onCommand:imp.device.agenturl",
-    "onCommand:imp.workspace.project.new",
     "onCommand:imp.show.commands",
     "onLanguage:squirrel"
   ],
@@ -39,16 +36,8 @@
         "title": "imp: Auth User Password"
       },
       {
-        "command": "imp.workspace.project.dg.exist",
-        "title": "imp: New Project, exist DG"
-      },
-      {
-        "command": "imp.workspace.project.dg.new",
-        "title": "imp: New Project, new DG"
-      },
-      {
-        "command": "imp.workspace.project.product.new",
-        "title": "imp: New Project, new Product"
+        "command": "imp.workspace.project.new",
+        "title": "imp: New Project"
       },
       {
         "command": "imp.workspace.project.deploy",
@@ -81,10 +70,6 @@
       {
         "command": "imp.device.agenturl",
         "title": "imp: Get agent URL"
-      },
-      {
-        "command": "imp.workspace.project.new",
-        "title": "imp: New Project"
       },
       {
         "command": "imp.show.commands",

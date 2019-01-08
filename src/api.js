@@ -109,20 +109,12 @@ function getOwners(accessToken) {
     const api = new ImpCentralApi();
     api.auth.accessToken = accessToken;
     return new Promise((resolve, reject) => {
-        getProductList(accessToken, undefined).then((products) => {
-            const accaunts = [];
-            products.forEach((product) => {
-                accaunts.push(api.accounts.get(product.relationships.owner.id));
-            });
-
+        api.accounts.list().then((accaunts) => {
             const owners = new Map();
-            Promise.all(accaunts).then((items) => {
-                items.forEach((item) => {
-                    owners.set(item.data.attributes.username, item.data.id);
-                });
-            }).then(() => {
-                resolve(owners);
-            }).catch((err) => { reject(err); });
+            accaunts.data.forEach((item) => {
+                owners.set(item.attributes.username, item.id);
+            });
+            resolve(owners);
         }, (err) => {
             reject(err);
         });
@@ -130,14 +122,15 @@ function getOwners(accessToken) {
 }
 module.exports.getOwners = getOwners;
 
-function getDGList(accessToken, owner) {
+function getDGList(accessToken, product, owner) {
     return new Promise((resolve, reject) => {
         const api = new ImpCentralApi();
         api.auth.accessToken = accessToken;
 
         let filters;
-        if (owner) {
+        if (product || owner) {
             filters = {
+                [DeviceGroups.FILTER_PRODUCT_ID]: product,
                 [DeviceGroups.FILTER_OWNER_ID]: owner,
             };
         }
@@ -155,15 +148,15 @@ function getDGList(accessToken, owner) {
 }
 module.exports.getDGList = getDGList;
 
-function newProduct(accessToken, productName) {
+function newProduct(accessToken, productName, ownerID = null) {
     const attrs = {
         name: productName,
     };
 
-    return Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         const api = new ImpCentralApi();
         api.auth.accessToken = accessToken;
-        api.products.create(attrs).then((product) => {
+        api.products.create(attrs, ownerID).then((product) => {
             resolve(product);
         }, (err) => {
             reject(err);
