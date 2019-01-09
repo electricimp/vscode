@@ -40,12 +40,19 @@ const Workspace = require('./workspace');
  */
 
 class LogStream {
-    constructor(diagnostic) {
+    constructor(diagnostic, playPauseItem) {
         this.diagnostic = diagnostic;
         this.logStreamID = undefined;
         this.outputChannel = undefined;
         this.devices = new Set();
         this.pause = false;
+
+        // Play/Pause LogStream status bar item
+        this.playChar = '\u25b6';
+        this.pauseChar = '\u23f8';
+        this.playPauseItem = playPauseItem;
+        this.playPauseItem.text = `LogStream ${this.pauseChar}`;
+        this.playPauseItem.tooltip = 'Play/Pause the LogStream';
     }
 
     static getTypeInfo(type) {
@@ -291,6 +298,7 @@ class LogStream {
                     .then(() => {
                         this.outputChannel.show(true);
                         this.devices.add(deviceID);
+                        this.playPauseItem.show();
                         vscode.window.showInformationMessage(`Device added: ${deviceID}`);
                         resolve();
                     }, (err) => {
@@ -306,6 +314,7 @@ class LogStream {
                             .then(() => {
                                 this.outputChannel.show(true);
                                 this.devices.add(deviceID);
+                                this.playPauseItem.show();
                                 vscode.window.showInformationMessage(`Device added: ${deviceID}`);
                                 resolve();
                             });
@@ -324,7 +333,8 @@ class LogStream {
         Promise.all([Auth.authorize(), Devices.getDeviceIDPrompt()])
             .then(([accessToken, deviceID]) => {
                 this.addDevice(accessToken, deviceID);
-            }).catch(err => vscode.window.showErrorMessage(err.message));
+            })
+            .catch(err => vscode.window.showErrorMessage(err.message));
     }
 
     // Remove device from LogStream.
@@ -368,6 +378,11 @@ class LogStream {
         }
 
         this.pause = !this.pause;
+        if (this.pause) {
+            this.playPauseItem.text = `LogStream ${this.playChar}`;
+        } else {
+            this.playPauseItem.text = `LogStream ${this.pauseChar}`;
+        }
     }
 }
 module.exports = LogStream;
