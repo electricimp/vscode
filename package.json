@@ -5,6 +5,7 @@
   "version": "0.0.1",
   "publisher": "Electric Imp",
   "icon": "simple_nut.png",
+  "license": "SPDX-License-Identifier: MIT",
   "engines": {
     "vscode": "^1.28.0"
   },
