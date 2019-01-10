@@ -1,32 +1,52 @@
 # Electric Imp impCentral Microsoft Visual Studio Code extension (Early Beta)
 
-Microsoft Visual Studio Code extension for Electric Imp applications development.
+[Visual Studio Code](https://code.visualstudio.com/) extension for [Electric Imp](https://electricimp.com) applications development.
 
-## Overview
+- [Overview](#overview)
+- [Installation (TODO:)](#installation)
+- [Extension Commands List](#extension-commands-list)
+- [Visual Studio Code Extension Usage](#visual-studio-code-extension-usage)
+    - [Creating a New Project](#creating-a-new-project)
+    - [Opening an Existing Project](#opening-an-existing-project)
+    - [Building and Running](#building-and-running)
+    - [The Log Console](#the-log-console)
+    - [Adding a Device to the Project Device Group](#adding-a-device-to-the-project-device-group)
+    - [Removing a Device from the Project Device Group](#removing-a-device-from-the-project-device-group)
+    - [Retrieving a Device’s Agent URL](#retrieving-a-devices-agent-url)
+    - [Keyboard Shortcuts](#keyboard-shortcuts)
+- [Preprocessor and Multi-File Support](#preprocessor-and-multi-file-support)
+    - [(TODO:) Specifying GitHub Authentication Information](#specifying-github-authentication-information)
+    - [(TODO:) Specifying Builder Preset Variable Definitions](#specifying-builder-preset-variable-definitions)
 
-The Plug-in is designed to improve developer productivity. It allows you to rapidly build and maintain applications by providing:
 
-* Advanced Squirrel code highlighting
+## Overview ##
+
+The Plug-in is designed to improve developer productivity. It allows you to rapidly build and maintain applications by
+providing:
+
 * Code auto-completion for [Electric Imp’s imp API](https://developer.electricimp.com/api)
-* Source code deployment and debug.
-* Ability to work with imp infrastructure.
+* The ability to use a source control system to manage application code and configuration
+* Advanced Squirrel code highlighting
+* Integration with [impWorks™ Builder](https://github.com/electricimp/Builder) to enable multi-file
+projects and code pre-processing
+* Live logs with clickable stack traces for errors, including navigation to the file and line in question
+* Key shortcuts for frequent operations (build and run, show console, etc.)
+* Leverages Visual Studio Code’s rich set of features.
 
 The Plug-in requires connection to the Internet as it leverages the
 [Electric Imp impCentral™ API](https://developer.electricimp.com/tools/impcentralapi)
 to work with the [Electric Imp impCloud™](https://electricimp.com/platform/cloud/).
 
-## Installation
+## Installation ##
 
-The installation process, starting from nodejs installation will be described here. 
+(TODO:) The installation process, starting from nodejs installation will be described here. 
 
-## Extension Settings
+## Extension Commands List ##
 
 This extension contributes the following commands:
 
 * `imp: Auth User Password`: Create authrization file with access token in the selected workspace directory.
-* `imp: New Project, exist DG`: Create configuration file and source code files in the selected workspace directory using exist device group ID.
-* `imp: New Project, new DG`: Create configuration file and source code files in the selected workspace directory using freshly created device group.
-* `imp: New Project, new Product`: Create configuration file and source code files in the selected workspace directory using freshly created product and device group.
+* `imp: New Project`: Create configuration file and source code files in the selected workspace directory.
 * `imp: Deploy Project`: Deploy the source code on the selected device group and reset the devices.
 * `imp: Add Device Logs`: Add selected device logs to the console output.
 * `imp: Remove Device Logs`: Remove selected device logs from the console output.
@@ -35,8 +55,103 @@ This extension contributes the following commands:
 * `imp: Add Device to current DG`: Add device to workspace device group.
 * `imp: Remove Device from current DG`: Remove device from the workspace device group.
 * `imp: Get agent URL`: Get agent URL.
+* `imp: Show All Commands...`: Show the list of extension commands.
 
-## Current limitations
+## Visual Studio Code Extension Usage ##
+
+### Creating a New Project ###
+
+Select new project working folder using the ’File’ > ’Open Folder...’, if it was not done previously. Your next step should be the creation of a new project. Do this by selecting the ‘View’ > ‘Command Palette...’ > ‘`imp: New Project`‘ menu item.
+
+The project folder will be set up with the following:
+
+```
+-- <Project Working Folder>
+  |--> settings                           - Electric Imp settings folder
+  .   |--> auth.info                      - SENSITIVE: impCentral API tokens and 
+  .   |                                     GitHub authentication information
+  .   |--> imp.config                     - Generic Electric Imp settings
+  |--> src                                - Source folder
+  .   |--> device.nut                     - Device code
+  .   |--> agent.nut                      - Agent code
+  |--> .gitignore                         - .gitignore file to exclude auth.info file 
+                                            from git repository
+```
+
+**Important** `settings/auth.info` **should not be put under source control as it contains sensitive information**
+
+The `imp.config` file contains:
+
+- A unique Device Group identifier.
+- Device and agent code file names.
+
+#### Example ####
+
+```
+{
+  "deviceGroupId" : "<device group id>",
+  "device_code"   : "<path to device source file, src/device.nut by default>",
+  "agent_code"    : "<path to agent source file, src/agent.nut by default>",
+}
+```
+
+When a project is created, empty device and agent code files (`device.nut` and `agent.nut`) are automatically created
+and stored in the `<Project Working Folder>/src` folder.
+
+If a project is created successfully, a `imp.config` file is opened.
+
+**Note** If the Project Working Folder is not opened in the Visual Studio Code, all extension commands will not work.
+
+**Important** The code which is deployed to the Device Group is preprocessed and contains line control markers. When you select an existing Device Group, the plug-in pulls down the code, but it doesn’t transfer the project file/folder structure. So for collaborative work on the same project, please share the original Electric Imp plug-in project sources/structure via a source control system.
+
+### Opening an Existing Project ###
+
+To open an existing Electric Imp project, just use the ‘File’ > ‘Open Folder...’ to open `<Project Working Folder>`.
+
+### Building and Running ###
+
+To build and deploy code, please select the ‘View’ > ‘Command Palette...’ > ‘`imp: Deploy Project`‘
+menu item. This action uploads the agent and the device code to the server, and restarts all of the devices assigned to the target Device Group. If you want to have you code running on a specific devices and view the logs from that devices, you need to select them using the ‘View’ > ‘Command Palette...’ > ‘`imp: Add Device to current DG`’ menu item. The ‘`imp: Remove Device from current DG`’ menu item removes a device from the project’s Device Group.
+
+**Note** (TODO:) To build and deploy your code it isn’t necessary to assign a device to the Device Group. If you don’t have a device assigned, you can still work on the code and see compilation errors reported by the server.
+
+### The Log Console ###
+
+The live logs are streamed to ‘View‘ > ‘Output‘. It is possible to add the specified device live logs by it's ID using `imp: Add Device Logs` extension command. The Output shows live logs streamed from the current Device Group if the group contains at least one device.
+
+### Adding a Device to the Project Device Group ###
+
+To assign devices to the project’s Device Group, go to the ‘View’ > ‘Command Palette...’ > ‘`imp: Add Device to current DG`’ (TODO:) menu item and select a device from the list. The newly added device is automatically attached to the console log stream.
+
+### Removing a Device from the Project Device Group ###
+
+Devices can be removed from the project’s Device Group by selecting the ‘View’ > ‘Command Palette...’ > ‘`imp: Remove Device from current DG`’.
+
+**Note** (TODO:) The log will be restarted when a device is unassigned.
+
+### Retrieving a Device’s Agent URL ###
+
+The URL of a device’s agent can be retrieved by selecting the ‘View’ > ‘Command Palette...’ > ‘`imp: Get agent URL`’ menu item. The URL is displayed in the pop-up Information Message.
+
+### Keyboard Shortcuts ###
+
+**Note** (TODO:) Electric Imp-specific menu items are only available if an Electric Imp project is opened in the currently active window.
+
+| Command | Keypress |
+| ------- | -------- |
+| Create Project | ? |
+| Build and Run | Ctrl + Shift + B |
+| Show Logs Console | ? |
+
+## Preprocessor and Multi-File Support ##
+
+Please refer to the [Builder documentation](https://developer.electricimp.com/tools/builder) for more information on the preprocessor syntax that you can use in your Squirrel code.
+
+## License ##
+
+The Electric Imp Sublime Plug-in is licensed under the [MIT License](./LICENSE).
+
+## Current limitations (TODO: will be removed)
 
 This is a very early version of extension, so the functionality is heavily restricted. The only available checked scenario is described below:
 - Download the extension from github.
@@ -50,18 +165,4 @@ The successful login procedure will be ended with pop-up notification in the rig
 - Make some changes in the device.nut and agent.nut and run `imp: Deploy Project`. The pop-up window with information message will be displayed in case of success.
 It is expected, that source code will be deployed on the selected device group and all devices will receive reset signal.
 
-## TODO (Current scope view)
-### Development scope:
-* Whole node codebase quality improvements (continuous).
-* Refresh access token functionality.
-* Products, device groups and devices manipulation (should be split).
-* Errors detection in the device logs.
-* Errors highlighting.
-* Errors links between logs and source code.
-* Investigate reasons to move the existing code base to TypeScript (some time later).
 
-### Testing and doc scope:
-* Fill this README file correctly.
-* Test and document some use-cases for source code development and deployment.
-* Test current syntax highlighting implementation.
-* Investigate vscode extensions testing capabilities (some unit-test frameworks could be used).
