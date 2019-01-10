@@ -46,13 +46,6 @@ class LogStream {
         this.outputChannel = undefined;
         this.devices = new Set();
         this.pause = false;
-
-        // Play/Pause LogStream status bar item
-        this.playChar = '\u25b6';
-        this.pauseChar = '\u23f8';
-        this.playPauseItem = playPauseItem;
-        this.playPauseItem.text = `LogStream ${this.pauseChar}`;
-        this.playPauseItem.tooltip = 'Play/Pause the LogStream';
     }
 
     static getTypeInfo(type) {
@@ -383,6 +376,15 @@ class LogStream {
         } else {
             this.playPauseItem.text = `LogStream ${this.pauseChar}`;
         }
+    }
+
+    setPauseLogsItem(playPauseItem) {
+        // Play/Pause LogStream status bar item
+        this.playChar = '\u25b6';
+        this.pauseChar = '\u23f8';
+        this.playPauseItem = playPauseItem;
+        this.playPauseItem.text = `LogStream ${this.pauseChar}`;
+        this.playPauseItem.tooltip = 'Play/Pause the LogStream';
     }
 }
 module.exports = LogStream;

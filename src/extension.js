@@ -32,8 +32,7 @@ const Diagnostic = require('./diagnostic');
 const Project = require('./project');
 
 const diagnostic = new Diagnostic();
-const playPauseItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-const logstream = new LogStream(diagnostic, playPauseItem);
+const logstream = new LogStream(diagnostic);
 
 function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('imp.auth.creds', () => {
@@ -113,8 +112,10 @@ function activate(context) {
         });
     }));
 
+    const playPauseItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
     playPauseItem.command = 'imp.logstream.pause';
     context.subscriptions.push(playPauseItem);
+    logstream.setPauseLogsItem(playPauseItem);
 }
 exports.activate = activate;
 
