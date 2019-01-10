@@ -31,7 +31,11 @@ const Auth = require('./auth');
 const User = require('./user');
 const Workspace = require('./workspace');
 
-function getTitle() {
+function getLoginTitle() {
+    return 'Electric Imp Login';
+}
+
+function getCreateProjectTitle() {
     return 'Create New Project';
 }
 
@@ -42,7 +46,13 @@ const projectTypes = {
 };
 
 function shouldResume() {
-    return new Promise(() => {});
+    return new Promise((resolve) => {
+        if (vscode.window.state.focused) {
+            resolve(false);
+        } else {
+            resolve(true);
+        }
+    });
 }
 
 class Button {
@@ -57,6 +67,41 @@ const backButton = new Button({
     dark: vscode.Uri.file(path.join(Workspace.Path.getPWD(), 'resources/dark/add.svg')),
     light: vscode.Uri.file(path.join(Workspace.Path.getPWD(), 'resources/light/add.svg')),
 }, 'Create Resource Group');
+
+async function getPassword(input, state) {
+    const pick = await input.showInputBox(
+        getLoginTitle(),
+        2,
+        2,
+        state.password || '',
+        User.MESSAGES.AUTH_PROMPT_ENTER_PWD,
+        () => {},
+        undefined,
+        shouldResume,
+        true,
+    );
+
+    const nextState = state;
+    nextState.password = pick;
+}
+
+async function getUsername(input, state) {
+    const pick = await input.showInputBox(
+        getLoginTitle(),
+        1,
+        2,
+        state.username || '',
+        User.MESSAGES.AUTH_PROMPT_ENTER_CREDS,
+        () => {},
+        undefined,
+        shouldResume,
+    );
+
+    const nextState = state;
+    nextState.username = pick;
+
+    return nextIn => getPassword(nextIn, nextState);
+}
 
 async function getDGName(input, state) {
     let checkName;
@@ -79,7 +124,7 @@ async function getDGName(input, state) {
     }
 
     const pick = await input.showInputBox(
-        getTitle(),
+        getCreateProjectTitle(),
         3,
         3,
         state.dgName || '',
@@ -91,6 +136,7 @@ async function getDGName(input, state) {
 
     const nextState = state;
     nextState.dgName = pick;
+    nextState.completed = true;
 }
 
 async function getProductName(input, state) {
@@ -107,7 +153,7 @@ async function getProductName(input, state) {
     function nameIsUnique(name) { return productList.get(name) ? 'Already exist' : ''; }
 
     const pick = await input.showInputBox(
-        getTitle(),
+        getCreateProjectTitle(),
         2,
         3,
         state.productName || '',
@@ -135,7 +181,7 @@ async function pickDGFromList(input, state) {
     }
 
     const pick = await input.showQuickPick(
-        getTitle(),
+        getCreateProjectTitle(),
         3,
         3,
         'Pick the DG name',
@@ -148,6 +194,7 @@ async function pickDGFromList(input, state) {
     const nextState = state;
     nextState.dgName = pick.label;
     nextState.dg = dgList.get(pick.label);
+    nextState.completed = true;
 }
 
 async function pickProductFromList(input, state) {
@@ -162,7 +209,7 @@ async function pickProductFromList(input, state) {
     }
 
     const pick = await input.showQuickPick(
-        getTitle(),
+        getCreateProjectTitle(),
         2,
         3,
         'Pick the product name',
@@ -187,7 +234,7 @@ async function pickProductFromList(input, state) {
 
 async function pickNewProjectType(input, state) {
     const pick = await input.showQuickPick(
-        getTitle(),
+        getCreateProjectTitle(),
         1,
         3,
         'The project will be based on',
@@ -225,7 +272,7 @@ async function pickOwner(input, state) {
     }
 
     const pick = await input.showQuickPick(
-        getTitle(),
+        getCreateProjectTitle(),
         0,
         3,
         'Pick the owner',
@@ -251,7 +298,7 @@ async function checkIfProjectAlreadyExist(input, state) {
     }
 
     const pick = await input.showQuickPick(
-        getTitle(),
+        getCreateProjectTitle(),
         0,
         3,
         'The project already exist, overwrite it?',
@@ -276,14 +323,14 @@ const FlowAction = {
     resume: 2,
 };
 
-class Project {
+class Dialog {
     constructor() {
         this.showBackButtonAfterSteps = 2;
         this.current = undefined;
         this.steps = [];
     }
 
-    async showInputBox(title, step, totalSteps, value, prompt, validate, buttons, resume) {
+    async showInputBox(title, step, totalSteps, value, prompt, validate, buttons, resume, pwd) {
         const disposables = [];
         try {
             return await new Promise((resolve, reject) => {
@@ -293,6 +340,7 @@ class Project {
                 input.totalSteps = totalSteps;
                 input.value = value || '';
                 input.prompt = prompt;
+                input.password = pwd;
                 input.buttons = [
                     ...(this.steps.length > this.showBackButtonAfterSteps
                         ? [vscode.QuickInputButtons.Back] : []),
@@ -321,8 +369,7 @@ class Project {
                     (async () => {
                         reject(resume &&
                             await shouldResume() ? FlowAction.resume : FlowAction.cancel);
-                    })()
-                        .catch(reject);
+                    })().catch(reject);
                 }));
                 if (this.current) {
                     this.current.dispose();
@@ -372,7 +419,7 @@ class Project {
     }
 
     static async run(start) {
-        const input = new Project();
+        const input = new Dialog();
         return input.stepThrough(start);
     }
 
@@ -404,16 +451,46 @@ class Project {
         }
     }
 
-    static async collectInputs(token) {
-        const state = {
-            accessToken: token,
-        };
-        await Project.run(input => checkIfProjectAlreadyExist(input, state));
+    static async loginCollectInputs() {
+        const state = {};
+        await Dialog.run(input => getUsername(input, state));
         return state;
     }
 
+    static async newProjectCollectInputs(token) {
+        const state = {
+            accessToken: token,
+        };
+        await Dialog.run(input => checkIfProjectAlreadyExist(input, state));
+        return state;
+    }
+
+    // Initiate user login dialog using username/password authorization.
+    // Save file with access token in the workspace directory.
+    //
+    // Parameters:
+    //     none
+    //
+    // Returns:
+    //     none
+    //
+    static async login() {
+        const state = await Dialog.loginCollectInputs();
+
+        /*
+         * The state.username and state.password values are expected.
+         */
+        console.log(util.inspect(state, { showHidden: false, depth: null }));
+        if (state.username && state.password) {
+            Api.login(state)
+                .then(Workspace.Data.storeAuthInfo)
+                .then(() => vscode.window.showInformationMessage(User.MESSAGES.AUTH_SUCCESS))
+                .catch(err => vscode.window.showErrorMessage(err.message));
+        }
+    }
+
     static async newProject(accessToken) {
-        const state = await Project.collectInputs(accessToken);
+        const state = await Dialog.newProjectCollectInputs(accessToken);
 
         /*
          * Here we have state after user new project dialog.
@@ -436,6 +513,10 @@ class Project {
          * 6) The state.owner should be defined in all cases.
          */
         console.log(util.inspect(state, { showHidden: false, depth: null }));
+        if (state.completed === undefined) {
+            return undefined;
+        }
+
         switch (state.type) {
         case projectTypes.existDG:
             Workspace.newProjectExistDG(state.dg.id);
@@ -447,14 +528,19 @@ class Project {
             Workspace.newProjectNewProduct(state.accessToken, state.productName, state.dgName, state.owner);
             break;
         default:
-            return undefined;
+            break;
         }
 
         return undefined;
     }
 }
 
+function loginDialog() {
+    Dialog.login();
+}
+module.exports.loginDialog = loginDialog;
+
 function newProjectDialog() {
-    Auth.authorize().then(Project.newProject);
+    Auth.authorize().then(Dialog.newProject);
 }
 module.exports.newProjectDialog = newProjectDialog;

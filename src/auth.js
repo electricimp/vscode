@@ -28,54 +28,6 @@ const Api = require('./api');
 const User = require('./user');
 const Workspace = require('./workspace');
 
-function promptUserPassword() {
-    const usernameOptions = {
-        prompt: User.MESSAGES.AUTH_PROMPT_ENTER_CREDS,
-    };
-
-    const passwordOptions = {
-        password: true,
-        prompt: User.MESSAGES.AUTH_PROMPT_ENTER_PWD,
-    };
-
-    return new Promise(((resolve, reject) => {
-        vscode.window.showInputBox(usernameOptions).then((user) => {
-            if (!user) {
-                reject(new Error(`${User.ERRORS.AUTH_USERNAME_EMPTY}`));
-                return;
-            }
-            vscode.window.showInputBox(passwordOptions).then((pass) => {
-                if (!pass) {
-                    reject(new Error(`${User.ERRORS.AUTH_PASSWORD_EMPTY}`));
-                    return;
-                }
-                resolve({
-                    username: user,
-                    password: pass,
-                });
-            });
-        });
-    }));
-}
-
-// Initiate user login dialog using username/password authorization.
-// Save file with access token in the workspace directory.
-//
-// Parameters:
-//     none
-//
-// Returns:
-//     none
-//
-function loginCredsDialog() {
-    promptUserPassword()
-        .then(Api.login)
-        .then(Workspace.Data.storeAuthInfo)
-        .then(() => vscode.window.showInformationMessage(User.MESSAGES.AUTH_SUCCESS))
-        .catch(err => vscode.window.showErrorMessage(err.message));
-}
-module.exports.loginCredsDialog = loginCredsDialog;
-
 // Authorization procedure using authorization file from current workspace.
 //
 // Parameters:
