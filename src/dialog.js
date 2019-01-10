@@ -480,7 +480,7 @@ class Dialog {
         /*
          * The state.username and state.password values are expected.
          */
-        console.log(util.inspect(state, { showHidden: false, depth: null }));
+        // console.log(util.inspect(state, { showHidden: false, depth: null }));
         if (state.username && state.password) {
             Api.login(state)
                 .then(Workspace.Data.storeAuthInfo)
@@ -512,7 +512,7 @@ class Dialog {
          *
          * 6) The state.owner should be defined in all cases.
          */
-        console.log(util.inspect(state, { showHidden: false, depth: null }));
+        // console.log(util.inspect(state, { showHidden: false, depth: null }));
         if (state.completed === undefined) {
             return undefined;
         }

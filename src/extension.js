@@ -24,7 +24,6 @@
 
 
 const vscode = require('vscode');
-const Auth = require('./auth');
 const Workspace = require('./workspace');
 const LogStream = require('./logstream');
 const Devices = require('./devices');
@@ -37,7 +36,6 @@ const logstream = new LogStream(diagnostic);
 function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('imp.auth.creds', () => {
         if (Workspace.isWorkspaceFolderOpened()) {
-            // Auth.loginCredsDialog();
             Dialog.loginDialog();
         }
     }));
