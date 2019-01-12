@@ -31,9 +31,11 @@ const Workspace = require('./workspace');
 class Diagnostic {
     constructor() {
         this.pre = undefined;
-        if (!this.diagnosticCollection) {
-            this.diagnosticCollection = vscode.languages.createDiagnosticCollection('imp');
-        }
+        this.diagnosticCollection = vscode.languages.createDiagnosticCollection('imp');
+    }
+
+    clearDiagnostic() {
+        this.diagnosticCollection.clear();
     }
 
     setPreprocessors(agentPre, devicePre) {
@@ -42,10 +44,6 @@ class Diagnostic {
             agent: agentPre,
             device: devicePre,
         };
-    }
-
-    clearDiagnostic() {
-        this.diagnosticCollection.clear();
     }
 
     static parseBuilderError(msg) {
@@ -92,8 +90,8 @@ class Diagnostic {
          * There are some cases of Builder errors, when it is not possible
          * to restore full path to file with error.
          * It could be nested @include with relative path. In this case Builder returns
-         * only filename without path prefix. So it is not possible to find a full file path,
-         * open it, an report problem correctly.
+         * only filename without path prefix. So it is not possible to find a full file path
+         * and report problem correctly.
          * Just return in this case.
          */
         const srcPath = path.join(includeDir, parsedError.file);
@@ -182,7 +180,7 @@ class Diagnostic {
              * TODO: Here, we have a hack in case if preprocessor was not defined previosly.
              * Handle this situation more correctly.
              * The second -1 below mean that we shold compensate "#line 1"
-             * preprocessor derictive in on the top of source file.
+             * preprocessor derictive on the top of source file.
              */
             const sourceFile = path.join(Workspace.Path.getPWD(), logStreamError.file);
             uri = vscode.Uri.file(sourceFile);

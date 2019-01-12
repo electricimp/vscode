@@ -74,7 +74,7 @@ function addDeviceToDGDialog() {
         .then(([accessToken, config, deviceID]) => {
             Api.addDeviceToDG(accessToken, config.deviceGroupId, deviceID)
                 .then(() => {
-                    vscode.window.showInformationMessage(`The ${deviceID} is added to ${config.deviceGroupId}`);
+                    vscode.window.showInformationMessage(`The ${deviceID} is added to DG:${config.deviceGroupId}`);
                 }, (err) => {
                     User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err);
                 });
@@ -94,7 +94,7 @@ function removeDeviceFromDGDialog() {
         .then(([accessToken, config, deviceID]) => {
             Api.removeDeviceFromDG(accessToken, config.deviceGroupId, deviceID)
                 .then(() => {
-                    vscode.window.showInformationMessage(`The ${deviceID} is removed from ${config.deviceGroupId}`);
+                    vscode.window.showInformationMessage(`The ${deviceID} is removed from DG:${config.deviceGroupId}`);
                 }, (err) => {
                     User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err);
                 });

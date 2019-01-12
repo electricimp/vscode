@@ -24,7 +24,6 @@
 
 
 const path = require('path');
-const colors = require('colors/safe');
 const strftime = require('strftime');
 const vscode = require('vscode');
 const Api = require('./api');
@@ -40,7 +39,7 @@ const Workspace = require('./workspace');
  */
 
 class LogStream {
-    constructor(diagnostic, playPauseItem) {
+    constructor(diagnostic) {
         this.diagnostic = diagnostic;
         this.logStreamID = undefined;
         this.outputChannel = undefined;
@@ -129,33 +128,6 @@ class LogStream {
         }
     }
 
-    static getTypeStringColorized(typeInfo) {
-        switch (typeInfo.className) {
-        case 'device-log':
-            return colors.blue(`[${typeInfo.name}]`);
-        case 'device-sleep':
-            return colors.blue(`[${typeInfo.name}]`);
-        case 'device-error':
-            return colors.bgBlack.white(`[${typeInfo.name}]`);
-        case 'agent-log':
-            return colors.cyan(`[${typeInfo.name}]`);
-        case 'agent-error':
-            return colors.bgCyan.black(`[${typeInfo.name}]`);
-        case 'status':
-            return colors.yellow(`[${typeInfo.name}]`);
-        case 'power-state':
-            return colors.green(`[${typeInfo.name}]`);
-        case 'last-exit-code':
-            return colors.red(`[${typeInfo.name}]`);
-        case 'firmware':
-            return colors.magenta(`[${typeInfo.name}]`);
-        case 'ide-log':
-            return colors.yellow(`[${typeInfo.name}]`);
-        default:
-            return undefined;
-        }
-    }
-
     replaceFileNameToLink(msg) {
         const haveAgent = msg.indexOf('agent_code') > -1;
         const haveDevice = msg.indexOf('device_code') > -1;
@@ -213,9 +185,9 @@ class LogStream {
         return `${ts} ${type} ${msg}`;
     }
 
-    getErrorMessage(message) {
+    getErrorMessage(msg) {
         const regex = /\b[0-9a-f]{16}\s(.*)\s(?:development|production)\s([a-z.]+)\sERROR:(.*)/;
-        const result = message.match(regex);
+        const result = msg.match(regex);
         if (result == null || this.diagnostic.pre === undefined) {
             return undefined;
         }
@@ -240,31 +212,31 @@ class LogStream {
         return undefined;
     }
 
-    logMsg(message) {
+    logMsg(msg) {
         if (this.pause) {
             return;
         }
 
-        const err = this.getErrorMessage(message);
+        const err = this.getErrorMessage(msg);
         if (err) {
             this.diagnostic.addLogStreamError(err);
         }
 
         /*
-            * If we get message like 'Downloading new code'.
-            * It mean that we should clean the diagnostic collection
-            * to report the actual problems from fresh deploy.
-            */
+         * If we get message like 'Downloading new code'.
+         * It mean that we should clean the diagnostic collection
+         * to report the actual problems from fresh deploy.
+         */
         const regex = /.*(Downloading new code).*(program storage used)/;
-        const result = message.match(regex);
+        const result = msg.match(regex);
         if (result) {
             this.diagnostic.clearDiagnostic();
         }
 
-        this.outputChannel.appendLine(this.getLogStreamLogMessage(message));
+        this.outputChannel.appendLine(this.getLogStreamLogMessage(msg));
     }
 
-    logState(message) {
+    logState(msg) {
         /*
          * Do not print state messages for now.
          */
@@ -277,11 +249,18 @@ class LogStream {
             return;
         }
 
-        this.outputChannel.appendLine(message);
+        this.outputChannel.appendLine(msg);
     }
 
     isOpened() {
         return this.logStreamID && this.outputChannel;
+    }
+
+    deviceAdded(deviceID) {
+        this.outputChannel.show(true);
+        this.devices.add(deviceID);
+        this.playPauseItem.show();
+        vscode.window.showInformationMessage(`Device added: ${deviceID}`);
     }
 
     addDevice(accessToken, deviceID) {
@@ -289,10 +268,7 @@ class LogStream {
             if (this.isOpened()) {
                 Api.logStreamAddDevice(accessToken, this.logStreamID, deviceID)
                     .then(() => {
-                        this.outputChannel.show(true);
-                        this.devices.add(deviceID);
-                        this.playPauseItem.show();
-                        vscode.window.showInformationMessage(`Device added: ${deviceID}`);
+                        this.deviceAdded(deviceID);
                         resolve();
                     }, (err) => {
                         User.showImpApiError(`Cannot add ${deviceID}`, err);
@@ -305,10 +281,7 @@ class LogStream {
                             vscode.window.createOutputChannel(User.NAMES.OUTPUT_CHANNEL);
                         Api.logStreamAddDevice(accessToken, logStreamID, deviceID)
                             .then(() => {
-                                this.outputChannel.show(true);
-                                this.devices.add(deviceID);
-                                this.playPauseItem.show();
-                                vscode.window.showInformationMessage(`Device added: ${deviceID}`);
+                                this.deviceAdded(deviceID);
                                 resolve();
                             });
                     }, (err) => {

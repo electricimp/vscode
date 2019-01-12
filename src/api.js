@@ -26,9 +26,9 @@
 const ImpCentralApi = require('imp-central-api');
 const User = require('./user');
 
-const DeviceGroups = ImpCentralApi.DeviceGroups;
-const Products = ImpCentralApi.Products;
-const Devices = ImpCentralApi.Devices;
+const ImpDeviceGroups = ImpCentralApi.DeviceGroups;
+const ImpProducts = ImpCentralApi.Products;
+const ImpDevices = ImpCentralApi.Devices;
 
 function login(creds) {
     const api = new ImpCentralApi();
@@ -92,7 +92,7 @@ function getProductList(accessToken, owner) {
     let filters;
     if (owner) {
         filters = {
-            [Products.FILTER_OWNER_ID]: owner,
+            [ImpProducts.FILTER_OWNER_ID]: owner,
         };
     }
 
@@ -149,8 +149,8 @@ function getDGList(accessToken, product, owner) {
     let filters;
     if (product || owner) {
         filters = {
-            [DeviceGroups.FILTER_PRODUCT_ID]: product,
-            [DeviceGroups.FILTER_OWNER_ID]: owner,
+            [ImpDeviceGroups.FILTER_PRODUCT_ID]: product,
+            [ImpDeviceGroups.FILTER_OWNER_ID]: owner,
         };
     }
 
@@ -195,7 +195,7 @@ function newDG(accessToken, productID, dgName) {
     };
 
     return new Promise((resolve, reject) => {
-        api.deviceGroups.create(productID, DeviceGroups.TYPE_DEVELOPMENT, attrs)
+        api.deviceGroups.create(productID, ImpDeviceGroups.TYPE_DEVELOPMENT, attrs)
             .then((dg) => {
                 resolve(dg);
             }, (err) => {
@@ -210,7 +210,7 @@ function getDeviceList(accessToken, dgID = undefined) {
     api.auth.accessToken = accessToken;
 
     const filters = {
-        [Devices.FILTER_DEVICE_GROUP_ID]: dgID,
+        [ImpDevices.FILTER_DEVICE_GROUP_ID]: dgID,
     };
     return new Promise((resolve, reject) => {
         api.devices.list(filters)

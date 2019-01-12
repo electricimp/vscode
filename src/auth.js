@@ -41,7 +41,7 @@ function authorize() {
             .then((auth) => {
                 resolve(auth.accessToken.access_token);
             }, (err) => {
-                vscode.window.showErrorMessage(`${User.ERRORS.AUTH_FILE} ${err}. Please Login.`);
+                vscode.window.showErrorMessage(`${User.ERRORS.AUTH_FILE} ${err}`);
                 vscode.commands.executeCommand('imp.auth.creds');
                 reject(err);
             });
