@@ -28,10 +28,12 @@ const User = require('./user');
 
 const DeviceGroups = ImpCentralApi.DeviceGroups;
 const Products = ImpCentralApi.Products;
+const Devices = ImpCentralApi.Devices;
 
 function login(creds) {
+    const api = new ImpCentralApi();
+
     return new Promise((resolve, reject) => {
-        const api = new ImpCentralApi();
         api.auth.login(creds.username, creds.password)
             .then(authInfo => resolve(authInfo), (err) => {
                 reject(new Error(`${User.ERRORS.AUTH_LOGIN} ${err}`));
@@ -41,9 +43,10 @@ function login(creds) {
 module.exports.login = login;
 
 function getAgentURL(accessToken, deviceID) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
     return new Promise((resolve, reject) => {
-        const api = new ImpCentralApi();
-        api.auth.accessToken = accessToken;
         api.devices.get(deviceID).then((result) => {
             resolve(result.data.attributes.agent_url);
         }, (err) => {
@@ -54,9 +57,10 @@ function getAgentURL(accessToken, deviceID) {
 module.exports.getAgentURL = getAgentURL;
 
 function addDeviceToDG(accessToken, dgID, deviceID) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
     return new Promise((resolve, reject) => {
-        const api = new ImpCentralApi();
-        api.auth.accessToken = accessToken;
         api.deviceGroups.addDevices(dgID, deviceID).then(() => {
             resolve();
         }, (err) => {
@@ -67,9 +71,10 @@ function addDeviceToDG(accessToken, dgID, deviceID) {
 module.exports.addDeviceToDG = addDeviceToDG;
 
 function removeDeviceFromDG(accessToken, dgID, deviceID) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
     return new Promise((resolve, reject) => {
-        const api = new ImpCentralApi();
-        api.auth.accessToken = accessToken;
         api.deviceGroups.removeDevices(dgID, null, deviceID)
             .then(() => {
                 resolve();
@@ -81,17 +86,17 @@ function removeDeviceFromDG(accessToken, dgID, deviceID) {
 module.exports.removeDeviceFromDG = removeDeviceFromDG;
 
 function getProductList(accessToken, owner) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
+    let filters;
+    if (owner) {
+        filters = {
+            [Products.FILTER_OWNER_ID]: owner,
+        };
+    }
+
     return new Promise((resolve, reject) => {
-        const api = new ImpCentralApi();
-        api.auth.accessToken = accessToken;
-
-        let filters;
-        if (owner) {
-            filters = {
-                [Products.FILTER_OWNER_ID]: owner,
-            };
-        }
-
         api.products.list(filters).then((result) => {
             const products = new Map();
             result.data.forEach((item) => {
@@ -108,6 +113,7 @@ module.exports.getProductList = getProductList;
 function getOwners(accessToken) {
     const api = new ImpCentralApi();
     api.auth.accessToken = accessToken;
+
     return new Promise((resolve, reject) => {
         api.accounts.list().then((accaunts) => {
             const owners = new Map();
@@ -122,19 +128,33 @@ function getOwners(accessToken) {
 }
 module.exports.getOwners = getOwners;
 
-function getDGList(accessToken, product, owner) {
+function getDGOwnerID(accessToken, dgID) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
     return new Promise((resolve, reject) => {
-        const api = new ImpCentralApi();
-        api.auth.accessToken = accessToken;
+        api.deviceGroups.get(dgID).then((dg) => {
+            resolve(dg.data.relationships.owner.id);
+        }, (err) => {
+            reject(err);
+        });
+    });
+}
+module.exports.getDGOwnerID = getDGOwnerID;
 
-        let filters;
-        if (product || owner) {
-            filters = {
-                [DeviceGroups.FILTER_PRODUCT_ID]: product,
-                [DeviceGroups.FILTER_OWNER_ID]: owner,
-            };
-        }
+function getDGList(accessToken, product, owner) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
 
+    let filters;
+    if (product || owner) {
+        filters = {
+            [DeviceGroups.FILTER_PRODUCT_ID]: product,
+            [DeviceGroups.FILTER_OWNER_ID]: owner,
+        };
+    }
+
+    return new Promise((resolve, reject) => {
         api.deviceGroups.list(filters).then((result) => {
             const deviceGroups = new Map();
             result.data.forEach((item) => {
@@ -149,13 +169,14 @@ function getDGList(accessToken, product, owner) {
 module.exports.getDGList = getDGList;
 
 function newProduct(accessToken, productName, ownerID = null) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
     const attrs = {
         name: productName,
     };
 
     return new Promise((resolve, reject) => {
-        const api = new ImpCentralApi();
-        api.auth.accessToken = accessToken;
         api.products.create(attrs, ownerID).then((product) => {
             resolve(product);
         }, (err) => {
@@ -166,13 +187,14 @@ function newProduct(accessToken, productName, ownerID = null) {
 module.exports.newProduct = newProduct;
 
 function newDG(accessToken, productID, dgName) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
     const attrs = {
         name: dgName,
     };
 
     return new Promise((resolve, reject) => {
-        const api = new ImpCentralApi();
-        api.auth.accessToken = accessToken;
         api.deviceGroups.create(productID, DeviceGroups.TYPE_DEVELOPMENT, attrs)
             .then((dg) => {
                 resolve(dg);
@@ -183,10 +205,34 @@ function newDG(accessToken, productID, dgName) {
 }
 module.exports.newDG = newDG;
 
-function logStreamCreate(accessToken, logMsg, logState) {
+function getDeviceList(accessToken, ownerID, dgID = undefined) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
+    const filters = {
+        [Devices.FILTER_OWNER_ID]: ownerID,
+        [Devices.FILTER_DEVICE_GROUP_ID]: dgID,
+    };
     return new Promise((resolve, reject) => {
-        const api = new ImpCentralApi();
-        api.auth.accessToken = accessToken;
+        api.devices.list(filters)
+            .then((devices) => {
+                const deviceMap = new Map();
+                devices.data.forEach((item) => {
+                    deviceMap.set(item.attributes.name, item);
+                });
+                resolve(deviceMap);
+            }, (err) => {
+                reject(err);
+            });
+    });
+}
+module.exports.getDeviceList = getDeviceList;
+
+function logStreamCreate(accessToken, logMsg, logState) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
+    return new Promise((resolve, reject) => {
         api.logStreams.create(logMsg, logState).then((logStream) => {
             resolve(logStream.data.id);
         }, (err) => {
@@ -197,9 +243,10 @@ function logStreamCreate(accessToken, logMsg, logState) {
 module.exports.logStreamCreate = logStreamCreate;
 
 function logStreamAddDevice(accessToken, logStreamID, deviceID) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
     return new Promise((resolve, reject) => {
-        const api = new ImpCentralApi();
-        api.auth.accessToken = accessToken;
         api.logStreams.addDevice(logStreamID, deviceID).then(() => {
             resolve();
         }, (err) => {
@@ -210,9 +257,10 @@ function logStreamAddDevice(accessToken, logStreamID, deviceID) {
 module.exports.logStreamAddDevice = logStreamAddDevice;
 
 function logStreamRemoveDevice(accessToken, logStreamID, deviceID) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
     return new Promise((resolve, reject) => {
-        const api = new ImpCentralApi();
-        api.auth.accessToken = accessToken;
         api.logStreams.removeDevice(logStreamID, deviceID).then(() => {
             resolve();
         }, (err) => {
