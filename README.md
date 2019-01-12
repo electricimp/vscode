@@ -3,7 +3,11 @@
 [Visual Studio Code](https://code.visualstudio.com/) extension for [Electric Imp](https://electricimp.com) applications development.
 
 - [Overview](#overview)
-- [Installation (TODO:)](#installation)
+- [Installation](#installation)
+    - [Install Node.js](#1-install-nodejs)
+    - [Install the Builder Node.js Module](#2-install-the-builder-nodejs-module)
+    - [Install Visual Studio Code](#3-install-visual-studio-code)
+    - [Install the Visual Studio Code Extension](#4-install-the-visual-studio-code-extension)
 - [Extension Commands List](#extension-commands-list)
 - [Visual Studio Code Extension Usage](#visual-studio-code-extension-usage)
     - [Creating a New Project](#creating-a-new-project)
@@ -39,7 +43,42 @@ to work with the [Electric Imp impCloud™](https://electricimp.com/platform/clo
 
 ## Installation ##
 
-(TODO:) The installation process, starting from nodejs installation will be described here. 
+### 1. Install Node.js ###
+
+**Note** The plug-in requires Node.js 4.0 or above.
+
+Please follow [these instructions](https://nodejs.org/en/download/package-manager/) to install Node on your machine.
+
+### 2. Install the Builder Node.js Module ###
+
+The plug-in uses the [Builder](https://github.com/electricimp/Builder) Node.js module for source code pre-processing.
+To install Builder, please use Node Package Manager (NPM):
+
+```bash
+npm i -g Builder
+```
+
+### 3. Install Visual Studio Code ###
+
+Visual Studio Code can be downloaded for a variety of platforms, [here](https://code.visualstudio.com/download).
+
+### 4. Install the Visual Studio Code Extension ###
+
+#### Manual Installation ####
+
+Alternatively, follow these steps to install the plug-in manually:
+
+1. Use the Visual Studio Code extension folder:
+    - **macOS** *~/.vscode/extensions*
+    - **Windows** *%USERPROFILE%\\.vscode\extensions*
+
+2. Follow next steps:
+    
+    - cd into Visual Studio Code extension folder.
+    - Clone the full GitHub source [repository](https://github.com/nobitlost/vscode.git).
+    - Checkout the `develop` branch in the git.
+    - npm install .
+    - restart the Visual Studio Code
 
 ## Extension Commands List ##
 
@@ -171,19 +210,5 @@ Please use the project `<Project Working Folder>/settings/imp.config` file to sp
 ## License ##
 
 The Electric Imp Sublime Plug-in is licensed under the [MIT License](./LICENSE).
-
-## Current limitations (TODO: will be removed)
-
-This is a very early version of extension, so the functionality is heavily restricted. The only available checked scenario is described below:
-- Download the extension from github.
-- Run the `npm install .` in the extension directory.
-- Run `code .` in the extension directory.
-- Start the extension debug procedure. Ctrl + Shift + D. The select "Start Debugging". The another vscode window will be opened with [Extension Development] string in the window header.
-- Choose the squirrel project working directory using File -> Open Folder.
-- Use the Alt + Ctrl + P and run the `imp: Auth User Password` extension command.
-The successful login procedure will be ended with pop-up notification in the right corner of the extension development window.
-- Run the `imp: New Project` command. Enter exist device group id, where the source code planned to be deployed. The files agent.nut, device.nut and imp.config should appear in the working directory.
-- Make some changes in the device.nut and agent.nut and run `imp: Deploy Project`. The pop-up window with information message will be displayed in case of success.
-It is expected, that source code will be deployed on the selected device group and all devices will receive reset signal.
 
 
