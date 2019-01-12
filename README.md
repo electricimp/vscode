@@ -15,8 +15,8 @@
     - [Retrieving a Device’s Agent URL](#retrieving-a-devices-agent-url)
     - [Keyboard Shortcuts](#keyboard-shortcuts)
 - [Preprocessor and Multi-File Support](#preprocessor-and-multi-file-support)
-    - [(TODO:) Specifying GitHub Authentication Information](#specifying-github-authentication-information)
-    - [(TODO:) Specifying Builder Preset Variable Definitions](#specifying-builder-preset-variable-definitions)
+    - [Specifying GitHub Authentication Information](#specifying-github-authentication-information)
+    - [Specifying Builder Preset Variable Definitions](#specifying-builder-preset-variable-definitions)
 
 
 ## Overview ##
@@ -144,6 +144,29 @@ The URL of a device’s agent can be retrieved by selecting the ‘View’ > ‘
 ## Preprocessor and Multi-File Support ##
 
 Please refer to the [Builder documentation](https://developer.electricimp.com/tools/builder) for more information on the preprocessor syntax that you can use in your Squirrel code.
+
+### Specifying GitHub Authentication Information ###
+
+Please use the project `<Project Working Folder>/settings/auth.info` file to specify your Builder GitHub authentication information:
+
+```
+{ ...
+  "builderSettings": { "github_user": "GitHub user name",
+                        "github_token": "Personal access token or password" }
+}
+```
+
+### Specifying Builder Preset Variable Definitions ###
+
+Please use the project `<Project Working Folder>/settings/imp.config` file to specify the Builder variables definitions:
+
+```
+{ "builderSettings": { ...,
+                        "variable_definitions": { "key1": "value1",
+                                                  "key2": "value2" },
+                        ... }
+}
+```
 
 ## License ##
 

@@ -147,8 +147,13 @@ module.exports.isWorkspaceFolderOpened = isWorkspaceFolderOpened;
 
 // This class is required to hide all project files interaction logic.
 class Data {
-    static storeAuthInfo(authInfo) {
+    static storeAuthInfo(impAccessToken) {
         return new Promise((resolve, reject) => {
+            const authInfo = {
+                accessToken: impAccessToken,
+                builderSettings: { github_user: null, github_token: null },
+            };
+
             if (!isWorkspaceFolderOpened()) {
                 reject(User.ERRORS.WORKSPACE_FOLDER_SELECT);
                 return;
@@ -160,15 +165,52 @@ class Data {
             }
 
             const authFile = path.join(Path.getPWD(), Consts.authFileLocalPath);
+            if (fs.existsSync(authFile)) {
+                /*
+                 * Do not overwrite github creds, in case of relogin
+                 */
+                const oldAuthInfo = JSON.parse(fs.readFileSync(authFile).toString());
+                authInfo.builderSettings = oldAuthInfo.builderSettings;
+            }
+
             const gitIgnoreFile = path.join(Path.getPWD(), Consts.gitIgnoreFileName);
             try {
-                fs.writeFileSync(authFile, JSON.stringify(authInfo));
+                fs.writeFileSync(authFile, JSON.stringify(authInfo, null, 2));
                 fs.writeFileSync(gitIgnoreFile, Consts.gitIgnoreFileContent);
                 resolve();
             } catch (err) {
                 reject(err);
             }
         });
+    }
+
+    static isAuthInfoValid(auth) {
+        if (auth.accessToken === undefined) {
+            return false;
+        }
+
+        if (auth.accessToken.access_token === undefined) {
+            return false;
+        }
+
+        if (auth.builderSettings === undefined) {
+            return false;
+        }
+
+        if (auth.builderSettings.github_user === undefined) {
+            return false;
+        }
+
+        if (auth.builderSettings.github_token === undefined) {
+            return false;
+        }
+
+        return true;
+    }
+
+    static getAuthInfoSync() {
+        const authFile = Path.getAuth();
+        return JSON.parse(fs.readFileSync(authFile).toString());
     }
 
     static getAuthInfo() {
@@ -178,16 +220,9 @@ class Data {
                 return;
             }
 
-            const authFile = Path.getAuth();
-            if (!fs.existsSync(authFile)) {
-                reject(new Error(User.ERRORS.AUTH_FILE_NONE));
-                return;
-            }
-
             try {
-                const data = fs.readFileSync(authFile);
-                const auth = JSON.parse(data);
-                if (auth.access_token === undefined) {
+                const auth = Data.getAuthInfoSync();
+                if (!Data.isAuthInfoValid(auth)) {
                     reject(new Error(User.ERRORS.AUTH_FILE_ERROR));
                     return;
                 }
@@ -216,7 +251,7 @@ class Data {
             }
 
             try {
-                fs.writeFileSync(Data.getWorkspaceInfoFilePath(), JSON.stringify(info));
+                fs.writeFileSync(Data.getWorkspaceInfoFilePath(), JSON.stringify(info, null, 2));
                 resolve();
             } catch (err) {
                 reject(err);
@@ -326,6 +361,7 @@ function createProjectFiles(dgID, force = false) {
             deviceGroupId: dgID,
             device_code: path.join(Consts.srcDirName, Consts.deviceSourceFileName),
             agent_code: path.join(Consts.srcDirName, Consts.agentSourceFileName),
+            builderSettings: { variable_definitions: {} },
         };
 
         const agentPath = path.join(Path.getPWD(), defaultOptions.agent_code);
@@ -423,7 +459,14 @@ function deploy(logstream, diagnostic) {
                 const agentInc = path.dirname(src.agent_path);
                 try {
                     const agentName = path.basename(cfg.agent_code);
-                    agentSource = agentPre.preprocess(agentName, src.agent_source, agentInc);
+                    const code = src.agent_source;
+                    const auth = Data.getAuthInfoSync();
+                    const gh = {
+                        username: auth.builderSettings.github_user,
+                        token: auth.builderSettings.github_token,
+                    };
+                    const defines = cfg.builderSettings.variable_definitions;
+                    agentSource = agentPre.preprocess(agentName, code, agentInc, gh, defines);
                 } catch (err) {
                     diagnostic.addBuilderError(agentInc, err.message);
                     vscode.window.showErrorMessage(`${User.ERRORS.BUILDER_FAIL} ${err}`);
@@ -432,12 +475,19 @@ function deploy(logstream, diagnostic) {
 
 
                 let deviceSource;
-                const deviceInc = path.dirname(src.device_path);
+                const devInc = path.dirname(src.device_path);
                 try {
-                    const deviceName = path.basename(cfg.device_code);
-                    deviceSource = devicePre.preprocess(deviceName, src.device_source, deviceInc);
+                    const devName = path.basename(cfg.device_code);
+                    const code = src.device_source;
+                    const auth = Data.getAuthInfoSync();
+                    const gh = {
+                        username: auth.builderSettings.github_user,
+                        token: auth.builderSettings.github_token,
+                    };
+                    const defines = cfg.builderSettings.variable_definitions;
+                    deviceSource = devicePre.preprocess(devName, code, devInc, gh, defines);
                 } catch (err) {
-                    diagnostic.addBuilderError(deviceInc, err.message);
+                    diagnostic.addBuilderError(devInc, err.message);
                     vscode.window.showErrorMessage(`${User.ERRORS.BUILDER_FAIL} ${err}`);
                     return;
                 }

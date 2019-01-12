@@ -24,7 +24,6 @@
 
 
 const vscode = require('vscode');
-const Api = require('./api');
 const User = require('./user');
 const Workspace = require('./workspace');
 
@@ -40,7 +39,7 @@ function authorize() {
     return new Promise(((resolve, reject) => {
         Workspace.Data.getAuthInfo()
             .then((auth) => {
-                resolve(auth.access_token);
+                resolve(auth.accessToken.access_token);
             }, (err) => {
                 vscode.window.showErrorMessage(`${User.ERRORS.AUTH_FILE} ${err}. Please Login.`);
                 vscode.commands.executeCommand('imp.auth.creds');

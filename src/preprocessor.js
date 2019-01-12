@@ -61,12 +61,16 @@ class Preprocessor {
     // Returns:
     //     none
     //
-    preprocess(inputFileName, inputData, includeDir) {
+    preprocess(inputFileName, inputData, includeDir, githubCreds, variables) {
         const builder = new Builder();
         builder.machine.file = inputFileName;
         builder.machine.generateLineControlStatements = true;
         builder.machine.readers.file.searchDirs.push(includeDir);
-        let outputData = builder.machine.execute(inputData);
+        if (githubCreds) {
+            builder.machine.readers.github.username = githubCreds.username;
+            builder.machine.readers.github.token = githubCreds.token;
+        }
+        let outputData = builder.machine.execute(inputData, variables);
         outputData = outputData.replace(/#line/g, '//line');
         this.buildLineTable(inputFileName, outputData);
 
