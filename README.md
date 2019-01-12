@@ -135,13 +135,13 @@ The URL of a device’s agent can be retrieved by selecting the ‘View’ > ‘
 
 ### Keyboard Shortcuts ###
 
-**Note** (TODO:) Electric Imp-specific menu items are only available if an Electric Imp project is opened in the currently active window.
+**Note** Electric Imp-specific menu items are only available if an Electric Imp project is opened in the currently active window.
 
 | Command | Keypress |
 | ------- | -------- |
-| Create Project | ? |
-| Build and Run | Ctrl + Shift + B |
-| Show Logs Console | ? |
+| Show all imp commands | Ctrl + Shift + C |
+| Create Project | Ctrl + Shift + Y |
+| Build and Run | Ctrl + Shift + X |
 
 ## Preprocessor and Multi-File Support ##
 

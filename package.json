@@ -80,9 +80,19 @@
     ],
     "keybindings": [
       {
+        "command": "imp.show.commands",
+        "key": "ctrl+shift+c",
+        "mac": "ctrl+shift+c"
+      },
+      {
+        "command": "imp.workspace.project.new",
+        "key": "ctrl+shift+y",
+        "mac": "ctrl+shift+y"
+      },
+      {
         "command": "imp.workspace.project.deploy",
-        "key": "ctrl+shift+d",
-        "mac": "cmd+shift+d"
+        "key": "ctrl+shift+x",
+        "mac": "ctrl+shift+x"
       }
     ],
     "languages": [
