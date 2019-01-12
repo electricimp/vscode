@@ -121,7 +121,7 @@ The live logs are streamed to ‘View‘ > ‘Output‘. It is possible to add t
 
 ### Adding a Device to the Project Device Group ###
 
-To assign devices to the project’s Device Group, go to the ‘View’ > ‘Command Palette...’ > ‘`imp: Add Device to current DG`’ (TODO:) menu item and select a device from the list. The newly added device is automatically attached to the console log stream.
+To assign devices to the project’s Device Group, use the ‘View’ > ‘Command Palette...’ > ‘`imp: Add Device to current DG`’ command.
 
 ### Removing a Device from the Project Device Group ###
 

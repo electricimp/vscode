@@ -492,6 +492,7 @@ function deploy(logstream, diagnostic) {
                                             });
                                     } else {
                                         vscode.window.showWarningMessage(`The DG ${dg} have no devices`);
+                                        vscode.commands.executeCommand('imp.device.add');
                                     }
                                 }, (err) => {
                                     User.showImpApiError('Cannot list DG devices:', err);

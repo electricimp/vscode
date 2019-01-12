@@ -205,12 +205,11 @@ function newDG(accessToken, productID, dgName) {
 }
 module.exports.newDG = newDG;
 
-function getDeviceList(accessToken, ownerID, dgID = undefined) {
+function getDeviceList(accessToken, dgID = undefined) {
     const api = new ImpCentralApi();
     api.auth.accessToken = accessToken;
 
     const filters = {
-        [Devices.FILTER_OWNER_ID]: ownerID,
         [Devices.FILTER_DEVICE_GROUP_ID]: dgID,
     };
     return new Promise((resolve, reject) => {
