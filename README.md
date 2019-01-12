@@ -113,7 +113,7 @@ To open an existing Electric Imp project, just use the ‘File’ > ‘Open Fold
 To build and deploy code, please select the ‘View’ > ‘Command Palette...’ > ‘`imp: Deploy Project`‘
 menu item. This action uploads the agent and the device code to the server, and restarts all of the devices assigned to the target Device Group. If you want to have you code running on a specific devices and view the logs from that devices, you need to select them using the ‘View’ > ‘Command Palette...’ > ‘`imp: Add Device to current DG`’ menu item. The ‘`imp: Remove Device from current DG`’ menu item removes a device from the project’s Device Group.
 
-**Note** (TODO:) To build and deploy your code it isn’t necessary to assign a device to the Device Group. If you don’t have a device assigned, you can still work on the code and see compilation errors reported by the server.
+**Note** To build and deploy your code it isn’t necessary to assign a device to the Device Group. If you don’t have a device assigned, you can still work on the code and see compilation errors reported by the server.
 
 ### The Log Console ###
 
@@ -126,8 +126,6 @@ To assign devices to the project’s Device Group, go to the ‘View’ > ‘Com
 ### Removing a Device from the Project Device Group ###
 
 Devices can be removed from the project’s Device Group by selecting the ‘View’ > ‘Command Palette...’ > ‘`imp: Remove Device from current DG`’.
-
-**Note** (TODO:) The log will be restarted when a device is unassigned.
 
 ### Retrieving a Device’s Agent URL ###
 
