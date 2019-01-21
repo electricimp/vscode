@@ -54,19 +54,6 @@ function shouldResume() {
     });
 }
 
-class Button {
-    constructor(iconPath, tooltip) {
-        this.iconPath = iconPath;
-        this.tooltip = tooltip;
-        this.isMyButton = true;
-    }
-}
-
-const backButton = new Button({
-    dark: vscode.Uri.file(path.join(Workspace.Path.getPWD(), 'resources/dark/add.svg')),
-    light: vscode.Uri.file(path.join(Workspace.Path.getPWD(), 'resources/light/add.svg')),
-}, 'Create Resource Group');
-
 async function getPassword(input, state) {
     const pick = await input.showInputBox(
         getLoginTitle(),
@@ -129,7 +116,7 @@ async function getDGName(input, state) {
         state.dgName || '',
         'Choose a unique DG name',
         checkName,
-        [backButton],
+        [],
         shouldResume,
     );
 
@@ -158,7 +145,7 @@ async function getProductName(input, state) {
         state.productName || '',
         'Choose a unique Product name',
         nameIsUnique,
-        [backButton],
+        [],
         shouldResume,
     );
 
@@ -186,7 +173,7 @@ async function pickDGFromList(input, state) {
         'Pick the DG name',
         Array.from(dgList.keys()).map(label => ({ label })),
         typeof state.dgName !== 'string' ? state.dgName : undefined,
-        [backButton],
+        [],
         shouldResume,
     );
 
@@ -214,7 +201,7 @@ async function pickProductFromList(input, state) {
         'Pick the product name',
         Array.from(productList.keys()).map(label => ({ label })),
         typeof state.productName !== 'string' ? state.productName : undefined,
-        [backButton],
+        [],
         shouldResume,
     );
 
