@@ -260,8 +260,10 @@ async function pickNewProjectType(input, state) {
 }
 
 async function pickOwner(input, state) {
+    let me;
     let owners;
     try {
+        me = await Api.getMe(state.accessToken);
         owners = await Api.getOwners(state.accessToken);
     } catch (err) {
         const nextState = state;
@@ -270,19 +272,39 @@ async function pickOwner(input, state) {
         return undefined;
     }
 
+    if (owners.size === 0) {
+        const nextState = state;
+        nextState.owner = me.data.id;
+        return nextIn => pickNewProjectType(nextIn, nextState);
+    }
+
+    const usersList = Array.from(owners.keys());
+    usersList.sort((a, b) => {
+        if (a < b) return -1;
+        else if (a > b) return 1;
+        return 0;
+    });
+    usersList.unshift(me.data.attributes.username);
+
     const pick = await input.showQuickPick(
         getCreateProjectTitle(),
         0,
         3,
         'Pick the owner',
-        Array.from(owners.keys()).map(label => ({ label })),
+        usersList.map(label => ({ label })),
         typeof state.owner !== 'string' ? state.owner : undefined,
         undefined,
         shouldResume,
     );
 
     const nextState = state;
-    nextState.owner = owners.get(pick.label);
+
+    if (pick.label === me.data.attributes.username) {
+        nextState.owner = me.data.id;
+    } else {
+        nextState.owner = owners.get(pick.label);
+    }
+
     return nextIn => pickNewProjectType(nextIn, nextState);
 }
 

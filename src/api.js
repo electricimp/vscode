@@ -110,17 +110,34 @@ function getProductList(accessToken, owner) {
 }
 module.exports.getProductList = getProductList;
 
+function getMe(accessToken) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
+    return new Promise((resolve, reject) => {
+        api.accounts.get('me').then((me) => {
+            resolve(me);
+        }, (err) => {
+            reject(err);
+        });
+    });
+}
+module.exports.getMe = getMe;
+
 function getOwners(accessToken) {
     const api = new ImpCentralApi();
     api.auth.accessToken = accessToken;
 
     return new Promise((resolve, reject) => {
-        api.accounts.list().then((accaunts) => {
-            const owners = new Map();
-            accaunts.data.forEach((item) => {
-                owners.set(item.attributes.username, item.id);
+        api.accounts.get('me').then((me) => {
+            api.accounts.list().then((accaunts) => {
+                const owners = new Map();
+                accaunts.data.forEach((item) => {
+                    owners.set(item.attributes.username, item.id);
+                });
+                owners.delete(me.data.attributes.username);
+                resolve(owners);
             });
-            resolve(owners);
         }, (err) => {
             reject(err);
         });
