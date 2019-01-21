@@ -23,7 +23,6 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
-const path = require('path');
 const vscode = require('vscode');
 const Api = require('./api');
 const Auth = require('./auth');

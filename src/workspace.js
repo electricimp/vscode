@@ -449,8 +449,8 @@ module.exports.newProjectNewProduct = newProjectNewProduct;
 // Parameters:
 //     none
 function deploy(logstream, diagnostic) {
-    Auth.authorize().then((accessToken) => {
-        Data.getWorkspaceInfo().then((cfg) => {
+    Promise.all([Auth.authorize(), Data.getWorkspaceInfo(), vscode.workspace.saveAll()])
+        .then(([accessToken, cfg]) => {
             const agentPre = new Preproc();
             const devicePre = new Preproc();
             diagnostic.setPreprocessors(agentPre, devicePre);
@@ -562,9 +562,6 @@ function deploy(logstream, diagnostic) {
             }, (err) => {
                 vscode.window.showErrorMessage(`Cannot read source files: ${err}`);
             });
-        }, (workspaceErr) => {
-            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${workspaceErr}`);
-        });
-    });
+        }).catch(err => vscode.window.showErrorMessage(`Deploy: ${err}`));
 }
 module.exports.deploy = deploy;
