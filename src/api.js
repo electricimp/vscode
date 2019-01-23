@@ -42,6 +42,20 @@ function login(creds) {
 }
 module.exports.login = login;
 
+function refreshAccessToken(refreshToken) {
+    const api = new ImpCentralApi();
+
+    return new Promise((resolve, reject) => {
+        api.auth.refreshAccessToken(refreshToken)
+            .then((authInfo) => {
+                resolve(authInfo);
+            }, (err) => {
+                reject(err);
+            });
+    });
+}
+module.exports.refreshAccessToken = refreshAccessToken;
+
 function getAgentURL(accessToken, deviceID) {
     const api = new ImpCentralApi();
     api.auth.accessToken = accessToken;

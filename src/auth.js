@@ -24,8 +24,44 @@
 
 
 const vscode = require('vscode');
+const Api = require('./api');
 const User = require('./user');
 const Workspace = require('./workspace');
+
+function isAccessTokenExpired(auth) {
+    if (isNaN(Date.parse(auth.expires_at)) ||
+        isNaN(parseInt(auth.expires_in, 10))) {
+        return true;
+    }
+
+    const expirationGap = 0.05;
+    const expires = new Date(auth.expires_at);
+    const now = new Date();
+    const diff = expires.getTime() - now.getTime();
+    if (diff < auth.expires_in * 1000 * expirationGap) {
+        return true;
+    }
+
+    return false;
+}
+
+function refreshAccessToken(accessToken) {
+    return new Promise((resolve, reject) => {
+        if (isAccessTokenExpired(accessToken)) {
+            Api.refreshAccessToken(accessToken.refresh_token)
+                .then((refreshedAuth) => {
+                    const freshAccessToken = refreshedAuth;
+                    freshAccessToken.refresh_token = accessToken.refresh_token;
+                    Workspace.Data.storeAuthInfo(freshAccessToken)
+                        .then(() => resolve(freshAccessToken), err => reject(err));
+                }, (err) => {
+                    reject(err);
+                });
+        } else {
+            resolve(accessToken);
+        }
+    });
+}
 
 // Authorization procedure using authorization file from current workspace.
 //
@@ -38,9 +74,9 @@ const Workspace = require('./workspace');
 function authorize() {
     return new Promise(((resolve, reject) => {
         Workspace.Data.getAuthInfo()
-            .then((auth) => {
-                resolve(auth.accessToken.access_token);
-            }, (err) => {
+            .then(auth => refreshAccessToken(auth.accessToken))
+            .then(accessToken => resolve(accessToken.access_token))
+            .catch((err) => {
                 vscode.window.showErrorMessage(`${User.ERRORS.AUTH_FILE} ${err}`);
                 vscode.commands.executeCommand('imp.auth.creds');
                 reject(err);
