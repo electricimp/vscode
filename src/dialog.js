@@ -23,6 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
+const util = require('util');
 const vscode = require('vscode');
 const Api = require('./api');
 const Auth = require('./auth');
@@ -35,6 +36,14 @@ function getLoginTitle() {
 
 function getCreateProjectTitle() {
     return 'Create New Project';
+}
+
+function getNewProductPickItem() {
+    return '> Create New Product';
+}
+
+function getNewDeviceGroupPickItem() {
+    return '> Create New Device Group';
 }
 
 const projectTypes = {
@@ -155,9 +164,9 @@ async function getProductName(input, state) {
 }
 
 async function pickDGFromList(input, state) {
-    let dgList;
+    let dgs;
     try {
-        dgList = await Api.getDGList(state.accessToken, state.product.id, state.owner);
+        dgs = await Api.getDGList(state.accessToken, state.product.id, state.owner);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -165,27 +174,37 @@ async function pickDGFromList(input, state) {
         return;
     }
 
+    const dgList = Array.from(dgs.keys());
+    dgList.sort();
+    dgList.unshift(getNewDeviceGroupPickItem());
+
     const pick = await input.showQuickPick(
         getCreateProjectTitle(),
+        2,
         3,
-        3,
-        'Pick the DG name',
-        Array.from(dgList.keys()).map(label => ({ label })),
+        'Pick the DG',
+        dgList.map(label => ({ label })),
         typeof state.dgName !== 'string' ? state.dgName : undefined,
         [],
         shouldResume,
     );
 
     const nextState = state;
+    if (pick.label === getNewDeviceGroupPickItem()) {
+        nextState.type = projectTypes.newDG;
+        return nextIn => getDGName(nextIn, nextState);
+    }
+
+    nextState.type = projectTypes.existDG;
     nextState.dgName = pick.label;
-    nextState.dg = dgList.get(pick.label);
+    nextState.dg = dgs.get(pick.label);
     nextState.completed = true;
 }
 
 async function pickProductFromList(input, state) {
-    let productList;
+    let products;
     try {
-        productList = await Api.getProductList(state.accessToken, state.owner);
+        products = await Api.getProductList(state.accessToken, state.owner);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -193,56 +212,30 @@ async function pickProductFromList(input, state) {
         return undefined;
     }
 
+    const productsList = Array.from(products.keys());
+    productsList.sort();
+    productsList.unshift(getNewProductPickItem());
+
     const pick = await input.showQuickPick(
         getCreateProjectTitle(),
-        2,
+        1,
         3,
-        'Pick the product name',
-        Array.from(productList.keys()).map(label => ({ label })),
+        'Pick the product',
+        productsList.map(label => ({ label })),
         typeof state.productName !== 'string' ? state.productName : undefined,
         [],
         shouldResume,
     );
 
     const nextState = state;
-    nextState.productName = pick.label;
-    nextState.product = productList.get(pick.label);
-    switch (state.type) {
-    case projectTypes.existDG:
-        return nextIn => pickDGFromList(nextIn, nextState);
-    case projectTypes.newDG:
-        return nextIn => getDGName(nextIn, nextState);
-    default:
-        return undefined;
-    }
-}
-
-async function pickNewProjectType(input, state) {
-    const pick = await input.showQuickPick(
-        getCreateProjectTitle(),
-        1,
-        3,
-        'The project will be based on',
-        Object.values(projectTypes).map(label => ({ label })),
-        typeof state.projectType !== 'string' ? state.projectType : undefined,
-        undefined,
-        shouldResume,
-    );
-
-    const nextState = state;
-    switch (pick.label) {
-    case projectTypes.existDG:
-        nextState.type = projectTypes.existDG;
-        return nextIn => pickProductFromList(nextIn, nextState);
-    case projectTypes.newDG:
-        nextState.type = projectTypes.newDG;
-        return nextIn => pickProductFromList(nextIn, nextState);
-    case projectTypes.newProduct:
+    if (pick.label === getNewProductPickItem()) {
         nextState.type = projectTypes.newProduct;
         return nextIn => getProductName(nextIn, nextState);
-    default:
-        return undefined;
     }
+
+    nextState.productName = pick.label;
+    nextState.product = products.get(pick.label);
+    return nextIn => pickDGFromList(nextIn, nextState);
 }
 
 async function pickOwner(input, state) {
@@ -261,15 +254,11 @@ async function pickOwner(input, state) {
     if (owners.size === 0) {
         const nextState = state;
         nextState.owner = me.data.id;
-        return nextIn => pickNewProjectType(nextIn, nextState);
+        return nextIn => pickProductFromList(nextIn, nextState);
     }
 
     const usersList = Array.from(owners.keys());
-    usersList.sort((a, b) => {
-        if (a < b) return -1;
-        else if (a > b) return 1;
-        return 0;
-    });
+    usersList.sort();
     usersList.unshift(me.data.attributes.username);
 
     const pick = await input.showQuickPick(
@@ -291,7 +280,7 @@ async function pickOwner(input, state) {
         nextState.owner = owners.get(pick.label);
     }
 
-    return nextIn => pickNewProjectType(nextIn, nextState);
+    return nextIn => pickProductFromList(nextIn, nextState);
 }
 
 async function checkIfProjectAlreadyExist(input, state) {
@@ -519,11 +508,14 @@ class Dialog {
          *
          * 6) The state.owner should be defined in all cases.
          */
-        // console.log(util.inspect(state, { showHidden: false, depth: null }));
+        console.log(util.inspect(state, { showHidden: false, depth: null }));
         if (state.completed === undefined) {
             return undefined;
         }
+        console.log("CREATED");
 
+        return undefined;
+/*
         switch (state.type) {
         case projectTypes.existDG:
             Workspace.newProjectExistDG(state.dg.id);
@@ -539,6 +531,7 @@ class Dialog {
         }
 
         return undefined;
+        */
     }
 }
 
