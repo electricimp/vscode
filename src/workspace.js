@@ -497,7 +497,7 @@ function deploy(logstream, diagnostic) {
                      * The code below is only for debug purposes.
                      * Write postprocessed files to workspace directory for future analyzes.
                      */
-                    const storePostprocessed = false;
+                    const storePostprocessed = true;
                     if (storePostprocessed) {
                         const buildPath = path.join(Path.getPWD(), 'build');
                         if (!fs.existsSync(buildPath)) {
@@ -505,7 +505,7 @@ function deploy(logstream, diagnostic) {
                         }
                         fs.writeFileSync(path.join(buildPath, 'postprocessed_agent.nut'), agentSource);
                         fs.writeFileSync(path.join(buildPath, 'postprocessed_device.nut'), deviceSource);
-                        vscode.window.showInformationMessage('Postprocessed files were saved.');
+                        // vscode.window.showInformationMessage('Postprocessed files were saved.');
                     }
                 } catch (err) {
                     vscode.window.showErrorMessage(`Postprocessed files error: ${err}`);
