@@ -38,8 +38,15 @@ async function getDeviceIDPick(accessToken, ownerID, dgIDAssigned, dgIDUnAssigne
         return err;
     }
 
+    const display = [];
+    devices.forEach((item) => {
+        const onlineState = item.attributes.device_online ? 'online' : 'offline';
+        const name = item.attributes.name === null ? 'noName' : item.attributes.name;
+        display.push(`${item.id} ${onlineState} ${name}`);
+    });
+
     const pick = await vscode.window.showQuickPick(
-        Array.from(devices.keys()).map(label => ({ label })),
+        display.map(label => ({ label })),
         {
             placeHolder: 'Select device ID',
             ignoreFocusOut: true,
@@ -51,7 +58,13 @@ async function getDeviceIDPick(accessToken, ownerID, dgIDAssigned, dgIDUnAssigne
         throw Error('empty deviceID');
     }
 
-    return pick.label;
+    const regex = /(.*)\s(online|offline)\s(.*)/;
+    const result = pick.label.match(regex);
+    if (result == null) {
+        throw Error('Bad regexp');
+    }
+
+    return result[1];
 }
 module.exports.getDeviceIDPick = getDeviceIDPick;
 
