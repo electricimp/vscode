@@ -296,11 +296,12 @@ class LogStream {
     // Parameters:
     //     none
     addDeviceDialog() {
-        Promise.all([Auth.authorize(), Devices.getDeviceIDPrompt()])
-            .then(([accessToken, deviceID]) => {
-                this.addDevice(accessToken, deviceID);
-            })
-            .catch(err => vscode.window.showErrorMessage(err.message));
+        Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
+            .then(([accessToken, cfg]) => {
+                Devices.getDeviceIDPick(accessToken, cfg.ownerId, cfg.deviceGroupId, undefined)
+                    .then(deviceID => this.addDevice(accessToken, deviceID))
+                    .catch(err => User.showImpApiError('Cannot add device:', err));
+            }).catch(err => vscode.window.showErrorMessage(err.message));
     }
 
     // Remove device from LogStream.
@@ -308,14 +309,15 @@ class LogStream {
     // Parameters:
     //     none
     removeDeviceDialog() {
-        Promise.all([Auth.authorize(), Devices.getDeviceIDPrompt()])
-            .then(([accessToken, deviceID]) => {
-                Api.logStreamRemoveDevice(accessToken, this.logStreamID, deviceID)
-                    .then(() => {
-                        this.devices.delete(deviceID);
-                        vscode.window.showInformationMessage(`Device removed: ${deviceID}`);
-                    }, (err) => {
-                        User.showImpApiError(`Cannot remove ${deviceID}`, err);
+        Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
+            .then(([accessToken, cfg]) => {
+                Devices.getDeviceIDPick(accessToken, cfg.ownerId, cfg.deviceGroupId, undefined)
+                    .then((deviceID) => {
+                        Api.logStreamRemoveDevice(accessToken, this.logStreamID, deviceID)
+                            .then(() => {
+                                this.devices.delete(deviceID);
+                                vscode.window.showInformationMessage(`Device removed: ${deviceID}`);
+                            }).catch(err => User.showImpApiError(`Cannot remove ${deviceID}`, err));
                     });
             }).catch(err => vscode.window.showErrorMessage(err.message));
     }

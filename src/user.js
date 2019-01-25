@@ -44,6 +44,7 @@ const ERRORS = {
     PRODUCT_ID_EMPTY: 'The product ID is empty',
     PRODUCT_CREATE: 'Cannot create new product:',
     PRODUCT_LIST: 'Cannot retrieve product list:',
+    PROJECT_CREATE: 'Cannot create project:',
     VSCODE_API: 'IMP API:',
     WORKSPACE_MULTIROOT: 'Multi-root workspaces are not supported',
     WORKSPACE_FOLDER_SELECT: 'Please select the workspace folder to proceed',

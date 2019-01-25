@@ -236,19 +236,23 @@ function newDG(accessToken, productID, dgName) {
 }
 module.exports.newDG = newDG;
 
-function getDeviceList(accessToken, dgID = undefined) {
+function getDeviceList(accessToken, ownerID, dgIDAssigned, dgIDExclude) {
     const api = new ImpCentralApi();
     api.auth.accessToken = accessToken;
 
     const filters = {
-        [ImpDevices.FILTER_DEVICE_GROUP_ID]: dgID,
+        [ImpDevices.FILTER_OWNER_ID]: ownerID,
+        [ImpDevices.FILTER_DEVICE_GROUP_ID]: dgIDAssigned,
     };
     return new Promise((resolve, reject) => {
         api.devices.list(filters)
             .then((devices) => {
                 const deviceMap = new Map();
                 devices.data.forEach((item) => {
-                    deviceMap.set(item.attributes.name, item);
+                    const dgIDdevice = item.relationships.devicegroup.id;
+                    if (dgIDExclude !== dgIDdevice) {
+                        deviceMap.set(item.id, item);
+                    }
                 });
                 resolve(deviceMap);
             }, (err) => {
