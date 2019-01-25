@@ -508,20 +508,17 @@ class Dialog {
          *
          * 6) The state.owner should be defined in all cases.
          */
-        console.log(util.inspect(state, { showHidden: false, depth: null }));
+        // console.log(util.inspect(state, { showHidden: false, depth: null }));
         if (state.completed === undefined) {
             return undefined;
         }
-        console.log("CREATED");
 
-        return undefined;
-/*
         switch (state.type) {
         case projectTypes.existDG:
-            Workspace.newProjectExistDG(state.dg.id);
+            Workspace.newProjectExistDG(state.dg.id, state.owner);
             break;
         case projectTypes.newDG:
-            Workspace.newProjectNewDG(state.accessToken, state.product, state.dgName);
+            Workspace.newProjectNewDG(state.accessToken, state.product, state.dgName, state.owner);
             break;
         case projectTypes.newProduct:
             Workspace.newProjectNewProduct(state.accessToken, state.productName, state.dgName, state.owner);
@@ -531,7 +528,6 @@ class Dialog {
         }
 
         return undefined;
-        */
     }
 }
 

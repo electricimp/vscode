@@ -355,9 +355,10 @@ class Data {
 }
 module.exports.Data = Data;
 
-function createProjectFiles(dgID, force = false) {
+function createProjectFiles(dgID, ownerID, force = false) {
     return new Promise((resolve, reject) => {
         const defaultOptions = {
+            ownerId: ownerID,
             deviceGroupId: dgID,
             device_code: path.join(Consts.srcDirName, Consts.deviceSourceFileName),
             agent_code: path.join(Consts.srcDirName, Consts.agentSourceFileName),
@@ -385,62 +386,50 @@ function createProjectFiles(dgID, force = false) {
         try {
             fs.writeFileSync(agentPath, Consts.agentSourceHeader);
             fs.writeFileSync(devPath, Consts.deviceSourceHeader);
-            resolve();
         } catch (err) {
             vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_SRC_FILE} ${err}`);
             reject(err);
             return;
         }
 
-        Data.storeWorkspaceInfo(defaultOptions).then(() => {}, (err) => {
+        Data.storeWorkspaceInfo(defaultOptions).then(() => resolve(), (err) => {
             vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${err}`);
             reject(err);
         });
     });
 }
 
-function showCreatedProjectConfig() {
-    vscode.window.showTextDocument(vscode.workspace.openTextDocument(Path.getConfig()));
+function showSources(src) {
+    vscode.window.showTextDocument(vscode.workspace.openTextDocument(src.agent_path), 1);
+    vscode.window.showTextDocument(vscode.workspace.openTextDocument(src.device_path), 2);
+    vscode.commands.executeCommand('workbench.action.output.toggleOutput');
     vscode.window.showInformationMessage(`${User.MESSAGES.WORKSPACE_CREATED}`);
 }
 
-function newProjectExistDG(dgID) {
-    createProjectFiles(dgID, true).then(() => {
-        showCreatedProjectConfig();
-    }, (err) => {
-        vscode.window.showErrorMessage(`Cannot create project: ${err}`);
-    });
+function newProjectExistDG(dgID, ownerID) {
+    createProjectFiles(dgID, ownerID, true)
+        .then(Data.getSources)
+        .then(showSources)
+        .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
 }
 module.exports.newProjectExistDG = newProjectExistDG;
 
-function newProjectNewDG(accessToken, product, dgName) {
+function newProjectNewDG(accessToken, product, dgName, ownerID) {
     Api.newDG(accessToken, product.id, dgName)
-        .then((dg) => {
-            createProjectFiles(dg.data.id, true).then(() => {
-                showCreatedProjectConfig();
-            }, (err) => {
-                vscode.window.showErrorMessage(`Cannot create project: ${err}`);
-            });
-        }, (err) => {
-            User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
-        });
+        .then(dg => createProjectFiles(dg.data.id, ownerID, true))
+        .then(Data.getSources)
+        .then(showSources)
+        .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
 }
 module.exports.newProjectNewDG = newProjectNewDG;
 
 function newProjectNewProduct(accessToken, productName, dgName, ownerID) {
-    Api.newProduct(accessToken, productName, ownerID).then((product) => {
-        Api.newDG(accessToken, product.data.id, dgName).then((dg) => {
-            createProjectFiles(dg.data.id, true).then(() => {
-                showCreatedProjectConfig();
-            }, (err) => {
-                vscode.window.showErrorMessage(`Cannot create project: ${err}`);
-            });
-        }, (err) => {
-            User.showImpApiError(`${User.ERRORS.DG_CREATE}`, err);
-        });
-    }, (err) => {
-        User.showImpApiError(`${User.ERRORS.PRODUCT_CREATE}`, err);
-    });
+    Api.newProduct(accessToken, productName, ownerID)
+        .then(product => Api.newDG(accessToken, product.data.id, dgName))
+        .then(dg => createProjectFiles(dg.data.id, ownerID, true))
+        .then(Data.getSources)
+        .then(showSources)
+        .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
 }
 module.exports.newProjectNewProduct = newProjectNewProduct;
 
