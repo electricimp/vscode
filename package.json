@@ -46,11 +46,11 @@
       },
       {
         "command": "imp.logstream.add",
-        "title": "imp: Add Device Logs"
+        "title": "imp: Start Device Logs"
       },
       {
         "command": "imp.logstream.remove",
-        "title": "imp: Remove Device Logs"
+        "title": "imp: Stop Device Logs"
       },
       {
         "command": "imp.logstream.pause",
