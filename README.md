@@ -87,8 +87,8 @@ This extension contributes the following commands:
 * `imp: Auth User Password`: Create authrization file with access token in the selected workspace directory.
 * `imp: New Project`: Create configuration file and source code files in the selected workspace directory.
 * `imp: Deploy Project`: Deploy the source code on the selected device group and reset the devices.
-* `imp: Add Device Logs`: Add selected device logs to the console output.
-* `imp: Remove Device Logs`: Remove selected device logs from the console output.
+* `imp: Start Device Logs`: Add selected device logs to the console output.
+* `imp: Stop Device Logs`: Remove selected device logs from the console output.
 * `imp: Pause Logs`: Pause the logs in the console output.
 * `imp: Clear Logs`: Clear the logs in the console output.
 * `imp: Add Device to current DG`: Add device to workspace device group.
@@ -156,7 +156,7 @@ menu item. This action uploads the agent and the device code to the server, and 
 
 ### The Log Console ###
 
-The live logs are streamed to ‘View‘ > ‘Output‘. It is possible to add the specified device live logs by it's ID using `imp: Add Device Logs` extension command. The Output shows live logs streamed from the current Device Group if the group contains at least one device.
+The live logs are streamed to ‘View‘ > ‘Output‘. It is possible to add the specified device live logs by it's ID using `imp: Start Device Logs` extension command. The Output shows live logs streamed from the current Device Group if the group contains at least one device.
 
 ### Adding a Device to the Project Device Group ###
 
