@@ -172,8 +172,17 @@ class Diagnostic {
                 return;
             }
 
+            /*
+             * The location could be a path relative to Builder include dir or absolute path.
+             * Check the both cases below.
+             */
             const location = errData[0];
-            uri = vscode.Uri.file(path.join(path.dirname(src.file), location));
+            if (fs.existsSync(location)) {
+                uri = vscode.Uri.file(location);
+            } else if (fs.existsSync(path.join(path.dirname(src.file), location))) {
+                uri = vscode.Uri.file(path.join(path.dirname(src.file), location));
+            }
+
             pos = new vscode.Position(errData[1] - 1, 0);
         } else {
             /*
@@ -187,7 +196,7 @@ class Diagnostic {
             pos = new vscode.Position(logStreamError.line - 1 - 1, 0);
         }
 
-        if (fs.existsSync(uri.fsPath) && !this.diagnosticCollection.has(uri)) {
+        if (uri && fs.existsSync(uri.fsPath) && !this.diagnosticCollection.has(uri)) {
             this.diagnosticCollection.set(uri, [{
                 code: '',
                 message: 'Error',

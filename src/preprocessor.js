@@ -64,6 +64,7 @@ class Preprocessor {
     preprocess(inputFileName, inputData, includeDir, githubCreds, variables) {
         const builder = new Builder();
         builder.machine.file = inputFileName;
+        builder.machine.path = includeDir;
         builder.machine.generateLineControlStatements = true;
         builder.machine.readers.file.searchDirs.push(includeDir);
         if (githubCreds) {
