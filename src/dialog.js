@@ -26,7 +26,6 @@
 const util = require('util');
 const vscode = require('vscode');
 const Api = require('./api');
-const Auth = require('./auth');
 const User = require('./user');
 const Workspace = require('./workspace');
 
@@ -60,41 +59,6 @@ function shouldResume() {
             resolve(true);
         }
     });
-}
-
-async function getPassword(input, state) {
-    const pick = await input.showInputBox(
-        getLoginTitle(),
-        2,
-        2,
-        state.password || '',
-        User.MESSAGES.AUTH_PROMPT_ENTER_PWD,
-        () => {},
-        undefined,
-        shouldResume,
-        true,
-    );
-
-    const nextState = state;
-    nextState.password = pick;
-}
-
-async function getUsername(input, state) {
-    const pick = await input.showInputBox(
-        getLoginTitle(),
-        1,
-        2,
-        state.username || '',
-        User.MESSAGES.AUTH_PROMPT_ENTER_CREDS,
-        () => {},
-        undefined,
-        shouldResume,
-    );
-
-    const nextState = state;
-    nextState.username = pick;
-
-    return nextIn => getPassword(nextIn, nextState);
 }
 
 async function getDGName(input, state) {
@@ -283,14 +247,68 @@ async function pickOwner(input, state) {
     return nextIn => pickProductFromList(nextIn, nextState);
 }
 
+async function getPassword(input, state) {
+    const pick = await input.showInputBox(
+        getLoginTitle(),
+        2,
+        2,
+        state.password || '',
+        User.MESSAGES.AUTH_PROMPT_ENTER_PWD,
+        () => {},
+        undefined,
+        shouldResume,
+        true,
+    );
+
+    const nextState = state;
+    nextState.password = pick;
+    if (state.newProject === undefined) {
+        return;
+    }
+
+    try {
+        const auth = await Api.login(state);
+        nextState.auth = auth;
+        nextState.accessToken = auth.access_token;
+        return nextIn => pickOwner(nextIn, nextState);
+    } catch (err) {
+        nextState.err = err;
+        User.showImpApiError(`${User.ERRORS.PROJECT_CREATE}`, nextState.err);
+    }
+}
+
+async function getUsername(input, state) {
+    const pick = await input.showInputBox(
+        getLoginTitle(),
+        1,
+        2,
+        state.username || '',
+        User.MESSAGES.AUTH_PROMPT_ENTER_CREDS,
+        () => {},
+        undefined,
+        shouldResume,
+    );
+
+    const nextState = state;
+    nextState.username = pick;
+
+    return nextIn => getPassword(nextIn, nextState);
+}
+
 async function checkIfProjectAlreadyExist(input, state) {
+    let auth;
     let config;
     try {
+        auth = await Workspace.Data.getAuthInfo();
         config = await Workspace.Data.getWorkspaceInfo();
     } catch (err) {
-        // Correct behaviour, we cannot read workspace in the cwd.
+        /*
+         * Correct behaviour, we cannot read workspace in the cwd.
+         * The auth information should be saved too.
+         */
         const nextState = state;
-        return nextIn => pickOwner(nextIn, nextState);
+        nextState.newProject = true;
+        return nextIn => getUsername(nextIn, nextState);
     }
 
     const pick = await input.showQuickPick(
@@ -305,11 +323,12 @@ async function checkIfProjectAlreadyExist(input, state) {
     );
 
     const nextState = state;
+    nextState.config = config;
+    nextState.accessToken = auth.accessToken.access_token;
     if (pick.label === 'Yes') {
         return nextIn => pickOwner(nextIn, nextState);
     }
 
-    nextState.config = config;
     return undefined;
 }
 
@@ -453,10 +472,8 @@ class Dialog {
         return state;
     }
 
-    static async newProjectCollectInputs(token) {
-        const state = {
-            accessToken: token,
-        };
+    static async newProjectCollectInputs() {
+        const state = {};
         await Dialog.run(input => checkIfProjectAlreadyExist(input, state));
         return state;
     }
@@ -485,32 +502,36 @@ class Dialog {
         }
     }
 
-    static async newProject(accessToken) {
-        const state = await Dialog.newProjectCollectInputs(accessToken);
+    static async newProject() {
+        const state = await Dialog.newProjectCollectInputs();
 
         /*
          * Here we have state after user new project dialog.
          * How to use it:
-         * 1) Ensure, that state.err is note defined.
+         * 1) Ensure, that the state.err is not defined.
          *
-         * 2) If state.type == 'Exist DG':
+         * 2) If state.auth is defined, do not forget to save it.
+         *
+         * 3) If state.type == 'Exist DG':
          * state should contait state.dgName and state.dg variables.
          *
-         * 3) If state.type == 'New DG':
+         * 2) If state.type == 'New DG':
          * state should contain state.productName, state.product and state.dgName.
          * The DG could be created later.
          *
-         * 4) if state.type == 'New Product':
+         * 5) if state.type == 'New Product':
          * state should contain state.productName and state.dgName.
          * The product and device group could be created later.
-         *
-         * 5) if state.config is defined, it mean that user rejected new project creation.
          *
          * 6) The state.owner should be defined in all cases.
          */
         // console.log(util.inspect(state, { showHidden: false, depth: null }));
         if (state.completed === undefined) {
             return undefined;
+        }
+
+        if (state.auth) {
+            await Workspace.Data.storeAuthInfo(state.auth);
         }
 
         switch (state.type) {
@@ -537,6 +558,6 @@ function loginDialog() {
 module.exports.loginDialog = loginDialog;
 
 function newProjectDialog() {
-    Auth.authorize().then(Dialog.newProject);
+    Dialog.newProject();
 }
 module.exports.newProjectDialog = newProjectDialog;
