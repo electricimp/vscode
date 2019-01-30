@@ -29,7 +29,7 @@ const Auth = require('./auth');
 const User = require('./user');
 const Workspace = require('./workspace');
 
-async function getDeviceIDPick(accessToken, ownerID, dgIDAssigned, dgIDUnAssigned) {
+async function pickDeviceID(accessToken, ownerID, dgIDAssigned, dgIDUnAssigned) {
     let devices;
     try {
         devices = await Api.getDeviceList(accessToken, ownerID, dgIDAssigned, dgIDUnAssigned);
@@ -66,7 +66,7 @@ async function getDeviceIDPick(accessToken, ownerID, dgIDAssigned, dgIDUnAssigne
 
     return result[1];
 }
-module.exports.getDeviceIDPick = getDeviceIDPick;
+module.exports.pickDeviceID = pickDeviceID;
 
 // Get agent URL related with device.
 // The URL will be displayed in the pop-up message.
@@ -79,7 +79,7 @@ module.exports.getDeviceIDPick = getDeviceIDPick;
 function getAgentURLDialog() {
     Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
         .then(([accessToken, cfg]) => {
-            getDeviceIDPick(accessToken, cfg.ownerId, undefined, undefined)
+            pickDeviceID(accessToken, cfg.ownerId, undefined, undefined)
                 .then(deviceID => Api.getAgentURL(accessToken, deviceID))
                 .then(agentUrl => vscode.window.showInformationMessage(agentUrl))
                 .catch(err => User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err));
@@ -97,7 +97,7 @@ module.exports.getAgentURLDialog = getAgentURLDialog;
 function addDeviceToDGDialog() {
     Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
         .then(([accessToken, cfg]) => {
-            getDeviceIDPick(accessToken, cfg.ownerId, undefined, cfg.deviceGroupId)
+            pickDeviceID(accessToken, cfg.ownerId, undefined, cfg.deviceGroupId)
                 .then(deviceID => Api.addDeviceToDG(accessToken, cfg.deviceGroupId, deviceID))
                 .then(() => {
                     vscode.window.showInformationMessage(`The device is added to DG:${cfg.deviceGroupId}`);
@@ -117,7 +117,7 @@ module.exports.addDeviceToDGDialog = addDeviceToDGDialog;
 function removeDeviceFromDGDialog() {
     Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
         .then(([accessToken, cfg]) => {
-            getDeviceIDPick(accessToken, cfg.ownerId, cfg.deviceGroupId, undefined)
+            pickDeviceID(accessToken, cfg.ownerId, cfg.deviceGroupId, undefined)
                 .then(deviceID => Api.removeDeviceFromDG(accessToken, cfg.deviceGroupId, deviceID))
                 .then(() => {
                     vscode.window.showInformationMessage(`The device is removed from DG:${cfg.deviceGroupId}`);

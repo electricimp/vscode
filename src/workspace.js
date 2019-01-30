@@ -462,7 +462,6 @@ function deploy(logstream, diagnostic) {
                     return;
                 }
 
-
                 let deviceSource;
                 const devInc = path.dirname(src.device_path);
                 try {
@@ -551,6 +550,6 @@ function deploy(logstream, diagnostic) {
             }, (err) => {
                 vscode.window.showErrorMessage(`Cannot read source files: ${err}`);
             });
-        }).catch(err => vscode.window.showErrorMessage(`Deploy: ${err}`));
+        }).catch(err => vscode.window.showErrorMessage(err.message));
 }
 module.exports.deploy = deploy;

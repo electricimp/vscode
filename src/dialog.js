@@ -297,18 +297,28 @@ async function getUsername(input, state) {
 
 async function checkIfProjectAlreadyExist(input, state) {
     let auth;
-    let config;
     try {
         auth = await Workspace.Data.getAuthInfo();
-        config = await Workspace.Data.getWorkspaceInfo();
     } catch (err) {
         /*
-         * Correct behaviour, we cannot read workspace in the cwd.
-         * The auth information should be saved too.
+         * If we cannot get auth information, start the login procedure.
+         * The auth information should be saved later too.
          */
         const nextState = state;
         nextState.newProject = true;
         return nextIn => getUsername(nextIn, nextState);
+    }
+
+    let config;
+    try {
+        config = await Workspace.Data.getWorkspaceInfo();
+    } catch (err) {
+        /*
+         * Correct behaviour, we cannot read workspace in the cwd.
+         */
+        const nextState = state;
+        nextState.accessToken = auth.accessToken.access_token;
+        return nextIn => pickOwner(nextIn, nextState);
     }
 
     const pick = await input.showQuickPick(

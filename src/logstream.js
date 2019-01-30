@@ -253,11 +253,21 @@ class LogStream {
     }
 
     logState(msg) {
-        /*
-         * Do not print state messages for now.
-         */
         const doNotPrintState = true;
         if (doNotPrintState) {
+            return;
+        }
+
+        if (this.pause) {
+            return;
+        }
+
+        this.outputChannel.appendLine(msg);
+    }
+
+    logError(msg) {
+        const doNotPrintError = true;
+        if (doNotPrintError) {
             return;
         }
 
@@ -290,7 +300,7 @@ class LogStream {
                         User.showImpApiError(`Cannot add ${deviceID}`, err);
                     });
             } else {
-                Api.logStreamCreate(accessToken, this.logMsg.bind(this), this.logState.bind(this))
+                Api.logStreamCreate(accessToken, this.logMsg.bind(this), this.logState.bind(this), this.logError(this))
                     .then((logStreamID) => {
                         this.logStreamID = logStreamID;
                         this.outputChannel =
@@ -314,7 +324,7 @@ class LogStream {
     addDeviceDialog() {
         Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
             .then(([accessToken, cfg]) => {
-                Devices.getDeviceIDPick(accessToken, cfg.ownerId, cfg.deviceGroupId, undefined)
+                Devices.pickDeviceID(accessToken, cfg.ownerId, cfg.deviceGroupId, undefined)
                     .then(deviceID => this.addDevice(accessToken, deviceID))
                     .catch(err => User.showImpApiError('Cannot add device:', err));
             }).catch(err => vscode.window.showErrorMessage(err.message));
@@ -327,7 +337,7 @@ class LogStream {
     removeDeviceDialog() {
         Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
             .then(([accessToken, cfg]) => {
-                Devices.getDeviceIDPick(accessToken, cfg.ownerId, cfg.deviceGroupId, undefined)
+                Devices.pickDeviceID(accessToken, cfg.ownerId, cfg.deviceGroupId, undefined)
                     .then((deviceID) => {
                         Api.logStreamRemoveDevice(accessToken, this.logStreamID, deviceID)
                             .then(() => {

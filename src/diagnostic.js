@@ -101,7 +101,7 @@ class Diagnostic {
 
         const uri = vscode.Uri.file(path.join(includeDir, parsedError.file));
         const pos = new vscode.Position(parsedError.line - 1, 0);
-        if (!this.diagnosticCollection.has(uri)) {
+        if (fs.existsSync(uri.fsPath) && !this.diagnosticCollection.has(uri)) {
             this.diagnosticCollection.set(uri, [{
                 code: '',
                 message: parsedError.msg,
@@ -138,7 +138,7 @@ class Diagnostic {
 
                 const uri = vscode.Uri.file(path.join(path.dirname(data.file), errData[0]));
                 const pos = new vscode.Position(errData[1] - 1, meta.column - 1);
-                if (!this.diagnosticCollection.has(uri)) {
+                if (fs.existsSync(uri.fsPath) && !this.diagnosticCollection.has(uri)) {
                     this.diagnosticCollection.set(uri, [{
                         code: '',
                         message: `${meta.text} in ${errData[0]}`,

@@ -262,12 +262,12 @@ function getDeviceList(accessToken, ownerID, dgIDAssigned, dgIDExclude) {
 }
 module.exports.getDeviceList = getDeviceList;
 
-function logStreamCreate(accessToken, logMsg, logState) {
+function logStreamCreate(accessToken, logMsg, logState, logError) {
     const api = new ImpCentralApi();
     api.auth.accessToken = accessToken;
 
     return new Promise((resolve, reject) => {
-        api.logStreams.create(logMsg, logState).then((logStream) => {
+        api.logStreams.create(logMsg, logState, logError).then((logStream) => {
             resolve(logStream.data.id);
         }, (err) => {
             reject(err);

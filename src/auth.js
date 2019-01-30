@@ -25,7 +25,6 @@
 
 const vscode = require('vscode');
 const Api = require('./api');
-const User = require('./user');
 const Workspace = require('./workspace');
 
 function isAccessTokenExpired(auth) {
@@ -77,8 +76,6 @@ function authorize() {
             .then(auth => refreshAccessToken(auth.accessToken))
             .then(accessToken => resolve(accessToken.access_token))
             .catch((err) => {
-                vscode.window.showErrorMessage(`${User.ERRORS.AUTH_FILE} ${err}`);
-                vscode.commands.executeCommand('imp.auth.creds');
                 reject(err);
             });
     }));
