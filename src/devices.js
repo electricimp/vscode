@@ -81,7 +81,10 @@ function getAgentURLDialog() {
         .then(([accessToken, cfg]) => {
             pickDeviceID(accessToken, cfg.ownerId, undefined, undefined)
                 .then(deviceID => Api.getAgentURL(accessToken, deviceID))
-                .then(agentUrl => vscode.window.showInformationMessage(agentUrl))
+                .then((agentUrl) => {
+                    vscode.env.clipboard.writeText(agentUrl);
+                    vscode.window.showInformationMessage(agentUrl);
+                })
                 .catch(err => User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err));
         }).catch(err => vscode.window.showErrorMessage(err.message));
 }
