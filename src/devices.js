@@ -103,7 +103,7 @@ function addDeviceToDGDialog() {
             pickDeviceID(accessToken, cfg.ownerId, undefined, cfg.deviceGroupId)
                 .then(deviceID => Api.addDeviceToDG(accessToken, cfg.deviceGroupId, deviceID))
                 .then(() => {
-                    vscode.window.showInformationMessage(`The device is added to DG:${cfg.deviceGroupId}`);
+                    vscode.window.showInformationMessage('The device is added to DG');
                 })
                 .catch(err => User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err));
         }).catch(err => vscode.window.showErrorMessage(err.message));
@@ -123,7 +123,7 @@ function removeDeviceFromDGDialog() {
             pickDeviceID(accessToken, cfg.ownerId, cfg.deviceGroupId, undefined)
                 .then(deviceID => Api.removeDeviceFromDG(accessToken, cfg.deviceGroupId, deviceID))
                 .then(() => {
-                    vscode.window.showInformationMessage(`The device is removed from DG:${cfg.deviceGroupId}`);
+                    vscode.window.showInformationMessage('The device is removed from DG');
                 })
                 .catch(err => User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err));
         }).catch(err => vscode.window.showErrorMessage(err.message));

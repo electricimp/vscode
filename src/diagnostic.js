@@ -25,6 +25,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const util = require('util');
 const vscode = require('vscode');
 const Workspace = require('./workspace');
 
@@ -74,6 +75,8 @@ class Diagnostic {
                 };
             }
         } catch (err) {
+            console.log("======== !catch! => getSource()" + err);
+            console.log(util.inspect(source, { showHidden: false, depth: null }));
             return undefined;
         }
 
@@ -110,7 +113,7 @@ class Diagnostic {
                 source: 'Builder',
                 relatedInformation: [],
             }]);
-            vscode.window.showTextDocument(uri);
+            // vscode.window.showTextDocument(uri);
             vscode.commands.executeCommand('workbench.action.problems.focus');
         }
     }
@@ -136,9 +139,17 @@ class Diagnostic {
                     return;
                 }
 
-                const uri = vscode.Uri.file(path.join(path.dirname(data.file), errData[0]));
+                let uri;
+                const relativeFilePath = path.join(path.dirname(data.file), errData[0]);
+                const absoluteFilePath = errData[0];
+                if (fs.existsSync(relativeFilePath)) {
+                    uri = vscode.Uri.file(relativeFilePath);
+                } else if (fs.existsSync(absoluteFilePath)) {
+                    uri = vscode.Uri.file(absoluteFilePath);
+                }
+
                 const pos = new vscode.Position(errData[1] - 1, meta.column - 1);
-                if (fs.existsSync(uri.fsPath) && !this.diagnosticCollection.has(uri)) {
+                if (uri && fs.existsSync(uri.fsPath) && !this.diagnosticCollection.has(uri)) {
                     this.diagnosticCollection.set(uri, [{
                         code: '',
                         message: `${meta.text} in ${errData[0]}`,
@@ -147,7 +158,7 @@ class Diagnostic {
                         source: 'Deploy',
                         relatedInformation: [],
                     }]);
-                    vscode.window.showTextDocument(uri);
+                    // vscode.window.showTextDocument(uri);
                     vscode.commands.executeCommand('workbench.action.problems.focus');
                 }
             });
@@ -176,11 +187,12 @@ class Diagnostic {
              * The location could be a path relative to Builder include dir or absolute path.
              * Check the both cases below.
              */
-            const location = errData[0];
-            if (fs.existsSync(location)) {
-                uri = vscode.Uri.file(location);
-            } else if (fs.existsSync(path.join(path.dirname(src.file), location))) {
-                uri = vscode.Uri.file(path.join(path.dirname(src.file), location));
+            const relativeFilePath = path.join(path.dirname(src.file), errData[0]);
+            const absoluteFilePath = errData[0];
+            if (fs.existsSync(relativeFilePath)) {
+                uri = vscode.Uri.file(relativeFilePath);
+            } else if (fs.existsSync(absoluteFilePath)) {
+                uri = vscode.Uri.file(absoluteFilePath);
             }
 
             pos = new vscode.Position(errData[1] - 1, 0);
@@ -205,7 +217,8 @@ class Diagnostic {
                 source: 'Run-time',
                 relatedInformation: [],
             }]);
-            vscode.window.showTextDocument(uri);
+            // vscode.window.showTextDocument(uri);
+            vscode.commands.executeCommand('workbench.action.problems.focus');
         }
     }
 }

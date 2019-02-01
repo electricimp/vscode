@@ -159,12 +159,12 @@ class LogStream {
              * or relative path with include directory.
              * Check the both cases below.
              */
-            const absoluteIncludeFilePath = errData[0];
-            const relativeIncludeFilePath = path.join(path.dirname(src.file), errData[0]);
-            if (fs.existsSync(absoluteIncludeFilePath)) {
-                return `${msg.replace(`${result[1]}:${result[2]}`, `${absoluteIncludeFilePath}:${errData[1]}`)}:0`;
-            } else if (fs.existsSync(relativeIncludeFilePath)) {
-                return `${msg.replace(`${result[1]}:${result[2]}`, `${relativeIncludeFilePath}:${errData[1]}`)}:0`;
+            const relativeFilePath = path.join(path.dirname(src.file), errData[0]);
+            const absoluteFilePath = errData[0];
+            if (fs.existsSync(relativeFilePath)) {
+                return `${msg.replace(`${result[1]}:${result[2]}`, `${relativeFilePath}:${errData[1]}`)}:0`;
+            } else if (fs.existsSync(absoluteFilePath)) {
+                return `${msg.replace(`${result[1]}:${result[2]}`, `${absoluteFilePath}:${errData[1]}`)}:0`;
             }
 
             /*
@@ -202,26 +202,30 @@ class LogStream {
     }
 
     getErrorMessage(msg) {
-        const regex = /\b[0-9a-f]{16}\s(.*)\s(?:development|production)\s([a-z.]+)\sERROR:(.*)/;
-        const result = msg.match(regex);
+        let regex = /\b[0-9a-f]{16}\s(.*)\s(?:development|production)\s([a-z.]+)\sERROR:(.*)/;
+        let result = msg.match(regex);
         if (result == null || this.diagnostic.pre === undefined) {
             return undefined;
         }
 
         const errMsg = result[3];
-        const reg = /(.*):(\d+)/;
-        const res = errMsg.match(reg);
-        if (errMsg.indexOf('agent_code') > -1) {
+        regex = /(.*):(\d+)/;
+        result = errMsg.match(regex);
+        if (result == null) {
+            return undefined;
+        }
+
+        if (errMsg.includes('agent_code')) {
             return {
                 source: 'agent_code',
                 file: this.diagnostic.getSource('agent_code').file,
-                line: res[2],
+                line: result[2],
             };
-        } else if (errMsg.indexOf('device_code') > -1) {
+        } else if (errMsg.includes('device_code')) {
             return {
                 source: 'device_code',
                 file: this.diagnostic.getSource('device_code').file,
-                line: res[2],
+                line: result[2],
             };
         }
 
@@ -229,30 +233,56 @@ class LogStream {
     }
 
     logMsg(msg) {
-        if (this.pause) {
-            return;
-        }
+        try {
+            if (this.pause) {
+                return;
+            }
 
-        const err = this.getErrorMessage(msg);
-        if (err) {
-            this.diagnostic.addLogStreamError(err);
-        }
+            let err;
+            try {
+                err = this.getErrorMessage(msg);
+            } catch (error) {
+                console.log("======== !catch! => logMsg():this.getErrorMessage(msg)" + error);
+                console.log("======== msg: " + msg);
+                return;
+            }
 
-        /*
-         * If we get message like 'Downloading new code'.
-         * It mean that we should clean the diagnostic collection
-         * to report the actual problems from fresh deploy.
-         */
-        const regex = /.*(Downloading new code).*(program storage used)/;
-        const result = msg.match(regex);
-        if (result) {
-            this.diagnostic.clearDiagnostic();
-        }
+            try {
+                if (err) {
+                    this.diagnostic.addLogStreamError(err);
+                }
+            } catch (error) {
+                console.log("======== !catch! => logMsg():this.diagnostic.addLogStreamError(err)" + error);
+                console.log("======== msg: " + msg);
+                return;
+            }
 
-        this.outputChannel.appendLine(this.getLogStreamLogMessage(msg));
+            try {
+                /*
+                * If we got message like 'Downloading new code'.
+                * It mean that we should clean the diagnostic collection
+                * to report the actual problems from fresh deploy.
+                */
+                const regex = /.*(Downloading new code).*(program storage used)/;
+                const result = msg.match(regex);
+                if (result) {
+                    this.diagnostic.clearDiagnostic();
+                }
+            } catch (error) {
+                console.log("======== !catch! => logMsg():this.diagnostic.clearDiagnostic()" + error);
+                console.log("======== msg: " + msg);
+                return;
+            }
+
+            this.outputChannel.appendLine(this.getLogStreamLogMessage(msg));
+        } catch (err) {
+            console.log("======== !catch! => logMsg()" + err);
+            console.log("======== msg: " + msg);
+        }
     }
 
     logState(msg) {
+        console.log("logState() " + msg);
         const doNotPrintState = true;
         if (doNotPrintState) {
             return;
@@ -266,15 +296,7 @@ class LogStream {
     }
 
     logError(msg) {
-        const doNotPrintError = true;
-        if (doNotPrintError) {
-            return;
-        }
-
-        if (this.pause) {
-            return;
-        }
-
+        console.log("logError() " + msg);
         this.outputChannel.appendLine(msg);
     }
 
@@ -282,32 +304,37 @@ class LogStream {
         return this.logStreamID && this.outputChannel;
     }
 
-    deviceAdded(deviceID) {
+    deviceAdded(deviceID, silent = false) {
         this.outputChannel.show(true);
         this.devices.add(deviceID);
         this.playPauseItem.show();
-        vscode.window.showInformationMessage(`Device added: ${deviceID}`);
+        if (!silent) {
+            vscode.window.showInformationMessage(`Device added: ${deviceID}`);
+        }
     }
 
-    addDevice(accessToken, deviceID) {
+    addDevice(accessToken, deviceID, silent = false) {
         return new Promise(((resolve) => {
             if (this.isOpened()) {
                 Api.logStreamAddDevice(accessToken, this.logStreamID, deviceID)
                     .then(() => {
-                        this.deviceAdded(deviceID);
+                        this.deviceAdded(deviceID, silent);
                         resolve();
                     }, (err) => {
                         User.showImpApiError(`Cannot add ${deviceID}`, err);
                     });
             } else {
-                Api.logStreamCreate(accessToken, this.logMsg.bind(this), this.logState.bind(this), this.logError(this))
+                const message = this.logMsg.bind(this);
+                const state = this.logState.bind(this);
+                const error = this.logError.bind(this);
+                Api.logStreamCreate(accessToken, message, state, error)
                     .then((logStreamID) => {
                         this.logStreamID = logStreamID;
                         this.outputChannel =
                             vscode.window.createOutputChannel(User.NAMES.OUTPUT_CHANNEL);
                         Api.logStreamAddDevice(accessToken, logStreamID, deviceID)
                             .then(() => {
-                                this.deviceAdded(deviceID);
+                                this.deviceAdded(deviceID, silent);
                                 resolve();
                             });
                     }, (err) => {

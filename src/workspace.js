@@ -519,7 +519,7 @@ function deploy(logstream, diagnostic) {
                             api.devices.list({ [Devs.FILTER_DEVICE_GROUP_ID]: dg })
                                 .then((devs) => {
                                     if (devs.data.length >= 1) {
-                                        logstream.addDevice(accessToken, devs.data[0].id)
+                                        logstream.addDevice(accessToken, devs.data[0].id, true)
                                             .then(() => {
                                                 api.deviceGroups.restartDevices(cfg.deviceGroupId)
                                                     .then(() => {
