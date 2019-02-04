@@ -89,22 +89,17 @@ class Diagnostic {
             return;
         }
 
-        /*
-         * There are some cases of Builder errors, when it is not possible
-         * to restore full path to file with error.
-         * It could be nested @include with relative path. In this case Builder returns
-         * only filename without path prefix. So it is not possible to find a full file path
-         * and report problem correctly.
-         * Just return in this case.
-         */
-        const srcPath = path.join(includeDir, parsedError.file);
-        if (!fs.existsSync(srcPath)) {
-            return;
+        let uri;
+        const relativeFilePath = path.join(includeDir, parsedError.file);
+        const absoluteFilePath = parsedError.file;
+        if (fs.existsSync(relativeFilePath)) {
+            uri = vscode.Uri.file(relativeFilePath);
+        } else if (fs.existsSync(absoluteFilePath)) {
+            uri = vscode.Uri.file(absoluteFilePath);
         }
 
-        const uri = vscode.Uri.file(path.join(includeDir, parsedError.file));
         const pos = new vscode.Position(parsedError.line - 1, 0);
-        if (fs.existsSync(uri.fsPath) && !this.diagnosticCollection.has(uri)) {
+        if (uri && fs.existsSync(uri.fsPath) && !this.diagnosticCollection.has(uri)) {
             this.diagnosticCollection.set(uri, [{
                 code: '',
                 message: parsedError.msg,

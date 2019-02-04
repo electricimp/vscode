@@ -66,11 +66,16 @@ class Preprocessor {
         builder.machine.file = inputFileName;
         builder.machine.path = includeDir;
         builder.machine.generateLineControlStatements = true;
+
+        // Remove default Builder include path and add own
+        builder.machine.readers.file.searchDirs.length = 0;
         builder.machine.readers.file.searchDirs.push(includeDir);
+
         if (githubCreds) {
             builder.machine.readers.github.username = githubCreds.username;
             builder.machine.readers.github.token = githubCreds.token;
         }
+
         let outputData = builder.machine.execute(inputData, variables);
         outputData = outputData.replace(/#line/g, '//line');
         this.buildLineTable(inputFileName, outputData);
