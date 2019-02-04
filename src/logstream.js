@@ -27,6 +27,7 @@ const fs = require('fs');
 const path = require('path');
 const strftime = require('strftime');
 const vscode = require('vscode');
+const ImpCentralApi = require('imp-central-api');
 const Api = require('./api');
 const Devices = require('./devices');
 const User = require('./user');
@@ -42,6 +43,12 @@ const Workspace = require('./workspace');
 class LogStream {
     constructor(diagnostic) {
         this.diagnostic = diagnostic;
+        /*
+         * The ImpCentralApi instance below is used only for creating and closing
+         * ImpCentralApi logstreams. Because these two functions cannot be called
+         * from different ImpCentralApi instances.
+         */
+        this.impCentralApi = new ImpCentralApi();
         this.logStreamID = undefined;
         this.outputChannel = undefined;
         this.devices = new Set();
@@ -300,10 +307,6 @@ class LogStream {
         this.outputChannel.appendLine(msg);
     }
 
-    isOpened() {
-        return this.logStreamID && this.outputChannel;
-    }
-
     deviceAdded(deviceID, silent = false) {
         this.outputChannel.show(true);
         this.devices.add(deviceID);
@@ -315,32 +318,29 @@ class LogStream {
 
     addDevice(accessToken, deviceID, silent = false) {
         return new Promise(((resolve) => {
-            if (this.isOpened()) {
-                Api.logStreamAddDevice(accessToken, this.logStreamID, deviceID)
-                    .then(() => {
-                        this.deviceAdded(deviceID, silent);
-                        resolve();
-                    }, (err) => {
-                        User.showImpApiError(`Cannot add ${deviceID}`, err);
-                    });
-            } else {
-                const message = this.logMsg.bind(this);
-                const state = this.logState.bind(this);
-                const error = this.logError.bind(this);
-                Api.logStreamCreate(accessToken, message, state, error)
-                    .then((logStreamID) => {
-                        this.logStreamID = logStreamID;
-                        this.outputChannel =
-                            vscode.window.createOutputChannel(User.NAMES.OUTPUT_CHANNEL);
-                        Api.logStreamAddDevice(accessToken, logStreamID, deviceID)
-                            .then(() => {
-                                this.deviceAdded(deviceID, silent);
-                                resolve();
-                            });
-                    }, (err) => {
-                        User.showImpApiError(`Cannot open ${User.NAMES.OUTPUT_CHANNEL}`, err);
-                    });
-            }
+            this.impCentralApi.auth.accessToken = accessToken;
+            Api.logStreamClose(this.impCentralApi, this.logStreamID)
+                .then(() => {
+                    const message = this.logMsg.bind(this);
+                    const state = this.logState.bind(this);
+                    const error = this.logError.bind(this);
+                    Api.logStreamCreate(this.impCentralApi, message, state, error)
+                        .then((logStreamID) => {
+                            this.logStreamID = logStreamID;
+                            if (this.outputChannel === undefined) {
+                                this.outputChannel =
+                                    vscode.window.createOutputChannel(User.NAMES.OUTPUT_CHANNEL);
+                            }
+
+                            Api.logStreamAddDevice(accessToken, logStreamID, deviceID)
+                                .then(() => {
+                                    this.deviceAdded(deviceID, silent);
+                                    resolve();
+                                });
+                        }, (err) => {
+                            User.showImpApiError(`Cannot open ${User.NAMES.OUTPUT_CHANNEL}`, err);
+                        });
+                }, err => User.showImpApiError(`Cannot close ${User.NAMES.OUTPUT_CHANNEL}`, err));
         }));
     }
 

@@ -262,12 +262,9 @@ function getDeviceList(accessToken, ownerID, dgIDAssigned, dgIDExclude) {
 }
 module.exports.getDeviceList = getDeviceList;
 
-function logStreamCreate(accessToken, logMsg, logState, logError) {
-    const api = new ImpCentralApi();
-    api.auth.accessToken = accessToken;
-
+function logStreamCreate(impCentralApi, logMsg, logState, logError) {
     return new Promise((resolve, reject) => {
-        api.logStreams.create(logMsg, logState, logError).then((logStream) => {
+        impCentralApi.logStreams.create(logMsg, logState, logError).then((logStream) => {
             resolve(logStream.data.id);
         }, (err) => {
             reject(err);
@@ -275,6 +272,21 @@ function logStreamCreate(accessToken, logMsg, logState, logError) {
     });
 }
 module.exports.logStreamCreate = logStreamCreate;
+
+function logStreamClose(impCentralApi, logStreamID) {
+    if (logStreamID === undefined) {
+        return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+        impCentralApi.logStreams.close(logStreamID).then((result) => {
+            resolve(result);
+        }, (err) => {
+            reject(err);
+        });
+    });
+}
+module.exports.logStreamClose = logStreamClose;
 
 function logStreamAddDevice(accessToken, logStreamID, deviceID) {
     const api = new ImpCentralApi();
