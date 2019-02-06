@@ -340,7 +340,7 @@ class LogStream {
                         }, (err) => {
                             User.showImpApiError(`Cannot open ${User.NAMES.OUTPUT_CHANNEL}`, err);
                         });
-                }, err => User.showImpApiError(`Cannot close ${User.NAMES.OUTPUT_CHANNEL}`, err));
+                });
         }));
     }
 

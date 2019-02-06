@@ -278,11 +278,15 @@ function logStreamClose(impCentralApi, logStreamID) {
         return Promise.resolve();
     }
 
-    return new Promise((resolve, reject) => {
+    /*
+     * It is possible, that stream will be silently closed by server.
+     * Return resolve() in all cases.
+     */
+    return new Promise((resolve) => {
         impCentralApi.logStreams.close(logStreamID).then((result) => {
             resolve(result);
         }, (err) => {
-            reject(err);
+            resolve(err);
         });
     });
 }

@@ -24,6 +24,7 @@
 
 
 const vscode = require('vscode');
+const Api = require('./api');
 const Workspace = require('./workspace');
 const LogStream = require('./logstream');
 const Devices = require('./devices');
@@ -120,6 +121,11 @@ exports.activate = activate;
 
 // this method is called when your extension is deactivated
 function deactivate() {
-    // TODO: Do not forget close all outputChannels and device LogStreams here.
+    Api.logStreamClose(logstream.impCentralApi, logstream.logStreamID)
+        .then(() => {
+            if (logstream.outputChannel) {
+                logstream.outputChannel.dispose();
+            }
+        });
 }
 exports.deactivate = deactivate;
