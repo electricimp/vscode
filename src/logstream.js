@@ -26,6 +26,7 @@
 const fs = require('fs');
 const path = require('path');
 const strftime = require('strftime');
+const IsReachable = require('is-reachable');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
 const Api = require('./api');
@@ -53,6 +54,10 @@ class LogStream {
         this.outputChannel = undefined;
         this.devices = new Set();
         this.pause = false;
+
+        // IsReachable monitoring
+        this.interval = 3000;
+        this.target = 'https://api.electricimp.com/v5';
     }
 
     static getTypeInfo(type) {
@@ -380,7 +385,7 @@ class LogStream {
     // Parameters:
     //     none
     clearLogOutput() {
-        if (this.isOpened() === undefined) {
+        if (this.outputChannel === undefined) {
             vscode.window.showErrorMessage(`Cannot clear ${User.NAMES.OUTPUT_CHANNEL}`);
             return;
         }
@@ -393,7 +398,7 @@ class LogStream {
     // Parameters:
     //     none
     pauseLogOutput() {
-        if (this.isOpened() === undefined) {
+        if (this.outputChannel === undefined) {
             vscode.window.showErrorMessage(`Cannot pause ${User.NAMES.OUTPUT_CHANNEL}`);
             return;
         }
@@ -413,6 +418,27 @@ class LogStream {
         this.playPauseItem = playPauseItem;
         this.playPauseItem.text = `LogStream ${this.pauseChar}`;
         this.playPauseItem.tooltip = 'Play/Pause the LogStream';
+    }
+
+    setMonitoringItem(monitoringItem) {
+        // Monitoring LogStream status bar item
+        this.monitoringItem = monitoringItem;
+        this.monitoringItem.text = 'Online';
+        this.monitoringItem.tooltip = 'Check Electric Imp connection';
+        this.monitoringItem.show();
+    }
+
+    async checkConnection() {
+        const isConnected = await IsReachable(this.target);
+        if (isConnected) {
+            this.playPauseItem.text = 'Status:Online';
+        } else {
+            this.playPauseItem.text = 'Status:OFFLINE';
+        }
+    }
+
+    startMonitoring() {
+        setInterval(this.checkConnection.bind(this), 1500);
     }
 }
 module.exports = LogStream;

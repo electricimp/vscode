@@ -113,9 +113,12 @@ function activate(context) {
     }));
 
     const playPauseItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+    const monitorItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
     playPauseItem.command = 'imp.logstream.pause';
     context.subscriptions.push(playPauseItem);
+    context.subscriptions.push(monitorItem);
     logstream.setPauseLogsItem(playPauseItem);
+    logstream.setMonitoringItem(monitorItem);
 }
 exports.activate = activate;
 
