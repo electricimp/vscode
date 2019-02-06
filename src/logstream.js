@@ -423,22 +423,28 @@ class LogStream {
     setMonitoringItem(monitoringItem) {
         // Monitoring LogStream status bar item
         this.monitoringItem = monitoringItem;
-        this.monitoringItem.text = 'Online';
+        this.monitoringItem.text = '...';
         this.monitoringItem.tooltip = 'Check Electric Imp connection';
         this.monitoringItem.show();
+        this.startMonitoring();
     }
 
     async checkConnection() {
         const isConnected = await IsReachable(this.target);
         if (isConnected) {
-            this.playPauseItem.text = 'Status:Online';
+            this.monitoringItem.text = 'Status:Connected';
         } else {
-            this.playPauseItem.text = 'Status:OFFLINE';
+            this.monitoringItem.text = 'Status:DISCONNECTED';
+            if (this.outputChannel) {
+                const ts = strftime('%Y-%m-%d %H:%M:%S%z');
+                const msg = 'WARNING: Disconnected...';
+                this.outputChannel.appendLine(`${ts} ${msg}`);
+            }
         }
     }
 
     startMonitoring() {
-        setInterval(this.checkConnection.bind(this), 1500);
+        setInterval(this.checkConnection.bind(this), this.interval);
     }
 }
 module.exports = LogStream;
