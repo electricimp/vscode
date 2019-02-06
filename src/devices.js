@@ -79,7 +79,7 @@ module.exports.pickDeviceID = pickDeviceID;
 function getAgentURLDialog() {
     Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
         .then(([accessToken, cfg]) => {
-            pickDeviceID(accessToken, cfg.ownerId, undefined, undefined)
+            pickDeviceID(accessToken, cfg.ownerId, cfg.deviceGroupId, undefined)
                 .then(deviceID => Api.getAgentURL(accessToken, deviceID))
                 .then((agentUrl) => {
                     vscode.env.clipboard.writeText(agentUrl);
