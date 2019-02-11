@@ -99,28 +99,36 @@ function removeDeviceFromDG(accessToken, dgID, deviceID) {
 }
 module.exports.removeDeviceFromDG = removeDeviceFromDG;
 
-function getProductList(accessToken, owner) {
+const maxPageSize = 100;
+
+async function getProductList(accessToken, owner) {
     const api = new ImpCentralApi();
     api.auth.accessToken = accessToken;
 
-    let filters;
+    let filters = null;
     if (owner) {
         filters = {
             [ImpProducts.FILTER_OWNER_ID]: owner,
         };
     }
 
-    return new Promise((resolve, reject) => {
-        api.products.list(filters).then((result) => {
-            const products = new Map();
+    const products = new Map();
+    let result;
+    let i = 1;
+    try {
+        do {
+            result = await api.products.list(filters, i, maxPageSize);
             result.data.forEach((item) => {
                 products.set(item.attributes.name, item);
             });
-            resolve(products);
-        }, (err) => {
-            reject(err);
-        });
-    });
+
+            i += 1;
+        } while (result.links.next);
+    } catch (err) {
+        return Promise.reject(err);
+    }
+
+    return Promise.resolve(products);
 }
 module.exports.getProductList = getProductList;
 
@@ -173,11 +181,11 @@ function getDGOwnerID(accessToken, dgID) {
 }
 module.exports.getDGOwnerID = getDGOwnerID;
 
-function getDGList(accessToken, product, owner) {
+async function getDGList(accessToken, product, owner) {
     const api = new ImpCentralApi();
     api.auth.accessToken = accessToken;
 
-    let filters;
+    let filters = null;
     if (product || owner) {
         filters = {
             [ImpDeviceGroups.FILTER_PRODUCT_ID]: product,
@@ -185,17 +193,23 @@ function getDGList(accessToken, product, owner) {
         };
     }
 
-    return new Promise((resolve, reject) => {
-        api.deviceGroups.list(filters).then((result) => {
-            const deviceGroups = new Map();
+    const deviceGroups = new Map();
+    let result;
+    let i = 1;
+    try {
+        do {
+            result = await api.deviceGroups.list(filters, i, maxPageSize);
             result.data.forEach((item) => {
                 deviceGroups.set(item.attributes.name, item);
             });
-            resolve(deviceGroups);
-        }, (err) => {
-            reject(err);
-        });
-    });
+
+            i += 1;
+        } while (result.links.next);
+    } catch (err) {
+        return Promise.reject(err);
+    }
+
+    return Promise.resolve(deviceGroups);
 }
 module.exports.getDGList = getDGList;
 
@@ -236,7 +250,7 @@ function newDG(accessToken, productID, dgName) {
 }
 module.exports.newDG = newDG;
 
-function getDeviceList(accessToken, ownerID, dgIDAssigned, dgIDExclude) {
+async function getDeviceList(accessToken, ownerID, dgIDAssigned, dgIDExclude) {
     const api = new ImpCentralApi();
     api.auth.accessToken = accessToken;
 
@@ -244,21 +258,27 @@ function getDeviceList(accessToken, ownerID, dgIDAssigned, dgIDExclude) {
         [ImpDevices.FILTER_OWNER_ID]: ownerID,
         [ImpDevices.FILTER_DEVICE_GROUP_ID]: dgIDAssigned,
     };
-    return new Promise((resolve, reject) => {
-        api.devices.list(filters)
-            .then((devices) => {
-                const deviceMap = new Map();
-                devices.data.forEach((item) => {
-                    const dgIDdevice = item.relationships.devicegroup.id;
-                    if (dgIDExclude !== dgIDdevice) {
-                        deviceMap.set(item.id, item);
-                    }
-                });
-                resolve(deviceMap);
-            }, (err) => {
-                reject(err);
+
+    const devices = new Map();
+    let result;
+    let i = 1;
+    try {
+        do {
+            result = await api.devices.list(filters, i, maxPageSize);
+            result.data.forEach((item) => {
+                const dgIDdevice = item.relationships.devicegroup.id;
+                if (dgIDExclude !== dgIDdevice) {
+                    devices.set(item.id, item);
+                }
             });
-    });
+
+            i += 1;
+        } while (result.links.next);
+    } catch (err) {
+        return Promise.reject(err);
+    }
+
+    return Promise.resolve(devices);
 }
 module.exports.getDeviceList = getDeviceList;
 
