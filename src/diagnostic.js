@@ -37,6 +37,7 @@ class Diagnostic {
 
     clearDiagnostic() {
         this.diagnosticCollection.clear();
+        this.clearLogStreamErrorCause();
     }
 
     setPreprocessors(agentPre, devicePre) {
@@ -99,7 +100,7 @@ class Diagnostic {
         }
 
         const pos = new vscode.Position(parsedError.line - 1, 0);
-        if (uri && fs.existsSync(uri.fsPath) && !this.diagnosticCollection.has(uri)) {
+        if (uri && fs.existsSync(uri.fsPath)) {
             this.diagnosticCollection.set(uri, [{
                 code: '',
                 message: parsedError.msg,
@@ -144,7 +145,7 @@ class Diagnostic {
                 }
 
                 const pos = new vscode.Position(errData[1] - 1, meta.column - 1);
-                if (uri && fs.existsSync(uri.fsPath) && !this.diagnosticCollection.has(uri)) {
+                if (uri && fs.existsSync(uri.fsPath)) {
                     this.diagnosticCollection.set(uri, [{
                         code: '',
                         message: `${meta.text} in ${errData[0]}`,
@@ -158,6 +159,18 @@ class Diagnostic {
                 }
             });
         });
+    }
+
+    setLogStreamErrorCause(msg) {
+        this.logStreamErrorCause = msg;
+    }
+
+    clearLogStreamErrorCause() {
+        this.logStreamErrorCause = undefined;
+    }
+
+    getLogStreamErrorCause() {
+        return this.logStreamErrorCause;
     }
 
     addLogStreamError(logStreamError) {
@@ -209,7 +222,7 @@ class Diagnostic {
                 message: 'Error',
                 range: new vscode.Range(pos, pos),
                 severity: vscode.DiagnosticSeverity.Error,
-                source: 'Run-time',
+                source: this.getLogStreamErrorCause() ? this.getLogStreamErrorCause() : 'Run-time',
                 relatedInformation: [],
             }]);
             // vscode.window.showTextDocument(uri);

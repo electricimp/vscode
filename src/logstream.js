@@ -224,6 +224,16 @@ class LogStream {
         regex = /(.*):(\d+)/;
         result = errMsg.match(regex);
         if (result == null) {
+            /*
+             * The logStream ERROR messages could be divided to next types:
+             * 1) error message => "error cause".
+             * 2) stack-trace links => "error locations" (should contain filename and line number).
+             *
+             * If the message could pass regexp check, but the link could not be parsed, it mean,
+             * that the message is "error cause". In all other cases - it is "error location".
+             */
+            this.diagnostic.setLogStreamErrorCause(errMsg);
+
             return undefined;
         }
 
@@ -337,6 +347,10 @@ class LogStream {
                                     vscode.window.createOutputChannel(User.NAMES.OUTPUT_CHANNEL);
                             }
 
+                            /*
+                             * It is possible to add only one device to console output.
+                             * The run-time error diagnostic logic is rely on this fact.
+                             */
                             Api.logStreamAddDevice(accessToken, logStreamID, deviceID)
                                 .then(() => {
                                     this.deviceAdded(deviceID, silent);

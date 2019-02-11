@@ -36,7 +36,7 @@ class Preprocessor {
         let currLine = 0;
         let origLine = 0;
         /*
-         * Here and below the loop locgic is copied from imp sublime plugin.
+         * Here and below the loop logic is copied from imp sublime plugin.
          */
         this.lineTable[currLine] = [origFile, origLine];
         processedData.split('\n').forEach((line) => {
