@@ -165,12 +165,16 @@ class Data {
             }
 
             const authFile = path.join(Path.getPWD(), Consts.authFileLocalPath);
-            if (fs.existsSync(authFile)) {
-                /*
-                 * Do not overwrite github creds, in case of relogin
-                 */
-                const oldAuthInfo = JSON.parse(fs.readFileSync(authFile).toString());
-                authInfo.builderSettings = oldAuthInfo.builderSettings;
+            try {
+                if (fs.existsSync(authFile)) {
+                    /*
+                    * Do not overwrite github creds, in case of relogin
+                    */
+                    const oldAuthInfo = JSON.parse(fs.readFileSync(authFile).toString());
+                    authInfo.builderSettings = oldAuthInfo.builderSettings;
+                }
+            } catch (err) {
+                vscode.window.showWarningMessage(`Cannot read old auth info ${err}`);
             }
 
             const gitIgnoreFile = path.join(Path.getPWD(), Consts.gitIgnoreFileName);

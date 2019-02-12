@@ -76,6 +76,7 @@ function authorize() {
             .then(auth => refreshAccessToken(auth.accessToken))
             .then(accessToken => resolve(accessToken.access_token))
             .catch((err) => {
+                vscode.commands.executeCommand('imp.auth.creds');
                 reject(err);
             });
     }));
