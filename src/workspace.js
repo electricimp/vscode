@@ -495,8 +495,8 @@ function deploy(logstream, diagnostic) {
                         if (!fs.existsSync(buildPath)) {
                             fs.mkdirSync(buildPath);
                         }
-                        fs.writeFileSync(path.join(buildPath, 'postprocessed_agent.nut'), agentSource);
-                        fs.writeFileSync(path.join(buildPath, 'postprocessed_device.nut'), deviceSource);
+                        fs.writeFileSync(path.join(buildPath, 'preprocessed_agent.nut'), agentSource);
+                        fs.writeFileSync(path.join(buildPath, 'preprocessed_device.nut'), deviceSource);
                         // vscode.window.showInformationMessage('Postprocessed files were saved.');
                     }
                 } catch (err) {
