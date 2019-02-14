@@ -69,7 +69,7 @@ async function pickDeviceID(accessToken, ownerID, dgIDAssigned, dgIDUnAssigned) 
 module.exports.pickDeviceID = pickDeviceID;
 
 // Get agent URL related with device.
-// The URL will be displayed in the pop-up message.
+// The URL will be displayed in the pop-up message and copied to clipboard.
 //
 // Parameters:
 //     none
@@ -84,8 +84,7 @@ function getAgentURLDialog() {
                 .then((agentUrl) => {
                     vscode.env.clipboard.writeText(agentUrl);
                     vscode.window.showInformationMessage(agentUrl);
-                })
-                .catch(err => User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err));
+                }).catch(err => User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err));
         }).catch(err => vscode.window.showErrorMessage(err.message));
 }
 module.exports.getAgentURLDialog = getAgentURLDialog;
@@ -104,8 +103,7 @@ function addDeviceToDGDialog() {
                 .then(deviceID => Api.addDeviceToDG(accessToken, cfg.deviceGroupId, deviceID))
                 .then(() => {
                     vscode.window.showInformationMessage('The device is added to DG');
-                })
-                .catch(err => User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err));
+                }).catch(err => User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err));
         }).catch(err => vscode.window.showErrorMessage(err.message));
 }
 module.exports.addDeviceToDGDialog = addDeviceToDGDialog;
@@ -124,8 +122,7 @@ function removeDeviceFromDGDialog() {
                 .then(deviceID => Api.removeDeviceFromDG(accessToken, cfg.deviceGroupId, deviceID))
                 .then(() => {
                     vscode.window.showInformationMessage('The device is removed from DG');
-                })
-                .catch(err => User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err));
+                }).catch(err => User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err));
         }).catch(err => vscode.window.showErrorMessage(err.message));
 }
 module.exports.removeDeviceFromDGDialog = removeDeviceFromDGDialog;

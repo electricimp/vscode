@@ -76,9 +76,7 @@ class Diagnostic {
                 };
             }
         } catch (err) {
-            console.log("======== !catch! => getSource()" + err);
-            console.log(util.inspect(source, { showHidden: false, depth: null }));
-            return undefined;
+            vscode.window.showErrorMessage(`getSource():${err}`);
         }
 
         return undefined;

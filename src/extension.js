@@ -122,7 +122,7 @@ function activate(context) {
 }
 exports.activate = activate;
 
-// this method is called when your extension is deactivated
+// This method is called when your extension is deactivated.
 function deactivate() {
     Api.logStreamClose(logstream.impCentralApi, logstream.logStreamID)
         .then(() => {

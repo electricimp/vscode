@@ -28,16 +28,20 @@ const Api = require('./api');
 const Workspace = require('./workspace');
 
 function isAccessTokenExpired(auth) {
-    if (isNaN(Date.parse(auth.expires_at)) ||
-        isNaN(parseInt(auth.expires_in, 10))) {
+    if (!Number.isInteger(Date.parse(auth.expires_at)) ||
+        !Number.isInteger(parseInt(auth.expires_in, 10))) {
         return true;
     }
 
+    /*
+     * Select the expiration gap as 0.05,
+     * it is equal to 3 minutes if expires_in equals 3600 seconds.
+     */
     const expirationGap = 0.05;
     const expires = new Date(auth.expires_at);
     const now = new Date();
     const diff = expires.getTime() - now.getTime();
-    if (diff < auth.expires_in * 1000 * expirationGap) {
+    if (diff < auth.expires_in * expirationGap * 1000) {
         return true;
     }
 
@@ -46,19 +50,18 @@ function isAccessTokenExpired(auth) {
 
 function refreshAccessToken(accessToken) {
     return new Promise((resolve, reject) => {
-        if (isAccessTokenExpired(accessToken)) {
-            Api.refreshAccessToken(accessToken.refresh_token)
-                .then((refreshedAuth) => {
-                    const freshAccessToken = refreshedAuth;
-                    freshAccessToken.refresh_token = accessToken.refresh_token;
-                    Workspace.Data.storeAuthInfo(freshAccessToken)
-                        .then(() => resolve(freshAccessToken), err => reject(err));
-                }, (err) => {
-                    reject(err);
-                });
-        } else {
+        if (isAccessTokenExpired(accessToken) === false) {
             resolve(accessToken);
+            return;
         }
+
+        Api.refreshAccessToken(accessToken.refresh_token)
+            .then((refreshedAuth) => {
+                const freshAccessToken = refreshedAuth;
+                freshAccessToken.refresh_token = accessToken.refresh_token;
+                Workspace.Data.storeAuthInfo(freshAccessToken)
+                    .then(() => resolve(freshAccessToken), err => reject(err));
+            }, err => reject(err));
     });
 }
 

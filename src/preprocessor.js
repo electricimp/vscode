@@ -67,7 +67,7 @@ class Preprocessor {
         builder.machine.path = includeDir;
         builder.machine.generateLineControlStatements = true;
 
-        // Remove default Builder include path and add own
+        // Remove default Builder include path and add own.
         builder.machine.readers.file.searchDirs.length = 0;
         builder.machine.readers.file.searchDirs.push(includeDir);
 
@@ -83,7 +83,7 @@ class Preprocessor {
         return outputData;
     }
 
-    // Get original errors locations base of previously preprocessed data.
+    // Get original errors locations based on previously preprocessed data.
     //
     // Parameters:
     //     inputData    : Source code to preprocess

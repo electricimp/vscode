@@ -55,7 +55,7 @@ class LogStream {
         this.devices = new Set();
         this.pause = false;
 
-        // IsReachable monitoring
+        // IsReachable monitoring.
         this.interval = 3000;
         this.target = 'https://api.electricimp.com/v5';
     }
@@ -255,56 +255,34 @@ class LogStream {
     }
 
     logMsg(msg) {
+        if (this.pause) {
+            return;
+        }
+
         try {
-            if (this.pause) {
-                return;
+            const err = this.getErrorMessage(msg);
+            if (err) {
+                this.diagnostic.addLogStreamError(err);
             }
 
-            let err;
-            try {
-                err = this.getErrorMessage(msg);
-            } catch (error) {
-                console.log("======== !catch! => logMsg():this.getErrorMessage(msg)" + error);
-                console.log("======== msg: " + msg);
-                return;
-            }
-
-            try {
-                if (err) {
-                    this.diagnostic.addLogStreamError(err);
-                }
-            } catch (error) {
-                console.log("======== !catch! => logMsg():this.diagnostic.addLogStreamError(err)" + error);
-                console.log("======== msg: " + msg);
-                return;
-            }
-
-            try {
-                /*
-                * If we got message like 'Downloading new code'.
-                * It mean that we should clean the diagnostic collection
-                * to report the actual problems from fresh deploy.
-                */
-                const regex = /.*(Downloading new code).*(program storage used)/;
-                const result = msg.match(regex);
-                if (result) {
-                    this.diagnostic.clearDiagnostic();
-                }
-            } catch (error) {
-                console.log("======== !catch! => logMsg():this.diagnostic.clearDiagnostic()" + error);
-                console.log("======== msg: " + msg);
-                return;
+            /*
+             * If we got message like 'Downloading new code'.
+             * It mean that we should clean the diagnostic collection
+             * to report the actual problems from fresh deploy.
+             */
+            const regex = /.*(Downloading new code).*(program storage used)/;
+            const result = msg.match(regex);
+            if (result) {
+                this.diagnostic.clearDiagnostic();
             }
 
             this.outputChannel.appendLine(this.getLogStreamLogMessage(msg));
         } catch (err) {
-            console.log("======== !catch! => logMsg()" + err);
-            console.log("======== msg: " + msg);
+            vscode.window.showErrorMessage(`logMsg():${err}`);
         }
     }
 
     logState(msg) {
-        console.log("logState() " + msg);
         const doNotPrintState = true;
         if (doNotPrintState) {
             return;
@@ -318,7 +296,15 @@ class LogStream {
     }
 
     logError(msg) {
-        console.log("logError() " + msg);
+        const doNotPrintError = false;
+        if (doNotPrintError) {
+            return;
+        }
+
+        if (this.pause) {
+            return;
+        }
+
         this.outputChannel.appendLine(msg);
     }
 
@@ -332,7 +318,7 @@ class LogStream {
     }
 
     addDevice(accessToken, deviceID, silent = false) {
-        return new Promise(((resolve) => {
+        return new Promise(((resolve, reject) => {
             this.impCentralApi.auth.accessToken = accessToken;
             Api.logStreamClose(this.impCentralApi, this.logStreamID)
                 .then(() => {
@@ -358,6 +344,7 @@ class LogStream {
                                 });
                         }, (err) => {
                             User.showImpApiError(`Cannot open ${User.NAMES.OUTPUT_CHANNEL}`, err);
+                            reject(err);
                         });
                 });
         }));
@@ -426,7 +413,7 @@ class LogStream {
     }
 
     setPauseLogsItem(playPauseItem) {
-        // Play/Pause LogStream status bar item
+        // Play/Pause LogStream status bar item.
         this.playChar = '\u25b6';
         this.pauseChar = '\u23f8';
         this.playPauseItem = playPauseItem;
@@ -435,7 +422,7 @@ class LogStream {
     }
 
     setMonitoringItem(monitoringItem) {
-        // Monitoring LogStream status bar item
+        // Monitoring LogStream status bar item.
         this.monitoringItem = monitoringItem;
         this.monitoringItem.text = '...';
         this.monitoringItem.tooltip = 'Check Electric Imp connection';

@@ -30,6 +30,8 @@ const ImpDeviceGroups = ImpCentralApi.DeviceGroups;
 const ImpProducts = ImpCentralApi.Products;
 const ImpDevices = ImpCentralApi.Devices;
 
+const maxPageSize = 100;
+
 function login(creds) {
     const api = new ImpCentralApi();
 
@@ -98,8 +100,6 @@ function removeDeviceFromDG(accessToken, dgID, deviceID) {
     });
 }
 module.exports.removeDeviceFromDG = removeDeviceFromDG;
-
-const maxPageSize = 100;
 
 async function getProductList(accessToken, owner) {
     const api = new ImpCentralApi();
@@ -339,3 +339,38 @@ function logStreamRemoveDevice(accessToken, logStreamID, deviceID) {
     });
 }
 module.exports.logStreamRemoveDevice = logStreamRemoveDevice;
+
+function deploy(accessToken, dgID, dgType, attrs) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
+    return new Promise((resolve, reject) => {
+        api.deployments.create(dgID, dgType, attrs).then(() => {
+            api.devices.list({ [ImpDevices.FILTER_DEVICE_GROUP_ID]: dgID })
+                .then((devices) => {
+                    if (devices.data.length < 1) {
+                        resolve();
+                    } else {
+                        resolve(devices);
+                    }
+                });
+        }, (err) => {
+            reject(err);
+        });
+    });
+}
+module.exports.deploy = deploy;
+
+function restartDevices(accessToken, dgID) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
+    return new Promise((resolve, reject) => {
+        api.deviceGroups.restartDevices(dgID).then(() => {
+            resolve();
+        }, (err) => {
+            reject(err);
+        });
+    });
+}
+module.exports.restartDevices = restartDevices;

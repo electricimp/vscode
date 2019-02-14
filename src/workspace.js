@@ -33,7 +33,6 @@ const Preproc = require('./preprocessor');
 const User = require('./user');
 
 const DevGroups = ImpCentralApi.DeviceGroups;
-const Devs = ImpCentralApi.Devices;
 
 // This class provides the constants required for workspace manipulation.
 class Consts {
@@ -119,7 +118,7 @@ class Path {
 }
 module.exports.Path = Path;
 
-// Check, if workspace working directory was selected by user.
+// Check, if the workspace working directory was selected by user.
 //
 // Parameters:
 //     none
@@ -168,8 +167,8 @@ class Data {
             try {
                 if (fs.existsSync(authFile)) {
                     /*
-                    * Do not overwrite github creds, in case of relogin
-                    */
+                     * Do not overwrite github creds, in case of relogin.
+                     */
                     const oldAuthInfo = JSON.parse(fs.readFileSync(authFile).toString());
                     authInfo.builderSettings = oldAuthInfo.builderSettings;
                 }
@@ -487,7 +486,7 @@ function deploy(logstream, diagnostic) {
                 try {
                     /*
                      * The code below is only for debug purposes.
-                     * Write postprocessed files to workspace directory for future analyzes.
+                     * Write preprocessed files to workspace directory for future analyzes.
                      */
                     const storePostprocessed = true;
                     if (storePostprocessed) {
@@ -497,63 +496,40 @@ function deploy(logstream, diagnostic) {
                         }
                         fs.writeFileSync(path.join(buildPath, 'preprocessed_agent.nut'), agentSource);
                         fs.writeFileSync(path.join(buildPath, 'preprocessed_device.nut'), deviceSource);
-                        // vscode.window.showInformationMessage('Postprocessed files were saved.');
+                        // vscode.window.showInformationMessage('Preprocessed files were saved.');
                     }
                 } catch (err) {
-                    vscode.window.showErrorMessage(`Postprocessed files error: ${err}`);
+                    vscode.window.showErrorMessage(`Preprocessed files error: ${err}`);
                     return;
                 }
 
+                const dg = cfg.deviceGroupId;
                 const attrs = {
                     agent_code: agentSource,
                     device_code: deviceSource,
                 };
 
-                const api = new ImpCentralApi();
-                api.auth.accessToken = accessToken;
-                api.deployments.create(cfg.deviceGroupId, DevGroups.TYPE_DEVELOPMENT, attrs)
-                    .then((/* result */) => {
-                        /*
-                         * Here is a developer's knob below.
-                         * It is possible to open some device LogStream after successful deployment.
-                         */
-                        const openLogStream = true;
-                        if (openLogStream) {
-                            const dg = cfg.deviceGroupId;
-                            api.devices.list({ [Devs.FILTER_DEVICE_GROUP_ID]: dg })
-                                .then((devs) => {
-                                    if (devs.data.length >= 1) {
-                                        logstream.addDevice(accessToken, devs.data[0].id, true)
-                                            .then(() => {
-                                                api.deviceGroups.restartDevices(cfg.deviceGroupId)
-                                                    .then(() => {
-                                                        vscode.window.showInformationMessage(`Successfully deployed on ${dg}`);
-                                                    }, (err) => {
-                                                        User.showImpApiError('Reset devices:', err);
-                                                    });
-                                            });
-                                    } else {
-                                        vscode.window.showWarningMessage(`The DG ${dg} have no devices`);
-                                        vscode.commands.executeCommand('imp.device.add');
-                                    }
-                                }, (err) => {
-                                    User.showImpApiError('Cannot list DG devices:', err);
-                                });
-                        } else {
-                            api.deviceGroups.restartDevices(cfg.deviceGroupId)
-                                .then(() => {
-                                    vscode.window.showInformationMessage(`Successfully deployed on ${cfg.deviceGroupId}`);
-                                }, (err) => {
-                                    User.showImpApiError('Reset devices:', err);
-                                });
+                Api.deploy(accessToken, dg, DevGroups.TYPE_DEVELOPMENT, attrs)
+                    .then((devices) => {
+                        if (devices === undefined) {
+                            vscode.window.showWarningMessage(`The DG ${dg} have no devices`);
+                            vscode.commands.executeCommand('imp.device.add');
+                            return;
                         }
+
+                        logstream.addDevice(accessToken, devices.data[0].id, true)
+                            .then(() => {
+                                Api.restartDevices(accessToken, dg)
+                                    .then(
+                                        () => vscode.window.showInformationMessage(`Successfully deployed on ${dg}`),
+                                        err => User.showImpApiError('Reset devices:', err),
+                                    );
+                            }, () => {});
                     }, (err) => {
                         diagnostic.addDeployError(err);
                         User.showImpApiError('Deploy failed:', err);
                     });
-            }, (err) => {
-                vscode.window.showErrorMessage(`Cannot read source files: ${err}`);
-            });
+            }, err => vscode.window.showErrorMessage(`Cannot read source files: ${err}`));
         }).catch(err => vscode.window.showErrorMessage(err.message));
 }
 module.exports.deploy = deploy;
