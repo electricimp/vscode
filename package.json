@@ -1,9 +1,9 @@
 {
-  "name": "vscode-imp",
+  "name": "vscode-electricimp",
   "displayName": "Electric Imp Squirrel",
   "description": "Electric Imp vscode support",
-  "version": "0.0.1",
-  "publisher": "Electric Imp",
+  "version": "0.1.0",
+  "publisher": "electricimp",
   "icon": "simple_nut.png",
   "license": "MIT",
   "engines": {
