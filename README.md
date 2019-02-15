@@ -45,7 +45,7 @@ to work with the [Electric Imp impCloud™](https://electricimp.com/platform/clo
 
 ### 1. Install Node.js ###
 
-**Note** The plug-in requires Node.js 4.0 or above.
+**Note** The plug-in requires Node.js 11.0 or above.
 
 Please follow [these instructions](https://nodejs.org/en/download/package-manager/) to install Node on your machine.
 
@@ -64,7 +64,12 @@ Visual Studio Code can be downloaded for a variety of platforms, [here](https://
 
 ### 4. Install the Visual Studio Code Extension ###
 
-#### Manual Installation ####
+#### Installation From .vsix File ####
+
+1. Download extension .vsix file from GitHub source [repository](https://github.com/nobitlost/vscode.git).
+2. code --install-extension vscode-electricimp-0.x.x.vsix
+
+#### Installation From Source ####
 
 Alternatively, follow these steps to install the plug-in manually:
 
@@ -84,7 +89,7 @@ Alternatively, follow these steps to install the plug-in manually:
 
 This extension contributes the following commands:
 
-* `imp: Auth User Password`: Create authrization file with access token in the selected workspace directory.
+* `imp: Auth User Password`: Create authorization file with access token in the selected workspace directory.
 * `imp: New Project`: Create configuration file and source code files in the selected workspace directory.
 * `imp: Deploy Project`: Deploy the source code on the selected device group and reset the devices.
 * `imp: Start Device Logs`: Add selected device logs to the console output.
