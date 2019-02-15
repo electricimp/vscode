@@ -64,6 +64,10 @@ Visual Studio Code can be downloaded for a variety of platforms, [here](https://
 
 ### 4. Install the Visual Studio Code Extension ###
 
+#### Installation From [Marketplace](https://marketplace.visualstudio.com/vscode) ####
+
+TODO: Complete when published on the market!
+
 #### Installation From .vsix File ####
 
 1. Download extension .vsix file from GitHub source [repository](https://github.com/nobitlost/vscode.git).
