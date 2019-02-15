@@ -25,7 +25,7 @@
 
 ## Overview ##
 
-The Plug-in is designed to improve developer productivity. It allows you to rapidly build and maintain applications by
+The Plug-in is designed to improve developers` productivity. It allows you to rapidly build and maintain applications by
 providing:
 
 * Code auto-completion for [Electric Imp’s imp API](https://developer.electricimp.com/api)
@@ -77,7 +77,7 @@ Alternatively, follow these steps to install the plug-in manually:
     - **macOS** *~/.vscode/extensions*
     - **Windows** *%USERPROFILE%\\.vscode\extensions*
 
-2. Follow next steps:
+2. Follow the next steps:
     
     - cd into Visual Studio Code extension folder.
     - Clone the full GitHub source [repository](https://github.com/nobitlost/vscode.git).
@@ -142,11 +142,11 @@ The `imp.config` file contains:
 When a project is created, empty device and agent code files (`device.nut` and `agent.nut`) are automatically created
 and stored in the `<Project Working Folder>/src` folder.
 
-If a project is created successfully, a `imp.config` file is opened.
+If a project is created successfully, an `imp.config` file is opened.
 
 **Note** If the Project Working Folder is not opened in the Visual Studio Code, all extension commands will not work.
 
-**Important** The code which is deployed to the Device Group is preprocessed and contains line control markers. When you select an existing Device Group, the plug-in pulls down the code, but it doesn’t transfer the project file/folder structure. So for collaborative work on the same project, please share the original Electric Imp plug-in project sources/structure via a source control system.
+**Important** The code which is deployed to a Device Group is preprocessed and contains line control markers. When you select an existing Device Group, the plug-in pulls down the code, but it doesn’t transfer the project file/folder structure. So, for collaborative work on the same project, please share the original Electric Imp plug-in project sources/structure via a source control system.
 
 ### Opening an Existing Project ###
 
@@ -155,13 +155,13 @@ To open an existing Electric Imp project, just use the ‘File’ > ‘Open Fold
 ### Building and Running ###
 
 To build and deploy code, please select the ‘View’ > ‘Command Palette...’ > ‘`imp: Deploy Project`‘
-menu item. This action uploads the agent and the device code to the server, and restarts all of the devices assigned to the target Device Group. If you want to have you code running on a specific devices and view the logs from that devices, you need to select them using the ‘View’ > ‘Command Palette...’ > ‘`imp: Add Device to current DG`’ menu item. The ‘`imp: Remove Device from current DG`’ menu item removes a device from the project’s Device Group.
+menu item. This action uploads the agent and the device code to the server, and restarts all of the devices assigned to the target Device Group. If you want to have you code running on a specific devices and view the logs from those devices, you need to select them using the ‘View’ > ‘Command Palette...’ > ‘`imp: Add Device to current DG`’ menu item. The ‘`imp: Remove Device from current DG`’ menu item removes a device from the project’s Device Group.
 
-**Note** To build and deploy your code it isn’t necessary to assign a device to the Device Group. If you don’t have a device assigned, you can still work on the code and see compilation errors reported by the server.
+**Note** To build and deploy your code, it isn’t necessary to assign a device to the Device Group. If you don’t have any device assigned, you can still work on the code and see compilation errors reported by the server.
 
 ### The Log Console ###
 
-The live logs are streamed to ‘View‘ > ‘Output‘. It is possible to add the specified device live logs by it's ID using `imp: Start Device Logs` extension command. The Output shows live logs streamed from the current Device Group if the group contains at least one device.
+The live logs are streamed to ‘View‘ > ‘Output‘. It is possible to add the specified device live logs by its ID using `imp: Start Device Logs` extension command. The Output shows live logs streamed from the current Device Group if the group contains at least one device.
 
 ### Adding a Device to the Project Device Group ###
 
