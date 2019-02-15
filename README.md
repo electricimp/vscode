@@ -1,4 +1,4 @@
-# Electric Imp impCentral Microsoft Visual Studio Code extension (Early Beta)
+# Electric Imp impCentral Microsoft Visual Studio Code extension (Alpha)
 
 [Visual Studio Code](https://code.visualstudio.com/) extension for [Electric Imp](https://electricimp.com) applications development.
 
