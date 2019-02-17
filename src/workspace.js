@@ -304,7 +304,7 @@ class Data {
 
                 resolve(config);
             } catch (err) {
-                reject(err);
+                reject(new Error(`${User.ERRORS.WORKSPACE_CFG_CORRUPTED}: ${err}`));
             }
         });
     }
