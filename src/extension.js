@@ -96,7 +96,7 @@ function activate(context) {
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.show.commands', () => {
-        const extensionId = 'Electric Imp.vscode-imp';
+        const extensionId = 'electricimp.vscode-electricimp';
         const pkgJSON = vscode.extensions.getExtension(extensionId).packageJSON;
         if (!pkgJSON.contributes || !pkgJSON.contributes.commands) {
             return;
