@@ -29,6 +29,11 @@ const Auth = require('./auth');
 const User = require('./user');
 const Workspace = require('./workspace');
 
+const pickDeviceIDRetVal = {
+    empty: 'empty',
+    esc: 'esc',
+};
+
 async function pickDeviceID(accessToken, ownerID, dgIDAssigned, dgIDUnAssigned) {
     let devices;
     try {
@@ -45,6 +50,11 @@ async function pickDeviceID(accessToken, ownerID, dgIDAssigned, dgIDUnAssigned) 
         display.push(`${item.id} ${onlineState} ${name}`);
     });
 
+    if (display.length === 0) {
+        vscode.window.showWarningMessage('There are no available devices.');
+        throw pickDeviceIDRetVal.empty;
+    }
+
     const pick = await vscode.window.showQuickPick(
         display.map(label => ({ label })),
         {
@@ -55,7 +65,8 @@ async function pickDeviceID(accessToken, ownerID, dgIDAssigned, dgIDUnAssigned) 
     );
 
     if (pick === undefined) {
-        throw Error('empty deviceID');
+        // Case, when Esc key was pressed.
+        throw pickDeviceIDRetVal.esc;
     }
 
     const regex = /(.*)\s(online|offline)\s(.*)/;
@@ -67,6 +78,15 @@ async function pickDeviceID(accessToken, ownerID, dgIDAssigned, dgIDUnAssigned) 
     return result[1];
 }
 module.exports.pickDeviceID = pickDeviceID;
+
+function pickDeviceIDError(err) {
+    if (err === pickDeviceIDRetVal.empty || err === pickDeviceIDRetVal.esc) {
+        return;
+    }
+
+    User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err);
+}
+module.exports.pickDeviceIDError = pickDeviceIDError;
 
 // Get agent URL related with device.
 // The URL will be displayed in the pop-up message and copied to clipboard.
@@ -84,7 +104,7 @@ function getAgentURLDialog() {
                 .then((agentUrl) => {
                     vscode.env.clipboard.writeText(agentUrl);
                     vscode.window.showInformationMessage(agentUrl);
-                }).catch(err => User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err));
+                }).catch(err => pickDeviceIDError(err));
         }).catch(err => vscode.window.showErrorMessage(err.message));
 }
 module.exports.getAgentURLDialog = getAgentURLDialog;
@@ -103,7 +123,7 @@ function addDeviceToDGDialog() {
                 .then(deviceID => Api.addDeviceToDG(accessToken, cfg.deviceGroupId, deviceID))
                 .then(() => {
                     vscode.window.showInformationMessage('The device is added to DG');
-                }).catch(err => User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err));
+                }).catch(err => pickDeviceIDError(err));
         }).catch(err => vscode.window.showErrorMessage(err.message));
 }
 module.exports.addDeviceToDGDialog = addDeviceToDGDialog;
@@ -122,7 +142,7 @@ function removeDeviceFromDGDialog() {
                 .then(deviceID => Api.removeDeviceFromDG(accessToken, cfg.deviceGroupId, deviceID))
                 .then(() => {
                     vscode.window.showInformationMessage('The device is removed from DG');
-                }).catch(err => User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err));
+                }).catch(err => pickDeviceIDError(err));
         }).catch(err => vscode.window.showErrorMessage(err.message));
 }
 module.exports.removeDeviceFromDGDialog = removeDeviceFromDGDialog;

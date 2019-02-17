@@ -266,10 +266,12 @@ async function getDeviceList(accessToken, ownerID, dgIDAssigned, dgIDExclude) {
         do {
             result = await api.devices.list(filters, i, maxPageSize);
             result.data.forEach((item) => {
-                const dgIDdevice = item.relationships.devicegroup.id;
-                if (dgIDExclude !== dgIDdevice) {
-                    devices.set(item.id, item);
+                if ((dgIDExclude && item.relationships.devicegroup) &&
+                        dgIDExclude === item.relationships.devicegroup.id) {
+                    return;
                 }
+
+                devices.set(item.id, item);
             });
 
             i += 1;

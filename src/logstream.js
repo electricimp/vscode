@@ -359,7 +359,7 @@ class LogStream {
             .then(([accessToken, cfg]) => {
                 Devices.pickDeviceID(accessToken, cfg.ownerId, cfg.deviceGroupId, undefined)
                     .then(deviceID => this.addDevice(accessToken, deviceID))
-                    .catch(err => User.showImpApiError('Cannot add device:', err));
+                    .catch(err => Devices.pickDeviceIDError(err));
             }).catch(err => vscode.window.showErrorMessage(err.message));
     }
 
@@ -376,7 +376,7 @@ class LogStream {
                             .then(() => {
                                 this.devices.delete(deviceID);
                                 vscode.window.showInformationMessage(`Device removed: ${deviceID}`);
-                            }).catch(err => User.showImpApiError(`Cannot remove ${deviceID}`, err));
+                            }).catch(err => Devices.pickDeviceIDError(err));
                     });
             }).catch(err => vscode.window.showErrorMessage(err.message));
     }
