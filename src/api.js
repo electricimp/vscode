@@ -58,6 +58,20 @@ function refreshAccessToken(refreshToken) {
 }
 module.exports.refreshAccessToken = refreshAccessToken;
 
+function getDG(accessToken, dgID) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
+    return new Promise((resolve, reject) => {
+        api.deviceGroups.get(dgID).then((result) => {
+            resolve(result);
+        }, (err) => {
+            reject(err);
+        });
+    });
+}
+module.exports.getDG = getDG;
+
 function getAgentURL(accessToken, deviceID) {
     const api = new ImpCentralApi();
     api.auth.accessToken = accessToken;

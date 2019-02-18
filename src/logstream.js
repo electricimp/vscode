@@ -356,9 +356,10 @@ class LogStream {
     //     none
     addDeviceDialog() {
         Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
-            .then(([accessToken, cfg]) => {
-                Devices.pickDeviceID(accessToken, cfg.ownerId, cfg.deviceGroupId, undefined)
-                    .then(deviceID => this.addDevice(accessToken, deviceID))
+            .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
+            .then((ret) => {
+                Devices.pickDeviceID(ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
+                    .then(deviceID => this.addDevice(ret.token, deviceID))
                     .catch(err => Devices.pickDeviceIDError(err));
             }).catch(err => vscode.window.showErrorMessage(err.message));
     }
@@ -369,10 +370,11 @@ class LogStream {
     //     none
     removeDeviceDialog() {
         Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
-            .then(([accessToken, cfg]) => {
-                Devices.pickDeviceID(accessToken, cfg.ownerId, cfg.deviceGroupId, undefined)
+            .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
+            .then((ret) => {
+                Devices.pickDeviceID(ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
                     .then((deviceID) => {
-                        Api.logStreamRemoveDevice(accessToken, this.logStreamID, deviceID)
+                        Api.logStreamRemoveDevice(ret.token, this.logStreamID, deviceID)
                             .then(() => {
                                 this.devices.delete(deviceID);
                                 vscode.window.showInformationMessage(`Device removed: ${deviceID}`);
