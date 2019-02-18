@@ -1,4 +1,4 @@
-# Electric Imp impCentral Microsoft Visual Studio Code extension (Alpha)
+# Electric Imp impCentral Microsoft Visual Studio Code Extension (Alpha)
 
 [Visual Studio Code](https://code.visualstudio.com/) extension for [Electric Imp](https://electricimp.com) applications development.
 
@@ -77,13 +77,13 @@ TODO: Complete when published on the market!
 
 Alternatively, follow these steps to install the plug-in manually:
 
-1. Use the Visual Studio Code extension folder:
+1. Use the Visual Studio Code Extension folder:
     - **macOS** *~/.vscode/extensions*
     - **Windows** *%USERPROFILE%\\.vscode\extensions*
 
 2. Follow the next steps:
     
-    - cd into Visual Studio Code extension folder.
+    - cd into Visual Studio Code Extension folder.
     - Clone the full GitHub source [repository](https://github.com/electricimp/vscode.git).
     - Checkout the `develop` branch in the git.
     - npm install .
@@ -222,6 +222,6 @@ Please use the project `<Project Working Folder>/settings/imp.config` file to sp
 
 ## License ##
 
-The Electric Imp Sublime Plug-in is licensed under the [MIT License](./LICENSE).
+The Electric Imp Visual Studio Code Extension is licensed under the [MIT License](./LICENSE).
 
 
