@@ -1,10 +1,9 @@
 # Electric Imp impCentral Microsoft Visual Studio Code Extension (Alpha) #
 
-This is a [Visual Studio Code](https://code.visualstudio.com/) extension which supports [Electric Imp](https://electricimp.com) application development.
-
 ## Contents ##
 
 - [Overview](#overview)
+    - [Requirements](#requirements)
 - [Installation](#installation)
     1. [Install Node.js](#1-install-nodejs)
     2. [Install The Builder Node.js Module](#2-install-the-builder-nodejs-module)
@@ -20,25 +19,26 @@ This is a [Visual Studio Code](https://code.visualstudio.com/) extension which s
     - [Unassign A Device From The Project Device Group](#unassign-a-device-from-the-project-device-group)
     - [Retrieve A Device’s Agent URL](#retrieve-a-devices-agent-url)
     - [Extension Keyboard Shortcuts](#extension-keyboard-shortcuts)
-- [Preprocessor And Multiple File Support](#preprocessor-and-multiple-file-support)
-    - [Specifying GitHub Authentication Information](#specifying-github-authentication-information)
-    - [Specifying Builder Preset Variable Definitions](#specifying-builder-preset-variable-definitions)
+- [Pre-processor And Multiple File Support](#pre-processor-and-multiple-file-support)
+    - [Specify GitHub Authentication Information](#specify-github-authentication-information)
+    - [Specify Builder Preset Variable Definitions](#specify-builder-preset-variable-definitions)
 
 
 ## Overview ##
 
-The plug-in is designed to improve developers’ productivity. It allows you to rapidly build and maintain applications by providing:
+This Extension for the [Microsoft Visual Studio Code](https://code.visualstudio.com/) text editor enhances Electric Imp application development by delivering access to the Electric Imp impCloud™ via the [Electric Imp impCentral™ API](https://developer.electricimp.com/tools/impcentralapi). It allows you to rapidly build and maintain applications by providing:
 
 * Code auto-completion for [Electric Imp’s imp API](https://developer.electricimp.com/api).
 * The ability to use a source control system to manage application code and configuration.
 * Advanced Squirrel code highlighting.
-* Integration with [impWorks™ Builder](https://github.com/electricimp/Builder) to enable multi-file
-projects and code pre-processing.
+* Integration with [impWorks™ Builder](https://developer.electricimp.com/tools/builder) to enable multi-file projects and code pre-processing.
 * Live logs with clickable stack traces for errors, and navigation to the file and line in question.
 * Key shortcuts for frequently performed operations (build and run, show console, etc).
 * Leverages Visual Studio Code’s rich set of features.
 
-The plug-in requires connection to the Internet as it leverages the [Electric Imp impCentral™ API](https://developer.electricimp.com/tools/impcentralapi).
+### Requirements ###
+
+For operation, the Extension requires a connection to the Internet. It also requires Node.js, impWorks Builder and Visual Studio Code.
 
 ## Installation ##
 
@@ -48,7 +48,7 @@ The Extension requires Node.js 11.0 or above. Please follow [these instructions]
 
 ### 2. Install The Builder Node.js Module ###
 
-The Extension uses the [Builder](https://github.com/electricimp/Builder) Node.js module for source code pre-processing. To install Builder, please use Node Package Manager (NPM):
+The Extension uses the [Builder Node.js module](https://github.com/electricimp/Builder) for source code pre-processing. To install Builder, please use Node Package Manager (NPM):
 
 ```bash
 npm i -g Builder
@@ -60,11 +60,11 @@ Visual Studio Code can be [downloaded for a variety of platforms here](https://c
 
 ### 4. Install The Visual Studio Code Extension ###
 
-The Electric Imp Visual Studio Code Extension can be installed using a number of methods. Once the Extension has been published to the Visual Studio Marketplace, this will be the recommended way to install the Extension, but you may alternatively perform the install using a `.vsix` file or by building the Extension from the source code.
+The Electric Imp Visual Studio Code Extension can be installed using any of a number of methods, listed below. Once the Extension has been published to the [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode), this will be the recommended way to install the Extension, but you may alternatively perform the install using a `.vsix` file or by building the Extension from the source code.
 
 #### Installation From The Visual Studio Marketplace ####
 
-The Marketplace can be accessed through Visual Studio Code. We will add further instructions here when the Extension becomes available in the Marketplace.
+The [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode) can be accessed through Visual Studio Code itself. We will add further instructions here when the Extension becomes available in the Marketplace.
 
 #### Installation From A .VSIX File ####
 
@@ -75,11 +75,11 @@ The Marketplace can be accessed through Visual Studio Code. We will add further 
 
 Follow these steps to install the Extension manually:
 
-1. At the command line, `cd` to the Visual Studio Code extension folder:
+1. At the command line, `cd` to the Visual Studio Code extension directory:
     - **macOS** *~/.vscode/extensions*
     - **Windows** *%USERPROFILE%\\.vscode\extensions*
 2. Clone the [full GitHub source repository](https://github.com/electricimp/vscode.git).
-3. Checkout the `develop` branch using `git`.
+3. Switch to the `develop` branch using `git checkout develop`.
 4. Run `npm install .`
 5. Restart Visual Studio Code.
 
@@ -103,24 +103,26 @@ The Extension provides the following commands:
 
 ### Create A New Project ###
 
-Select a new project working folder using **File > Open Folder...**, if you have not done so. Select the **View > Command Palette... > imp: New Project** menu item.
+Select a new project working directory using **File > Open Folder...**, if you have not done so. Select the **View > Command Palette... > imp: New Project** menu item.
 
-The project folder will be set up with the following files and structure:
+The project directory will be set up with the following files and structure:
 
 ```
--- <Project Working Folder>
-  |--> settings                           - Electric Imp settings folder
-  .   |--> auth.info                      - SENSITIVE impCentral API tokens and 
-  .   |                                     GitHub authentication information
-  .   |--> imp.config                     - Generic Electric Imp settings
-  |--> src                                - Source folder
-  .   |--> device.nut                     - Device code
-  .   |--> agent.nut                      - Agent code
-  |--> .gitignore                         - .gitignore file to exclude auth.info file 
-                                            from git repository
+<project working directory>
+  |----> settings                   - Settings directory
+  .   |--> auth.info                - SENSITIVE impCentral API tokens and 
+  .   |                               GitHub authentication information
+  .   |--> imp.config               - Generic Electric Imp settings
+  .
+  |----> src                        - Source code directory
+  .   |--> device.nut               - Device code file
+  .   |--> agent.nut                - Agent code file
+  .
+  |---->.gitignore                  - .gitignore file to exclude auth.info file 
+                                      from git repository
 ```
 
-**IMPORTANT** `settings/auth.info` should not be put under source control as it contains sensitive account information.
+**IMPORTANT** The file `auth.info` in the `settings` sub-directory should not be put under source control as it contains sensitive account information. A `.gitignore` file is included automatically to prevent this.
 
 The `imp.config` file contains:
 
@@ -131,17 +133,20 @@ The `imp.config` file contains:
 
 ```json
 { "deviceGroupId" : "<device group id>",
-  "device_code"   : "<path to device source file, src/device.nut by default>",
-  "agent_code"    : "<path to agent source file, src/agent.nut by default>" }
+  "device_code"   : "<path to device source file; src/device.nut by default>",
+  "agent_code"    : "<path to agent source file; src/agent.nut by default>" }
 ```
 
-When a project is created, empty device and agent code files (`device.nut` and `agent.nut`) are automatically created and stored in the project working directory’s `src` sub-directory.
+When a project is created, empty device and agent code files (`device.nut` and `agent.nut`, respectively) are automatically created and stored in the project working directory’s `src` sub-directory.
 
 If the project was created successfully, the `imp.config` file is opened.
 
-**Note** If the project working directory is not open in Visual Studio Code, no Extension commands will work.
+#### Important Notes ####
 
-**IMPORTANT** The code which is deployed to a Device Group is preprocessed and therefore contains line control markers. When you select an existing Device Group, the Extension downloads the code currently deployed to the group, but doesn’t transfer this code to the project file/folder structure. If you are working with collaborators on a project, please share the original Electric Imp Extension project sources/structure via a source control system.
+- If the project working directory is not open in Visual Studio Code, no Extension commands will work. Use **File > Open Folder...** to open the directory.
+- The code which is deployed to a Device Group is preprocessed and therefore may contain line control markers. 
+- When you select an existing Device Group, the Extension downloads the code currently deployed to the group, but doesn’t transfer this code to the project file/directory structure.
+- If you are working with collaborators on a project, please share the original Electric Imp Extension project sources/structure via a source control system.
 
 ### Open An Existing Project ###
 
@@ -149,11 +154,11 @@ To open an existing project, use **File > Open Folder...** to open the project w
 
 ### Build And Run Code ###
 
-To build code and deploy it, select the **View > Command Palette... > imp: Deploy Project** menu item.
+To build code and deploy it, use **View > Command Palette... > imp: Deploy Project**.
 
-This action uploads the agent and the device code to the impCloud™ server, and restarts all of the devices assigned to the target Device Group. 
+This action pre-processes and then uploads the agent and the device code to the impCloud™ server. Finally, it restarts all of the devices assigned to the target Device Group. 
 
-If you want to run your code on specific devices and view the logs from those devices, you need to select them using the **View > Command Palette... > imp: Add Device to current DG** menu item. The **imp: Remove Device from current DG** menu item removes a device from the project’s Device Group.
+If you want to run your code on specific devices and view the logs from those devices, you need to select them using **View > Command Palette... > imp: Add Device to current DG**. The **imp: Remove Device from current DG** command removes a device from the project’s Device Group.
 
 **Note** It isn’t necessary to assign a device to the Device Group to build and deploy your code to the group. If you don’t have any devices assigned to the Device Group, you can still work on the code and see any compilation errors reported by the server.
 
@@ -177,35 +182,35 @@ The URL of a device’s agent can be retrieved by selecting **View > Command Pal
 
 **Note** Electric Imp-specific menu items are only available if an Electric Imp project is open in the currently active window.
 
-| Command | Keypress |
+| Command | Shortcut |
 | ------- | -------- |
-| Show all imp Commands | Ctrl + Shift + C |
+| Show all Extension Commands | Ctrl + Shift + C |
 | Create Project | Ctrl + Shift + Y |
 | Build and Run | Ctrl + Shift + X |
 
-## Preprocessor And Multiple File Support ##
+## Pre-processor And Multiple File Support ##
 
 Please refer to the [Builder documentation](https://developer.electricimp.com/tools/builder) for more information on the preprocessor syntax that you can use in your Squirrel code.
 
-### Specifying GitHub Authentication Information ###
+### Specify GitHub Authentication Information ###
 
-Please use the project `<Project Working Folder>/settings/auth.info` file to specify your Builder GitHub authentication information:
+Please use the project `<project working directory>/settings/auth.info` file to specify your Builder GitHub authentication information:
 
 ```json
 { ...,
   "builderSettings": { "github_user"  : "GitHub user name",
-                        "github_token": "Personal access token or password" }}
+                       "github_token": "Personal access token or password" }}
 ```
 
-### Specifying Builder Preset Variable Definitions ###
+### Specify Builder Preset Variable Definitions ###
 
-Please use the project `<Project Working Folder>/settings/imp.config` file to specify Builder variable definitions:
+Please use the project `<project working directory>/settings/imp.config` file to specify Builder variable definitions:
 
 ```json
 { "builderSettings": { ...,
-                        "variable_definitions": { "key1": "value1",
-                                                  "key2": "value2" },
-                        ... }}
+                       "variable_definitions": { "key1": "value1",
+                                                 "key2": "value2" },
+                       ... }}
 ```
 
 ## License ##
