@@ -25,7 +25,7 @@
 
 ## Overview ##
 
-The Plug-in is designed to improve developers` productivity. It allows you to rapidly build and maintain applications by
+The Extension is designed to improve developers` productivity. It allows you to rapidly build and maintain applications by
 providing:
 
 * Code auto-completion for [Electric Imp’s imp API](https://developer.electricimp.com/api)
@@ -37,7 +37,7 @@ projects and code pre-processing
 * Key shortcuts for frequent operations (build and run, show console, etc.)
 * Leverages Visual Studio Code’s rich set of features.
 
-The Plug-in requires connection to the Internet as it leverages the
+The Extension requires connection to the Internet as it leverages the
 [Electric Imp impCentral™ API](https://developer.electricimp.com/tools/impcentralapi)
 to work with the [Electric Imp impCloud™](https://electricimp.com/platform/cloud/).
 
@@ -45,13 +45,13 @@ to work with the [Electric Imp impCloud™](https://electricimp.com/platform/clo
 
 ### 1. Install Node.js ###
 
-**Note** The plug-in requires Node.js 11.0 or above.
+**Note** The Extension requires Node.js 11.0 or above.
 
 Please follow [these instructions](https://nodejs.org/en/download/package-manager/) to install Node on your machine.
 
 ### 2. Install the Builder Node.js Module ###
 
-The plug-in uses the [Builder](https://github.com/electricimp/Builder) Node.js module for source code pre-processing.
+The Extension uses the [Builder](https://github.com/electricimp/Builder) Node.js module for source code pre-processing.
 To install Builder, please use Node Package Manager (NPM):
 
 ```bash
@@ -70,12 +70,12 @@ TODO: Complete when published on the market!
 
 #### Installation From .vsix File ####
 
-1. Download extension .vsix file from GitHub source [repository](https://github.com/electricimp/vscode.git).
+1. Download Extension .vsix file from GitHub source [repository](https://github.com/electricimp/vscode.git).
 2. code --install-extension vscode-electricimp-0.x.x.vsix
 
 #### Installation From Source ####
 
-Alternatively, follow these steps to install the plug-in manually:
+Alternatively, follow these steps to install the Extension manually:
 
 1. Use the Visual Studio Code Extension folder:
     - **macOS** *~/.vscode/extensions*
@@ -91,7 +91,7 @@ Alternatively, follow these steps to install the plug-in manually:
 
 ## Extension Commands List ##
 
-This extension contributes the following commands:
+This Extension contributes the following commands:
 
 * `imp: Auth User Password`: Create authorization file with access token in the selected workspace directory.
 * `imp: New Project`: Create configuration file and source code files in the selected workspace directory.
@@ -103,7 +103,7 @@ This extension contributes the following commands:
 * `imp: Add Device to current DG`: Add device to workspace device group.
 * `imp: Remove Device from current DG`: Remove device from the workspace device group.
 * `imp: Get agent URL`: Get agent URL.
-* `imp: Show All Commands...`: Show the list of extension commands.
+* `imp: Show All Commands...`: Show the list of Extension commands.
 
 ## Visual Studio Code Extension Usage ##
 
@@ -152,9 +152,9 @@ and stored in the `<Project Working Folder>/src` folder.
 
 If a project is created successfully, an `imp.config` file is opened.
 
-**Note** If the Project Working Folder is not opened in the Visual Studio Code, all extension commands will not work.
+**Note** If the Project Working Folder is not opened in the Visual Studio Code, all Extension commands will not work.
 
-**Important** The code which is deployed to a Device Group is preprocessed and contains line control markers. When you select an existing Device Group, the plug-in pulls down the code, but it doesn’t transfer the project file/folder structure. So, for collaborative work on the same project, please share the original Electric Imp plug-in project sources/structure via a source control system.
+**Important** The code which is deployed to a Device Group is preprocessed and contains line control markers. When you select an existing Device Group, the Extension pulls down the code, but it doesn’t transfer the project file/folder structure. So, for collaborative work on the same project, please share the original Electric Imp Extension project sources/structure via a source control system.
 
 ### Opening an Existing Project ###
 
@@ -169,7 +169,7 @@ menu item. This action uploads the agent and the device code to the server, and 
 
 ### The Log Console ###
 
-The live logs are streamed to ‘View‘ > ‘Output‘. It is possible to add the specified device live logs by its ID using `imp: Start Device Logs` extension command. The Output shows live logs streamed from the current Device Group if the group contains at least one device.
+The live logs are streamed to ‘View‘ > ‘Output‘. It is possible to add the specified device live logs by its ID using `imp: Start Device Logs` Extension command. The Output shows live logs streamed from the current Device Group if the group contains at least one device.
 
 ### Adding a Device to the Project Device Group ###
 
