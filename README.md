@@ -70,7 +70,7 @@ TODO: Complete when published on the market!
 
 #### Installation From .vsix File ####
 
-1. Download extension .vsix file from GitHub source [repository](https://github.com/nobitlost/vscode.git).
+1. Download extension .vsix file from GitHub source [repository](https://github.com/electricimp/vscode.git).
 2. code --install-extension vscode-electricimp-0.x.x.vsix
 
 #### Installation From Source ####
@@ -84,7 +84,7 @@ Alternatively, follow these steps to install the plug-in manually:
 2. Follow the next steps:
     
     - cd into Visual Studio Code extension folder.
-    - Clone the full GitHub source [repository](https://github.com/nobitlost/vscode.git).
+    - Clone the full GitHub source [repository](https://github.com/electricimp/vscode.git).
     - Checkout the `develop` branch in the git.
     - npm install .
     - restart the Visual Studio Code
@@ -130,16 +130,20 @@ The project folder will be set up with the following:
 
 The `imp.config` file contains:
 
+- A unique user identifier.
 - A unique Device Group identifier.
 - Device and agent code file names.
+- [Builder](https://github.com/electricimp/Builder) settings.
 
 #### Example ####
 
 ```
 {
-  "deviceGroupId" : "<device group id>",
-  "device_code"   : "<path to device source file, src/device.nut by default>",
-  "agent_code"    : "<path to agent source file, src/agent.nut by default>",
+  "ownerId"         : "<user id>",
+  "deviceGroupId"   : "<device group id>",
+  "device_code"     : "<path to device source file, src/device.nut by default>",
+  "agent_code"      : "<path to agent source file, src/agent.nut by default>",
+  "builderSettings" : "<Buider variables set>"
 }
 ```
 
@@ -200,7 +204,7 @@ Please use the project `<Project Working Folder>/settings/auth.info` file to spe
 ```
 { ...
   "builderSettings": { "github_user": "GitHub user name",
-                        "github_token": "Personal access token or password" }
+                       "github_token": "Personal access token or password" }
 }
 ```
 
