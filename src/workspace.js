@@ -408,6 +408,7 @@ function validateDG(accessToken, config) {
             .then(() => {
                 resolve({ token: accessToken, cfg: config });
             }, (err) => {
+                Auth.reloginIfAuthError(err, Auth.hideAuthError);
                 reject(new Error(`${User.ERRORS.DG_RETRIEVE} ${err}`));
             });
     });

@@ -86,6 +86,9 @@ function authorize() {
 }
 module.exports.authorize = authorize;
 
+const hideAuthError = 'hideError';
+module.exports.hideAuthError = hideAuthError;
+
 // Check if 401 error was returned and call auth extension command if true.
 //
 // Parameters:
@@ -93,10 +96,14 @@ module.exports.authorize = authorize;
 //
 // Returns:                     ture if auth error
 //
-function reloginIfAuthError(err) {
+function reloginIfAuthError(err, hideError = undefined) {
     if (typeof err.statusCode !== 'undefined' && err.statusCode === 401) {
-        vscode.window.showErrorMessage('Authorization error, please login.');
+        if (hideError !== hideAuthError) {
+            vscode.window.showErrorMessage('Authorization error, please login.');
+        }
+
         vscode.commands.executeCommand('imp.auth.creds');
+
         return true;
     }
 
