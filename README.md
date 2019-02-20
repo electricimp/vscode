@@ -179,7 +179,7 @@ Devices can be removed from the project’s Device Group by selecting **View > C
 
 ### Retrieve A Device’s Agent URL ###
 
-The URL of a device’s agent can be retrieved by selecting **View > Command Palette... > imp: Get agent URL**. The URL is displayed in a dialog box.
+The URL of a device’s agent can be retrieved by selecting **View > Command Palette... > imp: Get agent URL**. The URL is displayed in a dialog box and copied to clipboard.
 
 ### Extension Keyboard Shortcuts ###
 
