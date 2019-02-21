@@ -207,13 +207,35 @@ Please use the project `<project working directory>/settings/auth.info` file to 
 
 ### Specify Builder Preset Variable Definitions ###
 
-Please use the project `<project working directory>/settings/imp.config` file to specify Builder variable definitions:
+Please use the project `<project working directory>/settings/imp.config` file to specify Builder variable definitions like [here](https://github.com/electricimp/Builder#types).
 
 ```json
 { "builderSettings": { ...,
-                       "variable_definitions": { "key1": "value1",
-                                                 "key2": "value2" },
-                       ... }}
+                       "variable_definitions": { "IntType": 34,
+                                                 "FloatType": 34.456,
+                                                 "ExponentType1": 3E4,
+                                                 "ExponentType2": 3e-2,
+                                                 "StringType1": "str1",
+                                                 "StringType2": "\"str2\"",
+                                                 "BoolTypeTrue": true,
+                                                 "BoolTypeFalse": false,
+                                                 "NullType": null },
+                                        ... }}
+```
+
+It is possible to obtain these Builder variable definitions values from *.nut source file:
+
+```
+server.log(@{IntType});       // 34
+server.log(@{FloatType});     // 34.456
+server.log(@{ExponentType1}); // 30000
+server.log(@{ExponentType2}); // 0.03
+server.log("@{StringType1}"); // str1
+server.log(@{StringType2});   // str2
+server.log(@{BoolTypeTrue});  // true
+server.log(@{BoolTypeFalse}); // false
+server.log(@{NullType});      // (null : 0x0)
+server.log(@{NotDefined});    // (null : 0x0)
 ```
 
 ## License ##
