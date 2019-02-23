@@ -23,6 +23,7 @@
     - [Specify GitHub Authentication Information](#specify-github-authentication-information)
     - [Specify Builder Preset Variable Definitions](#specify-builder-preset-variable-definitions)
 
+**NOTE:** This extension is in the Alpha state. Please report any issues that you find. Thanks for your patience and cooperation!
 
 ## Overview ##
 
