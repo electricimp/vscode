@@ -1,7 +1,7 @@
 {
   "name": "vscode-electricimp",
   "displayName": "Electric Imp Squirrel",
-  "description": "Electric Imp vscode support",
+  "description": "Electric Imp Application Development",
   "version": "0.1.0",
   "publisher": "electricimp",
   "icon": "simple_nut.png",

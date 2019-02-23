@@ -64,7 +64,9 @@ The Electric Imp Visual Studio Code Extension can be installed using any of a nu
 
 #### Installation From The Visual Studio Marketplace ####
 
-The [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode) can be accessed through Visual Studio Code itself. We will add further instructions here when the Extension becomes available in the Marketplace.
+The [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode) can be accessed through Visual Studio Code itself.
+Please refere to the Marketplace [documentation](https://code.visualstudio.com/docs/editor/extension-gallery) for more details.
+Search for "Electric Imp Squirrel" extension and click the "Install" button next to it.
 
 #### Installation From A .VSIX File ####
 
@@ -223,7 +225,7 @@ Please use the project `<project working directory>/settings/imp.config` file to
                                         ... }}
 ```
 
-It is possible to obtain these Builder variable definitions values from *.nut source file:
+It is possible to obtain these Builder variable definitions values from Squirrel code this way:
 
 ```
 server.log(@{IntType});       // 34
