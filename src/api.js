@@ -58,6 +58,20 @@ function refreshAccessToken(refreshToken) {
 }
 module.exports.refreshAccessToken = refreshAccessToken;
 
+function getDG(accessToken, dgID) {
+    const api = new ImpCentralApi();
+    api.auth.accessToken = accessToken;
+
+    return new Promise((resolve, reject) => {
+        api.deviceGroups.get(dgID).then((result) => {
+            resolve(result);
+        }, (err) => {
+            reject(err);
+        });
+    });
+}
+module.exports.getDG = getDG;
+
 function getAgentURL(accessToken, deviceID) {
     const api = new ImpCentralApi();
     api.auth.accessToken = accessToken;
@@ -266,10 +280,12 @@ async function getDeviceList(accessToken, ownerID, dgIDAssigned, dgIDExclude) {
         do {
             result = await api.devices.list(filters, i, maxPageSize);
             result.data.forEach((item) => {
-                const dgIDdevice = item.relationships.devicegroup.id;
-                if (dgIDExclude !== dgIDdevice) {
-                    devices.set(item.id, item);
+                if ((dgIDExclude && item.relationships.devicegroup) &&
+                        dgIDExclude === item.relationships.devicegroup.id) {
+                    return;
                 }
+
+                devices.set(item.id, item);
             });
 
             i += 1;
