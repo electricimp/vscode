@@ -304,7 +304,7 @@ class Data {
 
                 resolve(config);
             } catch (err) {
-                reject(err);
+                reject(new Error(`${User.ERRORS.WORKSPACE_CFG_CORRUPTED}: ${err}`));
             }
         });
     }
@@ -402,6 +402,19 @@ function createProjectFiles(dgID, ownerID, force = false) {
     });
 }
 
+function validateDG(accessToken, config) {
+    return new Promise((resolve, reject) => {
+        Api.getDG(accessToken, config.deviceGroupId)
+            .then(() => {
+                resolve({ token: accessToken, cfg: config });
+            }, (err) => {
+                Auth.reloginIfAuthError(err, Auth.hideAuthError);
+                reject(new Error(`${User.ERRORS.DG_RETRIEVE} ${err}`));
+            });
+    });
+}
+module.exports.validateDG = validateDG;
+
 function showSources(src) {
     vscode.window.showTextDocument(vscode.workspace.openTextDocument(src.agent_path), 1);
     vscode.window.showTextDocument(vscode.workspace.openTextDocument(src.device_path), 2);
@@ -442,7 +455,8 @@ module.exports.newProjectNewProduct = newProjectNewProduct;
 //     none
 function deploy(logstream, diagnostic) {
     Promise.all([Auth.authorize(), Data.getWorkspaceInfo(), vscode.workspace.saveAll()])
-        .then(([accessToken, cfg]) => {
+        .then(([accessToken, cfg]) => validateDG(accessToken, cfg))
+        .then((ret) => {
             const agentPre = new Preproc();
             const devicePre = new Preproc();
             diagnostic.setPreprocessors(agentPre, devicePre);
@@ -450,14 +464,14 @@ function deploy(logstream, diagnostic) {
                 let agentSource;
                 const agentInc = path.dirname(src.agent_path);
                 try {
-                    const agentName = path.basename(cfg.agent_code);
+                    const agentName = path.basename(ret.cfg.agent_code);
                     const code = src.agent_source;
                     const auth = Data.getAuthInfoSync();
                     const gh = {
                         username: auth.builderSettings.github_user,
                         token: auth.builderSettings.github_token,
                     };
-                    const defines = cfg.builderSettings.variable_definitions;
+                    const defines = ret.cfg.builderSettings.variable_definitions;
                     agentSource = agentPre.preprocess(agentName, code, agentInc, gh, defines);
                 } catch (err) {
                     diagnostic.addBuilderError(agentInc, err.message);
@@ -468,14 +482,14 @@ function deploy(logstream, diagnostic) {
                 let deviceSource;
                 const devInc = path.dirname(src.device_path);
                 try {
-                    const devName = path.basename(cfg.device_code);
+                    const devName = path.basename(ret.cfg.device_code);
                     const code = src.device_source;
                     const auth = Data.getAuthInfoSync();
                     const gh = {
                         username: auth.builderSettings.github_user,
                         token: auth.builderSettings.github_token,
                     };
-                    const defines = cfg.builderSettings.variable_definitions;
+                    const defines = ret.cfg.builderSettings.variable_definitions;
                     deviceSource = devicePre.preprocess(devName, code, devInc, gh, defines);
                 } catch (err) {
                     diagnostic.addBuilderError(devInc, err.message);
@@ -503,13 +517,13 @@ function deploy(logstream, diagnostic) {
                     return;
                 }
 
-                const dg = cfg.deviceGroupId;
+                const dg = ret.cfg.deviceGroupId;
                 const attrs = {
                     agent_code: agentSource,
                     device_code: deviceSource,
                 };
 
-                Api.deploy(accessToken, dg, DevGroups.TYPE_DEVELOPMENT, attrs)
+                Api.deploy(ret.token, dg, DevGroups.TYPE_DEVELOPMENT, attrs)
                     .then((devices) => {
                         if (devices === undefined) {
                             vscode.window.showWarningMessage(`The DG ${dg} have no devices`);
@@ -517,9 +531,9 @@ function deploy(logstream, diagnostic) {
                             return;
                         }
 
-                        logstream.addDevice(accessToken, devices.data[0].id, true)
+                        logstream.addDevice(ret.token, devices.data[0].id, true)
                             .then(() => {
-                                Api.restartDevices(accessToken, dg)
+                                Api.restartDevices(ret.token, dg)
                                     .then(
                                         () => vscode.window.showInformationMessage(`Successfully deployed on ${dg}`),
                                         err => User.showImpApiError('Reset devices:', err),
