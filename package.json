@@ -110,20 +110,20 @@
       {
         "id": "Log",
         "aliases": [
-            "log"
+          "log"
         ],
         "extensions": [
-            ".log"
+          ".log"
         ],
         "configuration": "./log.configuration.json",
         "mimetypes": [
-            "log",
-            "text/log",
-            "text/x-log",
-            "text/x-code-output",
-            "x-code-output"
+          "log",
+          "text/log",
+          "text/x-log",
+          "text/x-code-output",
+          "x-code-output"
         ]
-    }
+      }
     ],
     "grammars": [
       {
@@ -149,12 +149,11 @@
     "eslint": "^4.11.0",
     "eslint-plugin-import": "^2.14.0",
     "eslint-config-airbnb-base": "^12.0.0",
-
     "typescript": "^2.6.1",
     "vscode": "^1.1.21"
   },
   "dependencies": {
-    "colors":"^1.3.3",
+    "colors": "^1.3.3",
     "strftime": "^0.10.0",
     "imp-central-api": "^1.4.1",
     "Builder": "^2.4.0",

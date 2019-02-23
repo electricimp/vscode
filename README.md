@@ -73,7 +73,7 @@ Search for "Electric Imp Squirrel" extension and click the "Install" button next
 #### Installation From A .VSIX File ####
 
 1. Download the `.vsix` file from [Electric Imp’s GitHub repository](https://github.com/electricimp/vscode).
-2. Enter the following at the command line: `code --install-extension vscode-electricimp-0.x.x.vsix`
+2. Enter the following at the command line: `code --install-extension vscode-electricimp-X.X.X.vsix`
 
 #### Installation From Source ####
 
