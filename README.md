@@ -1,6 +1,6 @@
 # Electric Imp impCentral Microsoft Visual Studio Code Extension (Alpha) #
 
-| This extension is in the Alpha state. Please report any issues that you find. \nThanks for your patience and cooperation! |
+| This extension is in the Alpha state. Please report any issues that you find. <br/>Thanks for your patience and cooperation! |
 | --- |
 
 ## Contents ##
