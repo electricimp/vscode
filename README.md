@@ -1,5 +1,8 @@
 # Electric Imp impCentral Microsoft Visual Studio Code Extension (Alpha) #
 
+| This extension is in the Alpha state. Please report any issues that you find. \nThanks for your patience and cooperation! |
+| --- |
+
 ## Contents ##
 
 - [Overview](#overview)
@@ -22,9 +25,6 @@
 - [Pre-processor And Multiple File Support](#pre-processor-and-multiple-file-support)
     - [Specify GitHub Authentication Information](#specify-github-authentication-information)
     - [Specify Builder Preset Variable Definitions](#specify-builder-preset-variable-definitions)
-
-| This extension is in the Alpha state. Please report any issues that you find. Thanks for your patience and cooperation! |
-| --- |
 
 ## Overview ##
 
