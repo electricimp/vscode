@@ -68,11 +68,6 @@ The Electric Imp Visual Studio Code Extension can be installed using any of a nu
 
 The [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode) can be accessed through Visual Studio Code itself. Please refer to the Marketplace [documentation](https://code.visualstudio.com/docs/editor/extension-gallery) for more details. Search for the extension using `"Electric Imp Squirrel"` and, when the extension is listed, click the **Install** button next to it in the search results.
 
-#### Installation From A .VSIX File ####
-
-1. Download the `.vsix` file from [Electric Imp’s GitHub repository](https://github.com/electricimp/vscode).
-2. Enter the following at the command line: `code --install-extension vscode-electricimp-X.X.X.vsix`
-
 #### Installation From Source ####
 
 Follow these steps to install the Extension manually:
