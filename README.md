@@ -1,6 +1,6 @@
 # Electric Imp impCentral Microsoft Visual Studio Code Extension (Alpha) #
 
-| This extension is in the Alpha state. Please report any issues that you find. <br/>Thanks for your patience and cooperation! |
+| This extension is in the Alpha state. Please report any issues that you find. Thanks for your patience and cooperation! |
 | --- |
 
 ## Contents ##
@@ -20,7 +20,7 @@
     - [The Log Console](#the-log-console)
     - [Assign A Device To The Project Device Group](#assign-a-device-to-the-project-device-group)
     - [Unassign A Device From The Project Device Group](#unassign-a-device-from-the-project-device-group)
-    - [Retrieve A Device’s Agent URL](#retrieve-a-devices-agent-url)
+    - [Retrieve An Agent URL](#retrieve-an-agent-url)
     - [Extension Keyboard Shortcuts](#extension-keyboard-shortcuts)
 - [Pre-processor And Multiple File Support](#pre-processor-and-multiple-file-support)
     - [Specify GitHub Authentication Information](#specify-github-authentication-information)
@@ -66,14 +66,7 @@ The Electric Imp Visual Studio Code Extension can be installed using any of a nu
 
 #### Installation From The Visual Studio Marketplace ####
 
-The [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode) can be accessed through Visual Studio Code itself.
-Please refere to the Marketplace [documentation](https://code.visualstudio.com/docs/editor/extension-gallery) for more details.
-Search for "Electric Imp Squirrel" extension and click the "Install" button next to it.
-
-#### Installation From A .VSIX File ####
-
-1. Download the `.vsix` file from [Electric Imp’s GitHub repository](https://github.com/electricimp/vscode).
-2. Enter the following at the command line: `code --install-extension vscode-electricimp-X.X.X.vsix`
+The [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode) can be accessed through Visual Studio Code itself. Please refer to the Marketplace [documentation](https://code.visualstudio.com/docs/editor/extension-gallery) for more details. Search for the extension using `"Electric Imp Squirrel"` and, when the extension is listed, click the **Install** button next to it in the search results.
 
 #### Installation From Source ####
 
@@ -132,16 +125,16 @@ The `imp.config` file contains:
 - A unique user identifier.
 - A unique Device Group identifier.
 - Device and agent code file names.
-- [Builder](https://github.com/electricimp/Builder) settings.
+- [Builder](https://developer.electricimp.com/tools/builder) settings.
 
 #### Example ####
 
 ```json
-{ "ownerID"        : "<user id>",
-  "deviceGroupId"  : "<device group id>",
-  "device_code"    : "<path to device source file; src/device.nut by default>",
-  "agent_code"     : "<path to agent source file; src/agent.nut by default>",
-  "builderSettings": "<different Builder variables>" }
+{ "ownerID"         : "<user id>",
+  "deviceGroupId"   : "<device group id>",
+  "device_code"     : "<path to device source file; src/device.nut by default>",
+  "agent_code"      : "<path to agent source file; src/agent.nut by default>",
+  "builderSettings" : "<different Builder variables>" }
 ```
 
 When a project is created, empty device and agent code files (`device.nut` and `agent.nut`, respectively) are automatically created and stored in the project working directory’s `src` sub-directory.
@@ -181,9 +174,9 @@ To assign devices to the project’s Device Group, select **View > Command Palet
 
 Devices can be removed from the project’s Device Group by selecting **View > Command Palette... > imp: Remove Device from current DG**.
 
-### Retrieve A Device’s Agent URL ###
+### Retrieve An Agent URL ###
 
-The URL of a device’s agent can be retrieved by selecting **View > Command Palette... > imp: Get agent URL**. The URL is displayed in a dialog box and copied to clipboard.
+The URL of a device’s agent can be retrieved by selecting **View > Command Palette... > imp: Get agent URL**. The URL is displayed in a dialog box and copied to the clipboard.
 
 ### Extension Keyboard Shortcuts ###
 
@@ -211,7 +204,7 @@ Please use the project `<project working directory>/settings/auth.info` file to 
 
 ### Specify Builder Preset Variable Definitions ###
 
-Please use the project `<project working directory>/settings/imp.config` file to specify Builder variable definitions like [here](https://github.com/electricimp/Builder#types).
+Please use the project `<project working directory>/settings/imp.config` file to specify Builder variable definitions (as [described here](https://developer.electricimp.com/tools/builder#builder-expressions)).
 
 ```json
 { "builderSettings": { ...,
@@ -229,13 +222,13 @@ Please use the project `<project working directory>/settings/imp.config` file to
 
 It is possible to obtain these Builder variable definitions values from Squirrel code this way:
 
-```
+```squirrel
 server.log(@{IntType});       // 34
 server.log(@{FloatType});     // 34.456
 server.log(@{ExponentType1}); // 30000
 server.log(@{ExponentType2}); // 0.03
-server.log("@{StringType1}"); // str1
-server.log(@{StringType2});   // str2
+server.log(@{StringType1});   // str1
+server.log(@{StringType2});   // "str2"
 server.log(@{BoolTypeTrue});  // true
 server.log(@{BoolTypeFalse}); // false
 server.log(@{NullType});      // (null : 0x0)

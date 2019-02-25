@@ -2,7 +2,7 @@
   "name": "vscode-electricimp",
   "displayName": "Electric Imp Squirrel",
   "description": "Electric Imp Application Development",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "electricimp",
   "icon": "simple_nut.png",
   "license": "MIT",
@@ -161,6 +161,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/blablacar/vscode-squirrel-lang.git"
+    "url": "https://github.com/electricimp/vscode.git"
   }
 }
