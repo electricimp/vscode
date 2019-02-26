@@ -144,7 +144,7 @@ If the project was created successfully, the `imp.config` file is opened.
 #### Important Notes ####
 
 - If the project working directory is not open in Visual Studio Code, no Extension commands will work. Use **File > Open Folder...** to open the directory.
-- The code which is deployed to a Device Group is preprocessed and therefore may contain line control markers. 
+- The code which is deployed to a Device Group is pre-processed and therefore may contain line control markers. 
 - When you select an existing Device Group, the Extension downloads the code currently deployed to the group, but doesn’t transfer this code to the project file/directory structure.
 - If you are working with collaborators on a project, please share the original Electric Imp Extension project sources/structure via a source control system.
 
@@ -190,11 +190,11 @@ The URL of a device’s agent can be retrieved by selecting **View > Command Pal
 
 ## Pre-processor And Multiple File Support ##
 
-Please refer to the [Builder documentation](https://developer.electricimp.com/tools/builder) for more information on the preprocessor syntax that you can use in your Squirrel code.
+Please refer to the [Builder documentation](https://developer.electricimp.com/tools/builder) for more information on the pre-processor syntax that you can use in your Squirrel code.
 
 ### Specify GitHub Authentication Information ###
 
-Please use the project `<project working directory>/settings/auth.info` file to specify your Builder GitHub authentication information:
+Please use the `<project working directory>/settings/auth.info` file to specify your Builder GitHub authentication information:
 
 ```json
 { ...,
@@ -204,7 +204,7 @@ Please use the project `<project working directory>/settings/auth.info` file to 
 
 ### Specify Builder Preset Variable Definitions ###
 
-Please use the project `<project working directory>/settings/imp.config` file to specify Builder variable definitions (as [described here](https://developer.electricimp.com/tools/builder#builder-expressions)).
+Please use the `<project working directory>/settings/imp.config` file to specify Builder variable definitions (as [described here](https://developer.electricimp.com/tools/builder#builder-expressions)).
 
 ```json
 { "builderSettings": { ...,
