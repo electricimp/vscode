@@ -4,7 +4,7 @@
   "description": "Electric Imp vscode support",
   "version": "0.1.0",
   "publisher": "electricimp",
-  "icon": "simple_nut.png",
+  "icon": "modern_nut.png",
   "license": "MIT",
   "engines": {
     "vscode": "^1.28.0"
