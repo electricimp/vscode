@@ -128,8 +128,8 @@
     "grammars": [
       {
         "language": "squirrel",
-        "scopeName": "source.nut",
-        "path": "./syntaxes/Squirrel.tmLanguage.json"
+        "scopeName": "source.squirrel",
+        "path": "./syntaxes/nut.tmLanguage"
       },
       {
         "language": "Log",
