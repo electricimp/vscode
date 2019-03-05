@@ -136,6 +136,16 @@
         "scopeName": "stream.log",
         "path": "./syntaxes/log.tmLanguage"
       }
+    ],
+    "snippets": [
+      {
+        "language": "squirrel",
+        "path": "./snippets/electric-imp-squirrel-completions.json"
+      },
+      {
+        "language": "squirrel",
+        "path": "./snippets/squirrelSnippets.json"
+      }
     ]
   },
   "scripts": {
