@@ -34,10 +34,10 @@ const pickDeviceIDRetVal = {
     esc: 'esc',
 };
 
-async function pickDeviceID(accessToken, ownerID, dgIDAssigned, dgIDUnAssigned) {
+async function pickDeviceID(cloudUrl, accessToken, ownerID, dgIDAssigned, dgIDUnAssigned) {
     let devices;
     try {
-        devices = await Api.getDeviceList(accessToken, ownerID, dgIDAssigned, dgIDUnAssigned);
+        devices = await Api.getDeviceList(cloudUrl, accessToken, ownerID, dgIDAssigned, dgIDUnAssigned);
     } catch (err) {
         User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err);
         return err;
@@ -100,8 +100,8 @@ function getAgentURLDialog() {
     Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
         .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
         .then((ret) => {
-            pickDeviceID(ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
-                .then(deviceID => Api.getAgentURL(ret.token, deviceID))
+            pickDeviceID(ret.cfg.cloudUrl, ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
+                .then(deviceID => Api.getAgentURL(ret.cfg.cloudUrl, ret.token, deviceID))
                 .then((agentUrl) => {
                     vscode.env.clipboard.writeText(agentUrl);
                     vscode.window.showInformationMessage(agentUrl);
@@ -121,8 +121,8 @@ function addDeviceToDGDialog() {
     Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
         .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
         .then((ret) => {
-            pickDeviceID(ret.token, ret.cfg.ownerId, undefined, ret.cfg.deviceGroupId)
-                .then(deviceID => Api.addDeviceToDG(ret.token, ret.cfg.deviceGroupId, deviceID))
+            pickDeviceID(ret.cfg.cloudUrl, ret.token, ret.cfg.ownerId, undefined, ret.cfg.deviceGroupId)
+                .then(deviceID => Api.addDeviceToDG(ret.cfg.cloudUrl, ret.token, ret.cfg.deviceGroupId, deviceID))
                 .then(() => {
                     vscode.window.showInformationMessage('The device is added to DG');
                 }).catch(err => pickDeviceIDError(err));
@@ -141,8 +141,8 @@ function removeDeviceFromDGDialog() {
     Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
         .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
         .then((ret) => {
-            pickDeviceID(ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
-                .then(deviceID => Api.removeDeviceFromDG(ret.token, ret.cfg.deviceGroupId, deviceID))
+            pickDeviceID(ret.cfg.cloudUrl, ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
+                .then(deviceID => Api.removeDeviceFromDG(ret.cfg.cloudUrl, ret.token, ret.cfg.deviceGroupId, deviceID))
                 .then(() => {
                     vscode.window.showInformationMessage('The device is removed from DG');
                 }).catch(err => pickDeviceIDError(err));

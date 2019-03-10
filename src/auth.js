@@ -28,6 +28,8 @@ const Api = require('./api');
 const User = require('./user');
 const Workspace = require('./workspace');
 
+const defaultCloudURL = 'https://api.electricimp.com/v5';
+
 async function getUserCreds() {
     const userOptions = {
         prompt: User.MESSAGES.AUTH_PROMPT_ENTER_CREDS,
@@ -60,7 +62,7 @@ async function getUserCreds() {
     };
 
     try {
-        accessToken = await Api.login(creds);
+        accessToken = await Api.login(defaultCloudURL, creds);
     } catch (err) {
         if (Api.isMFAError(err)) {
             const otpOptions = {
@@ -75,7 +77,7 @@ async function getUserCreds() {
                 throw new User.UserInputCanceledError();
             }
 
-            accessToken = await Api.loginWithOTP(otp, Api.getMFALoginToken(err));
+            accessToken = await Api.loginWithOTP(defaultCloudURL, otp, Api.getMFALoginToken(err));
         } else {
             throw new User.LoginError(err);
         }
@@ -133,7 +135,7 @@ function refreshAccessToken(accessToken) {
             return;
         }
 
-        Api.refreshAccessToken(accessToken.refresh_token)
+        Api.refreshAccessToken(defaultCloudURL, accessToken.refresh_token)
             .then((refreshedAuth) => {
                 const freshAccessToken = refreshedAuth;
                 freshAccessToken.refresh_token = accessToken.refresh_token;

@@ -49,7 +49,7 @@ class LogStream {
          * ImpCentralApi logstreams. Because these two functions cannot be called
          * from different ImpCentralApi instances.
          */
-        this.impCentralApi = new ImpCentralApi();
+        this.impCentralApi = undefined;
         this.logStreamID = undefined;
         this.outputChannel = undefined;
         this.devices = new Set();
@@ -58,6 +58,13 @@ class LogStream {
         // IsReachable monitoring.
         this.interval = 3000;
         this.target = 'https://api.electricimp.com/v5';
+    }
+
+    setImpCentralApi(cloudUrl) {
+        if (this.impCentralApi === undefined) {
+            this.impCentralApi = new ImpCentralApi(cloudUrl);
+            this.target = this.impCentralApi.apiEndpoint;
+        }
     }
 
     static getTypeInfo(type) {
@@ -337,7 +344,7 @@ class LogStream {
                              * It is possible to add only one device to console output.
                              * The run-time error diagnostic logic is rely on this fact.
                              */
-                            Api.logStreamAddDevice(accessToken, logStreamID, deviceID)
+                            Api.logStreamAddDevice(this.impCentralApi.apiEndpoint, accessToken, logStreamID, deviceID)
                                 .then(() => {
                                     this.deviceAdded(deviceID, silent);
                                     resolve();
@@ -358,7 +365,8 @@ class LogStream {
         Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
             .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
             .then((ret) => {
-                Devices.pickDeviceID(ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
+                this.setImpCentralApi(ret.cfg.cloudUrl);
+                Devices.pickDeviceID(ret.cfg.cloudUrl, ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
                     .then(deviceID => this.addDevice(ret.token, deviceID))
                     .catch(err => Devices.pickDeviceIDError(err));
             }).catch(err => vscode.window.showErrorMessage(err.message));
@@ -372,9 +380,10 @@ class LogStream {
         Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
             .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
             .then((ret) => {
-                Devices.pickDeviceID(ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
+                this.setImpCentralApi(ret.cfg.cloudUrl);
+                Devices.pickDeviceID(ret.cfg.cloudUrl, ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
                     .then((deviceID) => {
-                        Api.logStreamRemoveDevice(ret.token, this.logStreamID, deviceID)
+                        Api.logStreamRemoveDevice(ret.cfg.cloudUrl, ret.token, this.logStreamID, deviceID)
                             .then(() => {
                                 this.devices.delete(deviceID);
                                 vscode.window.showInformationMessage(`Device removed: ${deviceID}`);

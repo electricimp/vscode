@@ -30,7 +30,6 @@ const Auth = require('./auth');
 const User = require('./user');
 const Workspace = require('./workspace');
 
-
 function getCreateProjectTitle() {
     return 'Create New Project';
 }
@@ -66,7 +65,7 @@ async function getDGName(input, state) {
 
     if (state.product) {
         try {
-            dgList = await Api.getDGList(state.accessToken, state.product.id, state.owner);
+            dgList = await Api.getDGList(state.cloudUrl, state.accessToken, state.product.id, state.owner);
         } catch (err) {
             const nextState = state;
             nextState.err = err;
@@ -98,7 +97,7 @@ async function getDGName(input, state) {
 async function getProductName(input, state) {
     let productList;
     try {
-        productList = await Api.getProductList(state.accessToken, state.owner);
+        productList = await Api.getProductList(state.cloudUrl, state.accessToken, state.owner);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -128,7 +127,7 @@ async function getProductName(input, state) {
 async function pickDGFromList(input, state) {
     let dgs;
     try {
-        dgs = await Api.getDGList(state.accessToken, state.product.id, state.owner);
+        dgs = await Api.getDGList(state.cloudUrl, state.accessToken, state.product.id, state.owner);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -166,7 +165,7 @@ async function pickDGFromList(input, state) {
 async function pickProductFromList(input, state) {
     let products;
     try {
-        products = await Api.getProductList(state.accessToken, state.owner);
+        products = await Api.getProductList(state.cloudUrl, state.accessToken, state.owner);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -204,8 +203,8 @@ async function pickOwner(input, state) {
     let me;
     let owners;
     try {
-        me = await Api.getMe(state.accessToken);
-        owners = await Api.getOwners(state.accessToken);
+        me = await Api.getMe(state.cloudUrl, state.accessToken);
+        owners = await Api.getOwners(state.cloudUrl, state.accessToken);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -245,6 +244,25 @@ async function pickOwner(input, state) {
     return nextIn => pickProductFromList(nextIn, nextState);
 }
 
+async function pickCloudUrl(input, state) {
+    const nextState = state;
+    const defaultCloudURL = 'https://api.electricimp.com/v5';
+    const availableURLs = [defaultCloudURL, 'https://beta-api.electricimp.com/v5'];
+    const pick = await input.showQuickPick(
+        getCreateProjectTitle(),
+        0,
+        3,
+        'Pick the Imp Cloud URL',
+        availableURLs.map(label => ({ label })),
+        typeof state.cloudUrl !== 'string' ? state.cloudUrl : undefined,
+        undefined,
+        shouldResume,
+    );
+
+    nextState.cloudUrl = pick.label;
+    return nextIn => pickOwner(nextIn, nextState);
+}
+
 async function checkIfProjectAlreadyExist(input, state) {
     let auth;
     let accessToken;
@@ -279,7 +297,7 @@ async function checkIfProjectAlreadyExist(input, state) {
          * Correct behaviour, we cannot read workspace in the cwd.
          */
         nextState.accessToken = accessToken;
-        return nextIn => pickOwner(nextIn, nextState);
+        return nextIn => pickCloudUrl(nextIn, nextState);
     }
 
     const pick = await input.showQuickPick(
@@ -288,7 +306,7 @@ async function checkIfProjectAlreadyExist(input, state) {
         3,
         'The project already exist, overwrite it?',
         ['No', 'Yes'].map(label => ({ label })),
-        typeof state.alreadyExist !== 'string' ? state.projectType : undefined,
+        typeof state.alreadyExist !== 'string' ? state.alreadyExist : undefined,
         undefined,
         shouldResume,
     );
@@ -296,7 +314,7 @@ async function checkIfProjectAlreadyExist(input, state) {
     nextState.config = config;
     nextState.accessToken = accessToken;
     if (pick.label === 'Yes') {
-        return nextIn => pickOwner(nextIn, nextState);
+        return nextIn => pickCloudUrl(nextIn, nextState);
     }
 
     return undefined;
@@ -476,13 +494,13 @@ class Dialog {
 
         switch (state.type) {
         case projectTypes.existDG:
-            Workspace.newProjectExistDG(state.dg.id, state.owner);
+            Workspace.newProjectExistDG(state.cloudUrl, state.dg.id, state.owner);
             break;
         case projectTypes.newDG:
-            Workspace.newProjectNewDG(state.accessToken, state.product, state.dgName, state.owner);
+            Workspace.newProjectNewDG(state.cloudUrl, state.accessToken, state.product, state.dgName, state.owner);
             break;
         case projectTypes.newProduct:
-            Workspace.newProjectNewProduct(state.accessToken, state.productName, state.dgName, state.owner);
+            Workspace.newProjectNewProduct(state.cloudUrl, state.accessToken, state.productName, state.dgName, state.owner);
             break;
         default:
             break;

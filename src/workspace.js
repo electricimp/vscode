@@ -360,9 +360,10 @@ class Data {
 }
 module.exports.Data = Data;
 
-function createProjectFiles(dgID, ownerID, force = false) {
+function createProjectFiles(url, dgID, ownerID, force = false) {
     return new Promise((resolve, reject) => {
         const defaultOptions = {
+            cloudUrl: url,
             ownerId: ownerID,
             deviceGroupId: dgID,
             device_code: path.join(Consts.srcDirName, Consts.deviceSourceFileName),
@@ -406,7 +407,7 @@ function createProjectFiles(dgID, ownerID, force = false) {
 
 function validateDG(accessToken, config) {
     return new Promise((resolve, reject) => {
-        Api.getDG(accessToken, config.deviceGroupId)
+        Api.getDG(config.cloudUrl, accessToken, config.deviceGroupId)
             .then(() => {
                 resolve({ token: accessToken, cfg: config });
             }, (err) => {
@@ -424,27 +425,27 @@ function showSources(src) {
     vscode.window.showInformationMessage(`${User.MESSAGES.WORKSPACE_CREATED}`);
 }
 
-function newProjectExistDG(dgID, ownerID) {
-    createProjectFiles(dgID, ownerID, true)
+function newProjectExistDG(cloudUrl, dgID, ownerID) {
+    createProjectFiles(cloudUrl, dgID, ownerID, true)
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
 }
 module.exports.newProjectExistDG = newProjectExistDG;
 
-function newProjectNewDG(accessToken, product, dgName, ownerID) {
-    Api.newDG(accessToken, product.id, dgName)
-        .then(dg => createProjectFiles(dg.data.id, ownerID, true))
+function newProjectNewDG(cloudUrl, accessToken, product, dgName, ownerID) {
+    Api.newDG(cloudUrl, accessToken, product.id, dgName)
+        .then(dg => createProjectFiles(cloudUrl, dg.data.id, ownerID, true))
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
 }
 module.exports.newProjectNewDG = newProjectNewDG;
 
-function newProjectNewProduct(accessToken, productName, dgName, ownerID) {
-    Api.newProduct(accessToken, productName, ownerID)
-        .then(product => Api.newDG(accessToken, product.data.id, dgName))
-        .then(dg => createProjectFiles(dg.data.id, ownerID, true))
+function newProjectNewProduct(cloudUrl, accessToken, productName, dgName, ownerID) {
+    Api.newProduct(cloudUrl, accessToken, productName, ownerID)
+        .then(product => Api.newDG(cloudUrl, accessToken, product.data.id, dgName))
+        .then(dg => createProjectFiles(cloudUrl, dg.data.id, ownerID, true))
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
@@ -525,7 +526,7 @@ function deploy(logstream, diagnostic) {
                     device_code: deviceSource,
                 };
 
-                Api.deploy(ret.token, dg, DevGroups.TYPE_DEVELOPMENT, attrs)
+                Api.deploy(ret.cfg.cloudUrl, ret.token, dg, DevGroups.TYPE_DEVELOPMENT, attrs)
                     .then((devices) => {
                         if (devices === undefined) {
                             vscode.window.showWarningMessage(`The DG ${dg} have no devices`);
@@ -533,9 +534,10 @@ function deploy(logstream, diagnostic) {
                             return;
                         }
 
+                        logstream.setImpCentralApi(ret.cfg.cloudUrl);
                         logstream.addDevice(ret.token, devices.data[0].id, true)
                             .then(() => {
-                                Api.restartDevices(ret.token, dg)
+                                Api.restartDevices(ret.cfg.cloudUrl, ret.token, dg)
                                     .then(
                                         () => vscode.window.showInformationMessage(`Successfully deployed on ${dg}`),
                                         err => User.showImpApiError('Reset devices:', err),
