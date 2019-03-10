@@ -25,7 +25,85 @@
 
 const vscode = require('vscode');
 const Api = require('./api');
+const User = require('./user');
 const Workspace = require('./workspace');
+
+async function getUserCreds() {
+    const userOptions = {
+        prompt: User.MESSAGES.AUTH_PROMPT_ENTER_CREDS,
+        placeHolder: '',
+        password: false,
+        ignoreFocusOut: true,
+    };
+
+    const user = await vscode.window.showInputBox(userOptions);
+    if (user === undefined) {
+        throw new User.UserInputCanceledError();
+    }
+
+    const pwdOptions = {
+        prompt: User.MESSAGES.AUTH_PROMPT_ENTER_PWD,
+        placeHolder: '',
+        password: true,
+        ignoreFocusOut: true,
+    };
+
+    const pwd = await vscode.window.showInputBox(pwdOptions);
+    if (pwd === undefined) {
+        throw new User.UserInputCanceledError();
+    }
+
+    let accessToken;
+    const creds = {
+        username: user,
+        password: pwd,
+    };
+
+    try {
+        accessToken = await Api.login(creds);
+    } catch (err) {
+        if (Api.isMFAError(err)) {
+            const otpOptions = {
+                prompt: User.MESSAGES.AUTH_PROMPT_ENTER_OTP,
+                placeHolder: '',
+                password: false,
+                ignoreFocusOut: true,
+            };
+
+            const otp = await vscode.window.showInputBox(otpOptions);
+            if (otp === undefined) {
+                throw new User.UserInputCanceledError();
+            }
+
+            accessToken = await Api.loginWithOTP(otp, Api.getMFALoginToken(err));
+        } else {
+            throw new User.LoginError(err);
+        }
+    }
+
+    return accessToken;
+}
+module.exports.getUserCreds = getUserCreds;
+
+// Initiate user login dialog using username/password authorization.
+// Save file with access token in the workspace directory.
+//
+// Parameters:
+//     none
+//
+// Returns:
+//     none
+//
+function loginDialog() {
+    if (!Workspace.isWorkspaceFolderOpened()) {
+        return;
+    }
+
+    getUserCreds()
+        .then(Workspace.Data.storeAuthInfo)
+        .catch(err => User.processError(err));
+}
+module.exports.loginDialog = loginDialog;
 
 function isAccessTokenExpired(auth) {
     if (!Number.isInteger(Date.parse(auth.expires_at)) ||
@@ -74,7 +152,7 @@ function refreshAccessToken(accessToken) {
 //                              or rejects with an error
 //
 function authorize() {
-    return new Promise(((resolve, reject) => {
+    return new Promise((resolve, reject) => {
         Workspace.Data.getAuthInfo()
             .then(auth => refreshAccessToken(auth.accessToken))
             .then(accessToken => resolve(accessToken.access_token))
@@ -82,7 +160,7 @@ function authorize() {
                 vscode.commands.executeCommand('imp.auth.creds');
                 reject(err);
             });
-    }));
+    });
 }
 module.exports.authorize = authorize;
 

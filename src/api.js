@@ -24,7 +24,6 @@
 
 
 const ImpCentralApi = require('imp-central-api');
-const User = require('./user');
 
 const ImpDeviceGroups = ImpCentralApi.DeviceGroups;
 const ImpProducts = ImpCentralApi.Products;
@@ -38,11 +37,53 @@ function login(creds) {
     return new Promise((resolve, reject) => {
         api.auth.login(creds.username, creds.password)
             .then(authInfo => resolve(authInfo), (err) => {
-                reject(new Error(`${User.ERRORS.AUTH_LOGIN} ${err}`));
+                reject(err);
             });
     });
 }
 module.exports.login = login;
+
+function isMFAError(err) {
+    // Check that errors array present in the error.
+    if (!err.body || !err.body.errors || err.body.errors.length !== 1) {
+        return false;
+    }
+
+    // Check error code and status.
+    const error = err.body.errors[0];
+    if (!error.code || error.code !== 'PX200' || !error.status || error.status !== '403') {
+        return false;
+    }
+
+    // Check login_token.
+    if (!error.meta || !error.meta.login_token || !error.meta.expires_at) {
+        return false;
+    }
+
+    return true;
+}
+module.exports.isMFAError = isMFAError;
+
+function getMFALoginToken(err) {
+    if (err && err.body && err.body.errors[0] && err.body.errors[0].meta) {
+        return err.body.errors[0].meta.login_token;
+    }
+
+    return undefined;
+}
+module.exports.getMFALoginToken = getMFALoginToken;
+
+function loginWithOTP(otp, loginToken) {
+    const api = new ImpCentralApi();
+
+    return new Promise((resolve, reject) => {
+        api.auth.loginWithOTP(otp, loginToken)
+            .then(authInfo => resolve(authInfo), (err) => {
+                reject(err);
+            });
+    });
+}
+module.exports.loginWithOTP = loginWithOTP;
 
 function refreshAccessToken(refreshToken) {
     const api = new ImpCentralApi();

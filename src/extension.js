@@ -25,6 +25,7 @@
 
 const vscode = require('vscode');
 const Api = require('./api');
+const Auth = require('./auth');
 const Workspace = require('./workspace');
 const LogStream = require('./logstream');
 const Devices = require('./devices');
@@ -36,9 +37,7 @@ const logstream = new LogStream(diagnostic);
 
 function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('imp.auth.creds', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            Dialog.loginDialog();
-        }
+        Auth.loginDialog();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.new', () => {
@@ -119,6 +118,13 @@ function activate(context) {
     context.subscriptions.push(monitorItem);
     logstream.setPauseLogsItem(playPauseItem);
     logstream.setMonitoringItem(monitorItem);
+
+    /*
+     * Subscribe to unhandled rejections for debug purposes.
+     */
+    process.on('unhandledRejection', (reason, p) => {
+        console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+    });
 }
 exports.activate = activate;
 

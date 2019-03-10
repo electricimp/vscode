@@ -24,6 +24,8 @@
 
 
 const vscode = require('vscode');
+const ImpCentralApi = require('imp-central-api');
+const Api = require('./api');
 const Auth = require('./auth');
 
 const ERRORS = {
@@ -63,6 +65,7 @@ module.exports.ERRORS = ERRORS;
 const MESSAGES = {
     AUTH_PROMPT_ENTER_CREDS: 'Enter username or email address:',
     AUTH_PROMPT_ENTER_PWD: 'Enter password:',
+    AUTH_PROMPT_ENTER_OTP: 'Enter otp (One Time Password):',
     AUTH_SUCCESS: 'Workspace login is successful',
     DEVICE_PROMPT_DEVICE_ID: 'Enter a valid device ID:',
     WORKSPACE_CREATED: 'Project created.',
@@ -101,3 +104,34 @@ function showImpApiError(msg, err) {
     vscode.window.showErrorMessage(`${msg} ${err}`);
 }
 module.exports.showImpApiError = showImpApiError;
+
+/*
+ * Internal vscode extension errors
+ */
+class LoginError extends Error {
+    constructor(apiErr) {
+        super();
+        this.apiErr = apiErr;
+    }
+}
+module.exports.LoginError = LoginError;
+
+class UserInputCanceledError extends Error {
+    constructor(message) {
+        super(message || 'User Input Canceled');
+    }
+}
+module.exports.UserInputCanceledError = UserInputCanceledError;
+
+function processError(err) {
+    if (err instanceof LoginError) {
+        vscode.window.showErrorMessage(`${ERRORS.AUTH_LOGIN} ${err.apiErr.message}`);
+    } else if (err instanceof UserInputCanceledError) {
+        // It mean that user pressed 'Esc' in case of data input, so do nothing.
+    } else if (err instanceof ImpCentralApi.Errors.InvalidDataError) {
+        vscode.window.showErrorMessage(err.message);
+    } else if (err instanceof ImpCentralApi.Errors.ImpCentralApiError) {
+        vscode.window.showErrorMessage(err.message);
+    }
+}
+module.exports.processError = processError;

@@ -26,12 +26,10 @@
 const util = require('util');
 const vscode = require('vscode');
 const Api = require('./api');
+const Auth = require('./auth');
 const User = require('./user');
 const Workspace = require('./workspace');
 
-function getLoginTitle() {
-    return 'Electric Imp Login';
-}
 
 function getCreateProjectTitle() {
     return 'Create New Project';
@@ -247,66 +245,30 @@ async function pickOwner(input, state) {
     return nextIn => pickProductFromList(nextIn, nextState);
 }
 
-async function getPassword(input, state) {
-    const pick = await input.showInputBox(
-        getLoginTitle(),
-        2,
-        2,
-        state.password || '',
-        User.MESSAGES.AUTH_PROMPT_ENTER_PWD,
-        () => {},
-        undefined,
-        shouldResume,
-        true,
-    );
-
-    const nextState = state;
-    nextState.password = pick;
-    if (state.newProject === undefined) {
-        return;
-    }
-
-    try {
-        const auth = await Api.login(state);
-        nextState.auth = auth;
-        nextState.accessToken = auth.access_token;
-        return nextIn => pickOwner(nextIn, nextState);
-    } catch (err) {
-        nextState.err = err;
-        User.showImpApiError(`${User.ERRORS.PROJECT_CREATE}`, nextState.err);
-    }
-}
-
-async function getUsername(input, state) {
-    const pick = await input.showInputBox(
-        getLoginTitle(),
-        1,
-        2,
-        state.username || '',
-        User.MESSAGES.AUTH_PROMPT_ENTER_CREDS,
-        () => {},
-        undefined,
-        shouldResume,
-    );
-
-    const nextState = state;
-    nextState.username = pick;
-
-    return nextIn => getPassword(nextIn, nextState);
-}
-
 async function checkIfProjectAlreadyExist(input, state) {
     let auth;
+    let accessToken;
+    const nextState = state;
+
     try {
         auth = await Workspace.Data.getAuthInfo();
+        accessToken = auth.accessToken.access_token;
     } catch (err) {
         /*
-         * If we cannot get auth information, start the login procedure.
+         * If we cannot get auth information, start the login procedure below.
          * The auth information should be saved later too.
          */
-        const nextState = state;
-        nextState.newProject = true;
-        return nextIn => getUsername(nextIn, nextState);
+    }
+
+    if (auth === undefined) {
+        try {
+            auth = await Auth.getUserCreds();
+            nextState.auth = auth;
+            accessToken = auth.access_token;
+        } catch (error) {
+            User.processError(error);
+            return undefined;
+        }
     }
 
     let config;
@@ -316,8 +278,7 @@ async function checkIfProjectAlreadyExist(input, state) {
         /*
          * Correct behaviour, we cannot read workspace in the cwd.
          */
-        const nextState = state;
-        nextState.accessToken = auth.accessToken.access_token;
+        nextState.accessToken = accessToken;
         return nextIn => pickOwner(nextIn, nextState);
     }
 
@@ -332,9 +293,8 @@ async function checkIfProjectAlreadyExist(input, state) {
         shouldResume,
     );
 
-    const nextState = state;
     nextState.config = config;
-    nextState.accessToken = auth.accessToken.access_token;
+    nextState.accessToken = accessToken;
     if (pick.label === 'Yes') {
         return nextIn => pickOwner(nextIn, nextState);
     }
@@ -476,40 +436,10 @@ class Dialog {
         }
     }
 
-    static async loginCollectInputs() {
-        const state = {};
-        await Dialog.run(input => getUsername(input, state));
-        return state;
-    }
-
     static async newProjectCollectInputs() {
         const state = {};
         await Dialog.run(input => checkIfProjectAlreadyExist(input, state));
         return state;
-    }
-
-    // Initiate user login dialog using username/password authorization.
-    // Save file with access token in the workspace directory.
-    //
-    // Parameters:
-    //     none
-    //
-    // Returns:
-    //     none
-    //
-    static async login() {
-        const state = await Dialog.loginCollectInputs();
-
-        /*
-         * The state.username and state.password values are expected.
-         */
-        // console.log(util.inspect(state, { showHidden: false, depth: null }));
-        if (state.username && state.password) {
-            Api.login(state)
-                .then(Workspace.Data.storeAuthInfo)
-                .then(() => vscode.window.showInformationMessage(User.MESSAGES.AUTH_SUCCESS))
-                .catch(err => vscode.window.showErrorMessage(err.message));
-        }
     }
 
     static async newProject() {
