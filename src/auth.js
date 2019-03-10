@@ -145,6 +145,25 @@ function refreshAccessToken(accessToken) {
     });
 }
 
+async function tryAccessToken(accessToken) {
+    try {
+        await Api.getMe(defaultCloudURL, accessToken);
+    } catch (err) {
+        /*
+         * Try to refresh access_token, if provided is not valid.
+         */
+        const freshAccessToken = await Api.refreshAccessToken(defaultCloudURL, accessToken.refresh_token);
+        freshAccessToken.refresh_token = accessToken.refresh_token;
+        await Workspace.Data.storeAuthInfo(freshAccessToken);
+        return freshAccessToken;
+    }
+
+    /*
+     * Check if access_token is near to be expired.
+     */
+    return refreshAccessToken(accessToken);
+}
+
 // Authorization procedure using authorization file from current workspace.
 //
 // Parameters:
@@ -156,7 +175,7 @@ function refreshAccessToken(accessToken) {
 function authorize() {
     return new Promise((resolve, reject) => {
         Workspace.Data.getAuthInfo()
-            .then(auth => refreshAccessToken(auth.accessToken))
+            .then(auth => tryAccessToken(auth.accessToken))
             .then(accessToken => resolve(accessToken.access_token))
             .catch((err) => {
                 vscode.commands.executeCommand('imp.auth.creds');
