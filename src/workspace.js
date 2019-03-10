@@ -179,7 +179,9 @@ class Data {
             const gitIgnoreFile = path.join(Path.getPWD(), Consts.gitIgnoreFileName);
             try {
                 fs.writeFileSync(authFile, JSON.stringify(authInfo, null, 2));
-                fs.writeFileSync(gitIgnoreFile, Consts.gitIgnoreFileContent);
+                if (!fs.existsSync(gitIgnoreFile)) {
+                    fs.writeFileSync(gitIgnoreFile, Consts.gitIgnoreFileContent);
+                }
                 resolve();
             } catch (err) {
                 reject(err);
