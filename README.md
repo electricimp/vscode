@@ -1,5 +1,8 @@
 # Electric Imp impCentral Microsoft Visual Studio Code Extension (Alpha) #
 
+| This extension is in the Alpha state. Please report any issues that you find. Thanks for your patience and cooperation! |
+| --- |
+
 ## Contents ##
 
 - [Overview](#overview)
@@ -17,12 +20,11 @@
     - [The Log Console](#the-log-console)
     - [Assign A Device To The Project Device Group](#assign-a-device-to-the-project-device-group)
     - [Unassign A Device From The Project Device Group](#unassign-a-device-from-the-project-device-group)
-    - [Retrieve A Device’s Agent URL](#retrieve-a-devices-agent-url)
+    - [Retrieve An Agent URL](#retrieve-an-agent-url)
     - [Extension Keyboard Shortcuts](#extension-keyboard-shortcuts)
 - [Pre-processor And Multiple File Support](#pre-processor-and-multiple-file-support)
     - [Specify GitHub Authentication Information](#specify-github-authentication-information)
     - [Specify Builder Preset Variable Definitions](#specify-builder-preset-variable-definitions)
-
 
 ## Overview ##
 
@@ -60,16 +62,11 @@ Visual Studio Code can be [downloaded for a variety of platforms here](https://c
 
 ### 4. Install The Visual Studio Code Extension ###
 
-The Electric Imp Visual Studio Code Extension can be installed using any of a number of methods, listed below. Once the Extension has been published to the [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode), this will be the recommended way to install the Extension, but you may alternatively perform the install using a `.vsix` file or by building the Extension from the source code.
+The Electric Imp Visual Studio Code Extension can be installed using any of a number of methods, listed below. Once the Extension has been published to the [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode), this will be the recommended way to install the Extension by building it from the source code.
 
 #### Installation From The Visual Studio Marketplace ####
 
-The [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode) can be accessed through Visual Studio Code itself. We will add further instructions here when the Extension becomes available in the Marketplace.
-
-#### Installation From A .VSIX File ####
-
-1. Download the `.vsix` file from [Electric Imp’s GitHub repository](https://github.com/electricimp/vscode).
-2. Enter the following at the command line: `code --install-extension vscode-electricimp-0.x.x.vsix`
+The [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode) can be accessed through Visual Studio Code itself. Please refer to the Marketplace [documentation](https://code.visualstudio.com/docs/editor/extension-gallery) for more details. Search for the extension using `"Electric Imp Squirrel"` and, when the extension is listed, click the **Install** button next to it in the search results.
 
 #### Installation From Source ####
 
@@ -128,7 +125,7 @@ The `imp.config` file contains:
 - A unique user identifier.
 - A unique Device Group identifier.
 - Device and agent code file names.
-- [Builder](https://github.com/electricimp/Builder) settings.
+- [Builder](https://developer.electricimp.com/tools/builder) settings.
 
 #### Example ####
 
@@ -148,7 +145,7 @@ If the project was created successfully, the `imp.config` file is opened.
 #### Important Notes ####
 
 - If the project working directory is not open in Visual Studio Code, no Extension commands will work. Use **File > Open Folder...** to open the directory.
-- The code which is deployed to a Device Group is preprocessed and therefore may contain line control markers. 
+- The code which is deployed to a Device Group is pre-processed and therefore may contain line control markers. 
 - When you select an existing Device Group, the Extension downloads the code currently deployed to the group, but doesn’t transfer this code to the project file/directory structure.
 - If you are working with collaborators on a project, please share the original Electric Imp Extension project sources/structure via a source control system.
 
@@ -178,9 +175,9 @@ To assign devices to the project’s Device Group, select **View > Command Palet
 
 Devices can be removed from the project’s Device Group by selecting **View > Command Palette... > imp: Remove Device from current DG**.
 
-### Retrieve A Device’s Agent URL ###
+### Retrieve An Agent URL ###
 
-The URL of a device’s agent can be retrieved by selecting **View > Command Palette... > imp: Get agent URL**. The URL is displayed in a dialog box and copied to clipboard.
+The URL of a device’s agent can be retrieved by selecting **View > Command Palette... > imp: Get agent URL**. The URL is displayed in a dialog box and copied to the clipboard.
 
 ### Extension Keyboard Shortcuts ###
 
@@ -194,11 +191,11 @@ The URL of a device’s agent can be retrieved by selecting **View > Command Pal
 
 ## Pre-processor And Multiple File Support ##
 
-Please refer to the [Builder documentation](https://developer.electricimp.com/tools/builder) for more information on the preprocessor syntax that you can use in your Squirrel code.
+Please refer to the [Builder documentation](https://developer.electricimp.com/tools/builder) for more information on the pre-processor syntax that you can use in your Squirrel code.
 
 ### Specify GitHub Authentication Information ###
 
-Please use the project `<project working directory>/settings/auth.info` file to specify your Builder GitHub authentication information:
+Please use the `<project working directory>/settings/auth.info` file to specify your Builder GitHub authentication information:
 
 ```json
 { ...,
@@ -208,7 +205,7 @@ Please use the project `<project working directory>/settings/auth.info` file to 
 
 ### Specify Builder Preset Variable Definitions ###
 
-Please use the project `<project working directory>/settings/imp.config` file to specify Builder variable definitions like [here](https://github.com/electricimp/Builder#types).
+Please use the `<project working directory>/settings/imp.config` file to specify Builder variable definitions (as [described here](https://developer.electricimp.com/tools/builder#builder-expressions)).
 
 ```json
 { "builderSettings": { ...,
@@ -224,15 +221,15 @@ Please use the project `<project working directory>/settings/imp.config` file to
                                         ... }}
 ```
 
-It is possible to obtain these Builder variable definitions values from *.nut source file:
+It is possible to obtain these Builder variable definitions values from Squirrel code this way:
 
-```
+```squirrel
 server.log(@{IntType});       // 34
 server.log(@{FloatType});     // 34.456
 server.log(@{ExponentType1}); // 30000
 server.log(@{ExponentType2}); // 0.03
-server.log("@{StringType1}"); // str1
-server.log(@{StringType2});   // str2
+server.log(@{StringType1});   // str1
+server.log(@{StringType2});   // "str2"
 server.log(@{BoolTypeTrue});  // true
 server.log(@{BoolTypeFalse}); // false
 server.log(@{NullType});      // (null : 0x0)
