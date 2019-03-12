@@ -43,6 +43,12 @@ function login(url, creds) {
 }
 module.exports.login = login;
 
+function isAuthError(err) {
+    return err instanceof ImpCentralApi.Errors.ImpCentralApiError &&
+        err._statusCode === 401;
+}
+module.exports.isAuthError = isAuthError;
+
 function isMFAError(err) {
     // Check that errors array present in the error.
     if (!err.body || !err.body.errors || err.body.errors.length !== 1) {
@@ -90,8 +96,10 @@ function refreshAccessToken(url, refreshToken) {
 
     return new Promise((resolve, reject) => {
         api.auth.refreshAccessToken(refreshToken)
-            .then((authInfo) => {
-                resolve(authInfo);
+            .then((accessToken) => {
+                const newAccessToken = accessToken;
+                newAccessToken.refresh_token = refreshToken;
+                resolve(newAccessToken);
             }, (err) => {
                 reject(err);
             });

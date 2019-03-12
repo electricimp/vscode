@@ -146,12 +146,15 @@ module.exports.isWorkspaceFolderOpened = isWorkspaceFolderOpened;
 
 // This class is required to hide all project files interaction logic.
 class Data {
-    static storeAuthInfo(impAccessToken) {
+    /*
+     * The input function argument should have the next structure:
+     * {   accessToken: object returned from ImpCentralApi.login(),
+     *     cloudURL: string with actual cloud url }
+     */
+    static storeAuthInfo(auth) {
         return new Promise((resolve, reject) => {
-            const authInfo = {
-                accessToken: impAccessToken,
-                builderSettings: { github_user: null, github_token: null },
-            };
+            const authInfo = auth;
+            authInfo.builderSettings = { github_user: null, github_token: null };
 
             if (!isWorkspaceFolderOpened()) {
                 reject(User.ERRORS.WORKSPACE_FOLDER_SELECT);
@@ -363,7 +366,7 @@ module.exports.Data = Data;
 function createProjectFiles(url, dgID, ownerID, force = false) {
     return new Promise((resolve, reject) => {
         const defaultOptions = {
-            cloudUrl: url,
+            cloudURL: url,
             ownerId: ownerID,
             deviceGroupId: dgID,
             device_code: path.join(Consts.srcDirName, Consts.deviceSourceFileName),
@@ -425,27 +428,27 @@ function showSources(src) {
     vscode.window.showInformationMessage(`${User.MESSAGES.WORKSPACE_CREATED}`);
 }
 
-function newProjectExistDG(cloudUrl, dgID, ownerID) {
-    createProjectFiles(cloudUrl, dgID, ownerID, true)
+function newProjectExistDG(cloudURL, dgID, ownerID) {
+    createProjectFiles(cloudURL, dgID, ownerID, true)
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
 }
 module.exports.newProjectExistDG = newProjectExistDG;
 
-function newProjectNewDG(cloudUrl, accessToken, product, dgName, ownerID) {
-    Api.newDG(cloudUrl, accessToken, product.id, dgName)
-        .then(dg => createProjectFiles(cloudUrl, dg.data.id, ownerID, true))
+function newProjectNewDG(cloudURL, accessToken, product, dgName, ownerID) {
+    Api.newDG(cloudURL, accessToken, product.id, dgName)
+        .then(dg => createProjectFiles(cloudURL, dg.data.id, ownerID, true))
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
 }
 module.exports.newProjectNewDG = newProjectNewDG;
 
-function newProjectNewProduct(cloudUrl, accessToken, productName, dgName, ownerID) {
-    Api.newProduct(cloudUrl, accessToken, productName, ownerID)
-        .then(product => Api.newDG(cloudUrl, accessToken, product.data.id, dgName))
-        .then(dg => createProjectFiles(cloudUrl, dg.data.id, ownerID, true))
+function newProjectNewProduct(cloudURL, accessToken, productName, dgName, ownerID) {
+    Api.newProduct(cloudURL, accessToken, productName, ownerID)
+        .then(product => Api.newDG(cloudURL, accessToken, product.data.id, dgName))
+        .then(dg => createProjectFiles(cloudURL, dg.data.id, ownerID, true))
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
@@ -526,7 +529,7 @@ function deploy(logstream, diagnostic) {
                     device_code: deviceSource,
                 };
 
-                Api.deploy(ret.cfg.cloudUrl, ret.token, dg, DevGroups.TYPE_DEVELOPMENT, attrs)
+                Api.deploy(ret.cfg.cloudURL, ret.token, dg, DevGroups.TYPE_DEVELOPMENT, attrs)
                     .then((devices) => {
                         if (devices === undefined) {
                             vscode.window.showWarningMessage(`The DG ${dg} have no devices`);
@@ -534,10 +537,10 @@ function deploy(logstream, diagnostic) {
                             return;
                         }
 
-                        logstream.setImpCentralApi(ret.cfg.cloudUrl);
+                        logstream.setImpCentralApi(ret.cfg.cloudURL);
                         logstream.addDevice(ret.token, devices.data[0].id, true)
                             .then(() => {
-                                Api.restartDevices(ret.cfg.cloudUrl, ret.token, dg)
+                                Api.restartDevices(ret.cfg.cloudURL, ret.token, dg)
                                     .then(
                                         () => vscode.window.showInformationMessage(`Successfully deployed on ${dg}`),
                                         err => User.showImpApiError('Reset devices:', err),

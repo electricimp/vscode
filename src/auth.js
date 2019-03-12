@@ -22,15 +22,68 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
-
+const validUrl = require('valid-url');
 const vscode = require('vscode');
 const Api = require('./api');
 const User = require('./user');
 const Workspace = require('./workspace');
 
 const defaultCloudURL = 'https://api.electricimp.com/v5';
+module.exports.defaultCloudURL = defaultCloudURL;
 
-async function getUserCreds() {
+async function getCloudUrl() {
+    /*
+     * If we are able to get imp.config file, we will try to read cloudURL from here.
+     */
+    try {
+        const config = await Workspace.Data.getWorkspaceInfo();
+        if (config.cloudURL) {
+            return config.cloudURL;
+        }
+    } catch (err) {
+        /*
+         * Correct behaviour, request cloud URL from user.
+         */
+    }
+
+    const pickCloudUrlOptions = {
+        matchOnDescription: true,
+        matchOnDetail: true,
+        placeHolder: `Use default Imp Cloud URL (${defaultCloudURL}) ?`,
+        ignoreFocusOut: true,
+        canPickMany: false,
+        onDidSelectItem: undefined,
+    };
+
+    const pick = await vscode.window.showQuickPick(['Yes', 'No'], pickCloudUrlOptions);
+    if (pick === undefined) {
+        throw new User.UserInputCanceledError();
+    }
+
+    if (pick === 'Yes') {
+        return defaultCloudURL;
+    }
+
+    function validateURL(url) { return validUrl.isWebUri(url) ? null : 'Incorrect URL'; }
+
+    const urlOptions = {
+        prompt: User.MESSAGES.AUTH_PROMPT_ENTER_URL,
+        placeHolder: '',
+        password: false,
+        ignoreFocusOut: true,
+        validateInput: validateURL,
+    };
+
+    const url = await vscode.window.showInputBox(urlOptions);
+    if (url === undefined) {
+        throw new User.UserInputCanceledError();
+    }
+
+    return url;
+}
+module.exports.getCloudUrl = getCloudUrl;
+
+async function getUserCreds(url) {
     const userOptions = {
         prompt: User.MESSAGES.AUTH_PROMPT_ENTER_CREDS,
         placeHolder: '',
@@ -55,14 +108,14 @@ async function getUserCreds() {
         throw new User.UserInputCanceledError();
     }
 
-    let accessToken;
+    let token;
     const creds = {
         username: user,
         password: pwd,
     };
 
     try {
-        accessToken = await Api.login(defaultCloudURL, creds);
+        token = await Api.login(url, creds);
     } catch (err) {
         if (Api.isMFAError(err)) {
             const otpOptions = {
@@ -77,13 +130,16 @@ async function getUserCreds() {
                 throw new User.UserInputCanceledError();
             }
 
-            accessToken = await Api.loginWithOTP(defaultCloudURL, otp, Api.getMFALoginToken(err));
+            token = await Api.loginWithOTP(url, otp, Api.getMFALoginToken(err));
         } else {
             throw new User.LoginError(err);
         }
     }
 
-    return accessToken;
+    return {
+        accessToken: token,
+        cloudURL: url,
+    };
 }
 module.exports.getUserCreds = getUserCreds;
 
@@ -101,9 +157,10 @@ function loginDialog() {
         return;
     }
 
-    getUserCreds()
+    getCloudUrl()
+        .then(getUserCreds)
         .then(Workspace.Data.storeAuthInfo)
-        .catch(err => User.processError(err));
+        .catch(User.processError);
 }
 module.exports.loginDialog = loginDialog;
 
@@ -128,40 +185,40 @@ function isAccessTokenExpired(auth) {
     return false;
 }
 
-function refreshAccessToken(accessToken) {
-    return new Promise((resolve, reject) => {
-        if (isAccessTokenExpired(accessToken) === false) {
-            resolve(accessToken);
-            return;
+async function checkAccess(url, token) {
+    try {
+        await Api.getMe(url, token);
+    } catch (err) {
+        if (!Api.isAuthError(err)) {
+            throw new User.LoginError(err);
         }
 
-        Api.refreshAccessToken(defaultCloudURL, accessToken.refresh_token)
-            .then((refreshedAuth) => {
-                const freshAccessToken = refreshedAuth;
-                freshAccessToken.refresh_token = accessToken.refresh_token;
-                Workspace.Data.storeAuthInfo(freshAccessToken)
-                    .then(() => resolve(freshAccessToken), err => reject(err));
-            }, err => reject(err));
-    });
-}
-
-async function tryAccessToken(accessToken) {
-    try {
-        await Api.getMe(defaultCloudURL, accessToken);
-    } catch (err) {
-        /*
-         * Try to refresh access_token, if provided is not valid.
-         */
-        const freshAccessToken = await Api.refreshAccessToken(defaultCloudURL, accessToken.refresh_token);
-        freshAccessToken.refresh_token = accessToken.refresh_token;
-        await Workspace.Data.storeAuthInfo(freshAccessToken);
-        return freshAccessToken;
+        return false;
     }
 
-    /*
-     * Check if access_token is near to be expired.
-     */
-    return refreshAccessToken(accessToken);
+    return true;
+}
+
+async function validateAccessToken(url, token) {
+    let newAccessToken;
+    const auth = {
+        accessToken: token,
+        cloudURL: url,
+    };
+
+    if (await checkAccess(url, token) === false ||
+        isAccessTokenExpired(token) === true) {
+        try {
+            newAccessToken = await Api.refreshAccessToken(url, token.refresh_token);
+        } catch (err) {
+            throw new User.RefreshAccessTokenError(err);
+        }
+
+        auth.accessToken = newAccessToken;
+        await Workspace.Data.storeAuthInfo(auth);
+    }
+
+    return auth.accessToken;
 }
 
 // Authorization procedure using authorization file from current workspace.
@@ -175,7 +232,7 @@ async function tryAccessToken(accessToken) {
 function authorize() {
     return new Promise((resolve, reject) => {
         Workspace.Data.getAuthInfo()
-            .then(auth => tryAccessToken(auth.accessToken))
+            .then(auth => validateAccessToken(auth.cloudURL, auth.accessToken))
             .then(accessToken => resolve(accessToken.access_token))
             .catch((err) => {
                 vscode.commands.executeCommand('imp.auth.creds');

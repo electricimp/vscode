@@ -60,9 +60,9 @@ class LogStream {
         this.target = 'https://api.electricimp.com/v5';
     }
 
-    setImpCentralApi(cloudUrl) {
+    setImpCentralApi(cloudURL) {
         if (this.impCentralApi === undefined) {
-            this.impCentralApi = new ImpCentralApi(cloudUrl);
+            this.impCentralApi = new ImpCentralApi(cloudURL);
             this.target = this.impCentralApi.apiEndpoint;
         }
     }
@@ -365,8 +365,8 @@ class LogStream {
         Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
             .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
             .then((ret) => {
-                this.setImpCentralApi(ret.cfg.cloudUrl);
-                Devices.pickDeviceID(ret.cfg.cloudUrl, ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
+                this.setImpCentralApi(ret.cfg.cloudURL);
+                Devices.pickDeviceID(ret.cfg.cloudURL, ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
                     .then(deviceID => this.addDevice(ret.token, deviceID))
                     .catch(err => Devices.pickDeviceIDError(err));
             }).catch(err => vscode.window.showErrorMessage(err.message));
@@ -380,10 +380,10 @@ class LogStream {
         Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
             .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
             .then((ret) => {
-                this.setImpCentralApi(ret.cfg.cloudUrl);
-                Devices.pickDeviceID(ret.cfg.cloudUrl, ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
+                this.setImpCentralApi(ret.cfg.cloudURL);
+                Devices.pickDeviceID(ret.cfg.cloudURL, ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
                     .then((deviceID) => {
-                        Api.logStreamRemoveDevice(ret.cfg.cloudUrl, ret.token, this.logStreamID, deviceID)
+                        Api.logStreamRemoveDevice(ret.cfg.cloudURL, ret.token, this.logStreamID, deviceID)
                             .then(() => {
                                 this.devices.delete(deviceID);
                                 vscode.window.showInformationMessage(`Device removed: ${deviceID}`);

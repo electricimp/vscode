@@ -47,6 +47,7 @@ const ERRORS = {
     PRODUCT_CREATE: 'Cannot create new product:',
     PRODUCT_LIST: 'Cannot retrieve product list:',
     PROJECT_CREATE: 'Cannot create project:',
+    REFREASH_AUTH: 'Cannot refresh access_token:',
     VSCODE_API: 'IMP API:',
     WORKSPACE_MULTIROOT: 'Multi-root workspaces are not supported',
     WORKSPACE_FOLDER_SELECT: 'Please select the workspace folder to proceed',
@@ -66,6 +67,7 @@ const MESSAGES = {
     AUTH_PROMPT_ENTER_CREDS: 'Enter username or email address:',
     AUTH_PROMPT_ENTER_PWD: 'Enter password:',
     AUTH_PROMPT_ENTER_OTP: 'Enter otp (One Time Password):',
+    AUTH_PROMPT_ENTER_URL: 'Enter Imp Cloud URL:',
     AUTH_SUCCESS: 'Workspace login is successful',
     DEVICE_PROMPT_DEVICE_ID: 'Enter a valid device ID:',
     WORKSPACE_CREATED: 'Project created.',
@@ -116,6 +118,14 @@ class LoginError extends Error {
 }
 module.exports.LoginError = LoginError;
 
+class RefreshAccessTokenError extends Error {
+    constructor(apiErr) {
+        super();
+        this.apiErr = apiErr;
+    }
+}
+module.exports.RefreshAccessTokenError = RefreshAccessTokenError;
+
 class UserInputCanceledError extends Error {
     constructor(message) {
         super(message || 'User Input Canceled');
@@ -126,6 +136,8 @@ module.exports.UserInputCanceledError = UserInputCanceledError;
 function processError(err) {
     if (err instanceof LoginError) {
         vscode.window.showErrorMessage(`${ERRORS.AUTH_LOGIN} ${err.apiErr.message}`);
+    } else if (err instanceof RefreshAccessTokenError) {
+        vscode.window.showErrorMessage(`${ERRORS.REFREASH_AUTH} ${err.apiErr.message}`);
     } else if (err instanceof UserInputCanceledError) {
         // It mean that user pressed 'Esc' in case of data input, so do nothing.
     } else if (err instanceof ImpCentralApi.Errors.InvalidDataError) {
