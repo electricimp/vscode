@@ -206,7 +206,7 @@ async function validateAccessToken(url, token) {
         cloudURL: url,
     };
 
-    if (await checkAccess(url, token) === false ||
+    if (await checkAccess(url, token.access_token) === false ||
         isAccessTokenExpired(token) === true) {
         try {
             newAccessToken = await Api.refreshAccessToken(url, token.refresh_token);
