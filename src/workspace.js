@@ -184,6 +184,15 @@ class Data {
                 fs.writeFileSync(authFile, JSON.stringify(authInfo, null, 2));
                 if (!fs.existsSync(gitIgnoreFile)) {
                     fs.writeFileSync(gitIgnoreFile, Consts.gitIgnoreFileContent);
+                } else {
+                    /*
+                     * Check if auth.info is added to it.
+                     */
+                    const gitIgnoreContent = fs.readFileSync(gitIgnoreFile);
+                    const gitIgnoreItem = Consts.gitIgnoreFileContent;
+                    if (gitIgnoreContent.includes(`${gitIgnoreItem}\n`) === false) {
+                        fs.writeFileSync(gitIgnoreFile, `${gitIgnoreItem}\n${gitIgnoreContent}`);
+                    }
                 }
                 resolve();
             } catch (err) {
