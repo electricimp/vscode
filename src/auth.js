@@ -224,7 +224,12 @@ function authorize(config) {
                 resolve(authorizedConfig);
             })
             .catch((err) => {
-                vscode.commands.executeCommand('imp.auth.creds');
+                /*
+                 * Do not propose relogin to user if we have errors related to bad cloud URL.
+                 */
+                if (!Api.isENOTFOUNDError(err.apiErr) && !Api.isBadRequestError(err.apiErr)) {
+                    vscode.commands.executeCommand('imp.auth.creds');
+                }
                 reject(err);
             });
     });

@@ -49,6 +49,28 @@ function isAuthError(err) {
 }
 module.exports.isAuthError = isAuthError;
 
+function isEntityNotFoundError(error) {
+    return error instanceof ImpCentralApi.Errors.ImpCentralApiError &&
+        error._statusCode === 404;
+}
+module.exports.isEntityNotFoundError = isEntityNotFoundError;
+
+function isBadRequestError(error) {
+    return error instanceof ImpCentralApi.Errors.ImpCentralApiError &&
+        error._statusCode === 400;
+}
+module.exports.isBadRequestError = isBadRequestError;
+
+function isENOTFOUNDError(err) {
+    if (err instanceof ImpCentralApi.Errors.InvalidDataError && 
+        err.message.indexOf('ENOTFOUND') >= 0) {
+        return true;
+    }
+
+    return false;
+}
+module.exports.isENOTFOUNDError = isENOTFOUNDError;
+
 function isMFAError(err) {
     // Check that errors array present in the error.
     if (!err.body || !err.body.errors || err.body.errors.length !== 1) {
