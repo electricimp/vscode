@@ -4,7 +4,7 @@
   "description": "Electric Imp Application Development",
   "version": "0.1.1",
   "publisher": "electricimp",
-  "icon": "simple_nut.png",
+  "icon": "modern_nut.png",
   "license": "MIT",
   "engines": {
     "vscode": "^1.28.0"
@@ -128,13 +128,23 @@
     "grammars": [
       {
         "language": "squirrel",
-        "scopeName": "source.nut",
-        "path": "./syntaxes/Squirrel.tmLanguage.json"
+        "scopeName": "source.squirrel",
+        "path": "./syntaxes/nut.tmLanguage"
       },
       {
         "language": "Log",
         "scopeName": "stream.log",
         "path": "./syntaxes/log.tmLanguage"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "squirrel",
+        "path": "./snippets/electric-imp-squirrel-completions.json"
+      },
+      {
+        "language": "squirrel",
+        "path": "./snippets/squirrelSnippets.json"
       }
     ]
   },
@@ -157,7 +167,8 @@
     "strftime": "^0.10.0",
     "imp-central-api": "^1.4.1",
     "Builder": "^2.4.0",
-    "is-reachable": "^3.0.0"
+    "is-reachable": "^3.0.0",
+    "valid-url":"^1.0.9"
   },
   "repository": {
     "type": "git",

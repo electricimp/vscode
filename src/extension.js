@@ -25,6 +25,7 @@
 
 const vscode = require('vscode');
 const Api = require('./api');
+const Auth = require('./auth');
 const Workspace = require('./workspace');
 const LogStream = require('./logstream');
 const Devices = require('./devices');
@@ -36,9 +37,7 @@ const logstream = new LogStream(diagnostic);
 
 function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('imp.auth.creds', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            Dialog.loginDialog();
-        }
+        Auth.loginDialog();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.new', () => {
@@ -48,51 +47,35 @@ function activate(context) {
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.deploy', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            Workspace.deploy(logstream, diagnostic);
-        }
+        Workspace.deploy(logstream, diagnostic);
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.add', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            logstream.addDeviceDialog();
-        }
+        logstream.addDeviceDialog();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.remove', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            logstream.removeDeviceDialog();
-        }
+        logstream.removeDeviceDialog();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.pause', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            logstream.pauseLogOutput();
-        }
+        logstream.pauseLogOutput();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.clean', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            logstream.clearLogOutput();
-        }
+        logstream.clearLogOutput();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.device.add', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            Devices.addDeviceToDGDialog();
-        }
+        Devices.addDeviceToDGDialog();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.device.remove', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            Devices.removeDeviceFromDGDialog();
-        }
+        Devices.removeDeviceFromDGDialog();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.device.agenturl', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            Devices.getAgentURLDialog();
-        }
+        Devices.getAgentURLDialog();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.show.commands', () => {
@@ -119,6 +102,13 @@ function activate(context) {
     context.subscriptions.push(monitorItem);
     logstream.setPauseLogsItem(playPauseItem);
     logstream.setMonitoringItem(monitorItem);
+
+    /*
+     * Subscribe to unhandled rejections for debug purposes.
+     */
+    process.on('unhandledRejection', (reason, p) => {
+        console.log('Unhandled Rejection at: Promise', p, 'reason:', reason);
+    });
 }
 exports.activate = activate;
 

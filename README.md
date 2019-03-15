@@ -130,11 +130,12 @@ The `imp.config` file contains:
 #### Example ####
 
 ```json
-{ "ownerID"         : "<user id>",
-  "deviceGroupId"   : "<device group id>",
-  "device_code"     : "<path to device source file; src/device.nut by default>",
-  "agent_code"      : "<path to agent source file; src/agent.nut by default>",
-  "builderSettings" : "<different Builder variables>" }
+{ "cloudURL"       : "<Electric Imp Cloud URL>",
+  "ownerID"        : "<user id>",
+  "deviceGroupId"  : "<device group id>",
+  "device_code"    : "<path to device source file; src/device.nut by default>",
+  "agent_code"     : "<path to agent source file; src/agent.nut by default>",
+  "builderSettings": "<different Builder variables>" }
 ```
 
 When a project is created, empty device and agent code files (`device.nut` and `agent.nut`, respectively) are automatically created and stored in the project working directory’s `src` sub-directory.
