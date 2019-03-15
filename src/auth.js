@@ -22,6 +22,7 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
+const IsReachable = require('is-reachable');
 const validUrl = require('valid-url');
 const vscode = require('vscode');
 const Api = require('./api');
@@ -54,7 +55,7 @@ async function getCloudUrl(cloudURL) {
         return defaultCloudURL;
     }
 
-    function validateURL(url) { return validUrl.isWebUri(url) ? null : 'Incorrect URL'; }
+    async function validateURL(url) { return validUrl.isWebUri(url) && await IsReachable(url) ? null : 'Incorrect URL'; }
 
     const urlOptions = {
         prompt: User.MESSAGES.AUTH_PROMPT_ENTER_URL,
