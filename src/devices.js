@@ -29,18 +29,12 @@ const Auth = require('./auth');
 const User = require('./user');
 const Workspace = require('./workspace');
 
-const pickDeviceIDRetVal = {
-    empty: 'empty',
-    esc: 'esc',
-};
-
 async function pickDeviceID(cloudURL, accessToken, ownerID, dgIDAssigned, dgIDUnAssigned) {
     let devices;
     try {
         devices = await Api.getDeviceList(cloudURL, accessToken, ownerID, dgIDAssigned, dgIDUnAssigned);
     } catch (err) {
-        User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err);
-        return err;
+        throw new User.DeviceListRetrieveError(err);
     }
 
     const display = [];
@@ -51,8 +45,7 @@ async function pickDeviceID(cloudURL, accessToken, ownerID, dgIDAssigned, dgIDUn
     });
 
     if (display.length === 0) {
-        vscode.window.showWarningMessage('There are no available devices.');
-        throw pickDeviceIDRetVal.empty;
+        throw new User.NoAvailableDevicesError();
     }
 
     const pick = await vscode.window.showQuickPick(
@@ -66,7 +59,7 @@ async function pickDeviceID(cloudURL, accessToken, ownerID, dgIDAssigned, dgIDUn
 
     if (pick === undefined) {
         // Case, when Esc key was pressed.
-        throw pickDeviceIDRetVal.esc;
+        throw new User.UserInputCanceledError();
     }
 
     const regex = /(.*)\s(online|offline)\s(.*)/;
@@ -79,15 +72,6 @@ async function pickDeviceID(cloudURL, accessToken, ownerID, dgIDAssigned, dgIDUn
 }
 module.exports.pickDeviceID = pickDeviceID;
 
-function pickDeviceIDError(err) {
-    if (err === pickDeviceIDRetVal.empty || err === pickDeviceIDRetVal.esc) {
-        return;
-    }
-
-    User.showImpApiError(User.ERRORS.DEVICE_RETRIEVE, err);
-}
-module.exports.pickDeviceIDError = pickDeviceIDError;
-
 // Get agent URL related with device.
 // The URL will be displayed in the pop-up message and copied to clipboard.
 //
@@ -97,16 +81,22 @@ module.exports.pickDeviceIDError = pickDeviceIDError;
 // Returns:
 //     none
 function getAgentURLDialog() {
-    Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
-        .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
-        .then((ret) => {
-            pickDeviceID(ret.cfg.cloudURL, ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
-                .then(deviceID => Api.getAgentURL(ret.cfg.cloudURL, ret.token, deviceID))
-                .then((agentUrl) => {
-                    vscode.env.clipboard.writeText(agentUrl);
-                    vscode.window.showInformationMessage(agentUrl);
-                }).catch(err => pickDeviceIDError(err));
-        }).catch(err => vscode.window.showErrorMessage(err.message));
+    Workspace.Data.getWorkspaceInfo()
+        .then(cfg => Auth.authorize(cfg))
+        .then(cfg => Workspace.validateDG(cfg))
+        .then((cfg) => {
+            this.cloudURL = cfg.cloudURL;
+            this.accessToken = cfg.accessToken;
+            this.ownerId = cfg.ownerId;
+            this.dg = cfg.deviceGroupId;
+        })
+        .then(() => pickDeviceID(this.cloudURL, this.accessToken, this.ownerId, this.dg, undefined))
+        .then(deviceID => Api.getAgentURL(this.cloudURL, this.accessToken, deviceID))
+        .then((agentUrl) => {
+            vscode.env.clipboard.writeText(agentUrl);
+            vscode.window.showInformationMessage(agentUrl);
+        })
+        .catch(err => User.processError(err));
 }
 module.exports.getAgentURLDialog = getAgentURLDialog;
 
@@ -118,15 +108,19 @@ module.exports.getAgentURLDialog = getAgentURLDialog;
 // Returns:
 //     none
 function addDeviceToDGDialog() {
-    Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
-        .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
-        .then((ret) => {
-            pickDeviceID(ret.cfg.cloudURL, ret.token, ret.cfg.ownerId, undefined, ret.cfg.deviceGroupId)
-                .then(deviceID => Api.addDeviceToDG(ret.cfg.cloudURL, ret.token, ret.cfg.deviceGroupId, deviceID))
-                .then(() => {
-                    vscode.window.showInformationMessage('The device is added to DG');
-                }).catch(err => pickDeviceIDError(err));
-        }).catch(err => vscode.window.showErrorMessage(err.message));
+    Workspace.Data.getWorkspaceInfo()
+        .then(cfg => Auth.authorize(cfg))
+        .then(cfg => Workspace.validateDG(cfg))
+        .then((cfg) => {
+            this.cloudURL = cfg.cloudURL;
+            this.accessToken = cfg.accessToken;
+            this.ownerId = cfg.ownerId;
+            this.dg = cfg.deviceGroupId;
+        })
+        .then(() => pickDeviceID(this.cloudURL, this.accessToken, this.ownerId, undefined, this.dg))
+        .then(deviceID => Api.addDeviceToDG(this.cloudURL, this.accessToken, this.dg, deviceID))
+        .then(() => vscode.window.showInformationMessage('The device is added to DG'))
+        .catch(err => User.processError(err));
 }
 module.exports.addDeviceToDGDialog = addDeviceToDGDialog;
 
@@ -138,14 +132,18 @@ module.exports.addDeviceToDGDialog = addDeviceToDGDialog;
 // Returns:
 //     none
 function removeDeviceFromDGDialog() {
-    Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
-        .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
-        .then((ret) => {
-            pickDeviceID(ret.cfg.cloudURL, ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
-                .then(deviceID => Api.removeDeviceFromDG(ret.cfg.cloudURL, ret.token, ret.cfg.deviceGroupId, deviceID))
-                .then(() => {
-                    vscode.window.showInformationMessage('The device is removed from DG');
-                }).catch(err => pickDeviceIDError(err));
-        }).catch(err => vscode.window.showErrorMessage(err.message));
+    Workspace.Data.getWorkspaceInfo()
+        .then(cfg => Auth.authorize(cfg))
+        .then(cfg => Workspace.validateDG(cfg))
+        .then((cfg) => {
+            this.cloudURL = cfg.cloudURL;
+            this.accessToken = cfg.accessToken;
+            this.ownerId = cfg.ownerId;
+            this.dg = cfg.deviceGroupId;
+        })
+        .then(() => pickDeviceID(this.cloudURL, this.accessToken, this.ownerId, this.dg, undefined))
+        .then(deviceID => Api.removeDeviceFromDG(this.cloudURL, this.accessToken, this.dg, deviceID))
+        .then(() => vscode.window.showInformationMessage('The device is removed from DG'))
+        .catch(err => User.processError(err));
 }
 module.exports.removeDeviceFromDGDialog = removeDeviceFromDGDialog;

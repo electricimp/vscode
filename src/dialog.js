@@ -245,19 +245,11 @@ async function pickOwner(input, state) {
 }
 
 async function checkIfProjectAlreadyExist(input, state) {
-    let url;
-    let auth;
-    let accessToken;
     const nextState = state;
 
     try {
-        auth = await Workspace.Data.getAuthInfo();
-        accessToken = auth.accessToken.access_token;
-        if (auth.cloudURL === undefined) {
-            url = Auth.defaultCloudURL;
-        } else {
-            url = auth.cloudURL;
-        }
+        nextState.auth = await Workspace.Data.getAuthInfo();
+        nextState.accessToken = nextState.auth.accessToken.access_token;
     } catch (err) {
         /*
          * If we cannot get auth information, start the login procedure below.
@@ -265,28 +257,26 @@ async function checkIfProjectAlreadyExist(input, state) {
          */
     }
 
-    if (auth === undefined) {
+    if (nextState.auth === undefined) {
         try {
-            url = await Auth.getCloudUrl();
-            auth = await Auth.getUserCreds(url);
-            nextState.auth = auth;
-            nextState.cloudURL = url;
-            accessToken = auth.accessToken.access_token;
+            nextState.cloudURL = await Auth.getCloudUrl();
+            nextState.auth = await Auth.getUserCreds(nextState.cloudURL);
+            nextState.accessToken = nextState.auth.accessToken.access_token;
         } catch (error) {
             User.processError(error);
             return undefined;
         }
     }
 
-    let config;
     try {
-        config = await Workspace.Data.getWorkspaceInfo();
+        nextState.config = await Workspace.Data.getWorkspaceInfo();
     } catch (err) {
         /*
          * Correct behaviour, we cannot read workspace in the cwd.
          */
-        nextState.accessToken = accessToken;
-        state.cloudURL = url;
+        if (nextState.cloudURL === undefined) {
+            nextState.cloudURL = await Auth.getCloudUrl();
+        }
         return nextIn => pickOwner(nextIn, nextState);
     }
 
@@ -301,10 +291,10 @@ async function checkIfProjectAlreadyExist(input, state) {
         shouldResume,
     );
 
-    nextState.config = config;
-    nextState.accessToken = accessToken;
-    state.cloudURL = url;
     if (pick.label === 'Yes') {
+        if (nextState.cloudURL === undefined) {
+            nextState.cloudURL = await Auth.getCloudUrl();
+        }
         return nextIn => pickOwner(nextIn, nextState);
     }
 
@@ -480,12 +470,7 @@ class Dialog {
         }
 
         if (state.auth) {
-            const auth = {
-                accessToken: state.auth.accessToken,
-                cloudURL: state.cloudURL,
-            };
-
-            await Workspace.Data.storeAuthInfo(auth);
+            await Workspace.Data.storeAuthInfo({ accessToken: state.auth.accessToken });
         }
 
         switch (state.type) {

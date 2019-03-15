@@ -31,19 +31,9 @@ const Workspace = require('./workspace');
 const defaultCloudURL = 'https://api.electricimp.com/v5';
 module.exports.defaultCloudURL = defaultCloudURL;
 
-async function getCloudUrl() {
-    /*
-     * If we are able to get imp.config file, we will try to read cloudURL from here.
-     */
-    try {
-        const config = await Workspace.Data.getWorkspaceInfo();
-        if (config.cloudURL) {
-            return config.cloudURL;
-        }
-    } catch (err) {
-        /*
-         * Correct behaviour, request cloud URL from user.
-         */
+async function getCloudUrl(cloudURL) {
+    if (cloudURL) {
+        return cloudURL;
     }
 
     const pickCloudUrlOptions = {
@@ -138,7 +128,6 @@ async function getUserCreds(url) {
 
     return {
         accessToken: token,
-        cloudURL: url,
     };
 }
 module.exports.getUserCreds = getUserCreds;
@@ -153,14 +142,11 @@ module.exports.getUserCreds = getUserCreds;
 //     none
 //
 function loginDialog() {
-    if (!Workspace.isWorkspaceFolderOpened()) {
-        return;
-    }
-
-    getCloudUrl()
-        .then(getUserCreds)
-        .then(Workspace.Data.storeAuthInfo)
-        .catch(User.processError);
+    Workspace.Data.getWorkspaceInfo()
+        .then(cfg => getCloudUrl(cfg.cloudURL))
+        .then(url => getUserCreds(url))
+        .then(auth => Workspace.Data.storeAuthInfo(auth))
+        .catch(err => User.processError(err));
 }
 module.exports.loginDialog = loginDialog;
 
@@ -229,11 +215,15 @@ async function validateAccessToken(url, token) {
 // Returns:                     Promise that resolves when the login is successfull,
 //                              or rejects with an error
 //
-function authorize() {
+function authorize(config) {
     return new Promise((resolve, reject) => {
         Workspace.Data.getAuthInfo()
-            .then(auth => validateAccessToken(auth.cloudURL, auth.accessToken))
-            .then(accessToken => resolve(accessToken.access_token))
+            .then(auth => validateAccessToken(config.cloudURL, auth.accessToken))
+            .then((accessToken) => {
+                const authorizedConfig = config;
+                authorizedConfig.accessToken = accessToken.access_token;
+                resolve(authorizedConfig);
+            })
             .catch((err) => {
                 vscode.commands.executeCommand('imp.auth.creds');
                 reject(err);

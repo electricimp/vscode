@@ -325,36 +325,26 @@ class LogStream {
     }
 
     addDevice(accessToken, deviceID, silent = false) {
-        return new Promise(((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             this.impCentralApi.auth.accessToken = accessToken;
             Api.logStreamClose(this.impCentralApi, this.logStreamID)
-                .then(() => {
-                    const message = this.logMsg.bind(this);
-                    const state = this.logState.bind(this);
-                    const error = this.logError.bind(this);
-                    Api.logStreamCreate(this.impCentralApi, message, state, error)
-                        .then((logStreamID) => {
-                            this.logStreamID = logStreamID;
-                            if (this.outputChannel === undefined) {
-                                this.outputChannel =
-                                    vscode.window.createOutputChannel(User.NAMES.OUTPUT_CHANNEL);
-                            }
-
-                            /*
-                             * It is possible to add only one device to console output.
-                             * The run-time error diagnostic logic is rely on this fact.
-                             */
-                            Api.logStreamAddDevice(this.impCentralApi.apiEndpoint, accessToken, logStreamID, deviceID)
-                                .then(() => {
-                                    this.deviceAdded(deviceID, silent);
-                                    resolve();
-                                });
-                        }, (err) => {
-                            User.showImpApiError(`Cannot open ${User.NAMES.OUTPUT_CHANNEL}`, err);
-                            reject(err);
-                        });
-                });
-        }));
+                .then(() => Api.logStreamCreate(this.impCentralApi, this.logMsg.bind(this), this.logState.bind(this), this.logError.bind(this)))
+                .then((logStreamID) => {
+                    this.logStreamID = logStreamID;
+                    if (this.outputChannel === undefined) {
+                        this.outputChannel =
+                            vscode.window.createOutputChannel(User.NAMES.OUTPUT_CHANNEL);
+                    }
+                })
+                /*
+                 * It is possible to add only one device to console output.
+                 * The run-time error diagnostic logic is rely on this fact.
+                 */
+                .then(() => Api.logStreamAddDevice(this.impCentralApi.apiEndpoint, accessToken, this.logStreamID, deviceID))
+                .then(() => this.deviceAdded(deviceID, silent))
+                .then(() => resolve())
+                .catch(err => reject(err));
+        });
     }
 
     // Add device to LogStream and send it's logs to the outputChannel.
@@ -362,14 +352,19 @@ class LogStream {
     // Parameters:
     //     none
     addDeviceDialog() {
-        Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
-            .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
-            .then((ret) => {
-                this.setImpCentralApi(ret.cfg.cloudURL);
-                Devices.pickDeviceID(ret.cfg.cloudURL, ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
-                    .then(deviceID => this.addDevice(ret.token, deviceID))
-                    .catch(err => Devices.pickDeviceIDError(err));
-            }).catch(err => vscode.window.showErrorMessage(err.message));
+        Workspace.Data.getWorkspaceInfo()
+            .then(cfg => Auth.authorize(cfg))
+            .then(cfg => Workspace.validateDG(cfg))
+            .then((cfg) => {
+                this.cloudURL = cfg.cloudURL;
+                this.accessToken = cfg.accessToken;
+                this.ownerId = cfg.ownerId;
+                this.dg = cfg.deviceGroupId;
+            })
+            .then(() => this.setImpCentralApi(this.cloudURL))
+            .then(() => Devices.pickDeviceID(this.cloudURL, this.accessToken, this.ownerId, this.dg, undefined))
+            .then(deviceID => this.addDevice(this.accessToken, deviceID))
+            .catch(err => User.processError(err));
     }
 
     // Remove device from LogStream.
@@ -377,19 +372,24 @@ class LogStream {
     // Parameters:
     //     none
     removeDeviceDialog() {
-        Promise.all([Auth.authorize(), Workspace.Data.getWorkspaceInfo()])
-            .then(([accessToken, cfg]) => Workspace.validateDG(accessToken, cfg))
-            .then((ret) => {
-                this.setImpCentralApi(ret.cfg.cloudURL);
-                Devices.pickDeviceID(ret.cfg.cloudURL, ret.token, ret.cfg.ownerId, ret.cfg.deviceGroupId, undefined)
-                    .then((deviceID) => {
-                        Api.logStreamRemoveDevice(ret.cfg.cloudURL, ret.token, this.logStreamID, deviceID)
-                            .then(() => {
-                                this.devices.delete(deviceID);
-                                vscode.window.showInformationMessage(`Device removed: ${deviceID}`);
-                            }).catch(err => Devices.pickDeviceIDError(err));
-                    });
-            }).catch(err => vscode.window.showErrorMessage(err.message));
+        Workspace.Data.getWorkspaceInfo()
+            .then(cfg => Auth.authorize(cfg))
+            .then(cfg => Workspace.validateDG(cfg))
+            .then((cfg) => {
+                this.cloudURL = cfg.cloudURL;
+                this.accessToken = cfg.accessToken;
+                this.ownerId = cfg.ownerId;
+                this.dg = cfg.deviceGroupId;
+            })
+            .then(() => this.setImpCentralApi(this.cloudURL))
+            .then(() => Devices.pickDeviceID(this.cloudURL, this.accessToken, this.ownerId, this.dg, undefined))
+            .then((deviceID) => { this.deviceID = deviceID; })
+            .then(() => Api.logStreamRemoveDevice(this.cloudURL, this.accessToken, this.logStreamID, this.deviceID))
+            .then(() => {
+                this.devices.delete(this.deviceID);
+                vscode.window.showInformationMessage(`Device removed: ${this.deviceID}`);
+            })
+            .catch(err => User.processError(err));
     }
 
     // Clear LogStream output window.
@@ -397,12 +397,18 @@ class LogStream {
     // Parameters:
     //     none
     clearLogOutput() {
-        if (this.outputChannel === undefined) {
-            vscode.window.showErrorMessage(`Cannot clear ${User.NAMES.OUTPUT_CHANNEL}`);
-            return;
-        }
+        Workspace.Data.getWorkspaceInfo()
+            .then(cfg => Auth.authorize(cfg))
+            .then(cfg => Workspace.validateDG(cfg))
+            .then(() => {
+                if (this.outputChannel === undefined) {
+                    vscode.window.showErrorMessage(`Cannot clear ${User.NAMES.OUTPUT_CHANNEL}`);
+                    return;
+                }
 
-        this.outputChannel.clear();
+                this.outputChannel.clear();
+            })
+            .catch(err => User.processError(err));
     }
 
     // Pause LogStream output window
@@ -410,17 +416,23 @@ class LogStream {
     // Parameters:
     //     none
     pauseLogOutput() {
-        if (this.outputChannel === undefined) {
-            vscode.window.showErrorMessage(`Cannot pause ${User.NAMES.OUTPUT_CHANNEL}`);
-            return;
-        }
+        Workspace.Data.getWorkspaceInfo()
+            .then(cfg => Auth.authorize(cfg))
+            .then(cfg => Workspace.validateDG(cfg))
+            .then(() => {
+                if (this.outputChannel === undefined) {
+                    vscode.window.showErrorMessage(`Cannot pause ${User.NAMES.OUTPUT_CHANNEL}`);
+                    return;
+                }
 
-        this.pause = !this.pause;
-        if (this.pause) {
-            this.playPauseItem.text = `LogStream ${this.playChar}`;
-        } else {
-            this.playPauseItem.text = `LogStream ${this.pauseChar}`;
-        }
+                this.pause = !this.pause;
+                if (this.pause) {
+                    this.playPauseItem.text = `LogStream ${this.playChar}`;
+                } else {
+                    this.playPauseItem.text = `LogStream ${this.pauseChar}`;
+                }
+            })
+            .catch(err => User.processError(err));
     }
 
     setPauseLogsItem(playPauseItem) {

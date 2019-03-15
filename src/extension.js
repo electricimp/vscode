@@ -47,51 +47,35 @@ function activate(context) {
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.workspace.project.deploy', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            Workspace.deploy(logstream, diagnostic);
-        }
+        Workspace.deploy(logstream, diagnostic);
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.add', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            logstream.addDeviceDialog();
-        }
+        logstream.addDeviceDialog();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.remove', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            logstream.removeDeviceDialog();
-        }
+        logstream.removeDeviceDialog();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.pause', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            logstream.pauseLogOutput();
-        }
+        logstream.pauseLogOutput();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.logstream.clean', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            logstream.clearLogOutput();
-        }
+        logstream.clearLogOutput();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.device.add', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            Devices.addDeviceToDGDialog();
-        }
+        Devices.addDeviceToDGDialog();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.device.remove', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            Devices.removeDeviceFromDGDialog();
-        }
+        Devices.removeDeviceFromDGDialog();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.device.agenturl', () => {
-        if (Workspace.isWorkspaceFolderOpened()) {
-            Devices.getAgentURLDialog();
-        }
+        Devices.getAgentURLDialog();
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('imp.show.commands', () => {
