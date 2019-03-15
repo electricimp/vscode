@@ -189,7 +189,6 @@ async function validateAccessToken(url, token) {
     let newAccessToken;
     const auth = {
         accessToken: token,
-        cloudURL: url,
     };
 
     if (await checkAccess(url, token.access_token) === false ||
