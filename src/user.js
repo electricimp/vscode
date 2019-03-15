@@ -65,7 +65,7 @@ module.exports.ERRORS = ERRORS;
 const MESSAGES = {
     AUTH_PROMPT_ENTER_CREDS: 'Enter username or email address:',
     AUTH_PROMPT_ENTER_PWD: 'Enter password:',
-    AUTH_PROMPT_ENTER_OTP: 'Enter otp (One Time Password):',
+    AUTH_PROMPT_ENTER_OTP: 'Enter OTP (One Time Password):',
     AUTH_PROMPT_ENTER_URL: 'Enter Imp Cloud URL:',
     AUTH_SUCCESS: 'Workspace login is successful',
     DEVICE_PROMPT_DEVICE_ID: 'Enter a valid device ID:',

@@ -168,7 +168,7 @@
     "imp-central-api": "^1.4.1",
     "Builder": "^2.4.0",
     "is-reachable": "^3.0.0",
-    "valid-url":"^1.0.9"
+    "valid-url": "^1.0.9"
   },
   "repository": {
     "type": "git",
