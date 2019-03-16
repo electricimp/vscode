@@ -144,9 +144,23 @@ module.exports.getUserCreds = getUserCreds;
 //
 function loginDialog() {
     Workspace.Data.getWorkspaceInfo()
-        .then(cfg => getCloudUrl(cfg.cloudURL))
-        .then(url => getUserCreds(url))
+        .then((cfg) => { this.cfg = cfg; })
+        .then(() => getCloudUrl(this.cfg.cloudURL))
+        .then((url) => { this.url = url; })
+        .then(() => getUserCreds(this.url))
         .then(auth => Workspace.Data.storeAuthInfo(auth))
+        .then(() => {
+            /*
+             * Store cloudURL to imp.config file if it was not defined.
+             */
+            if (this.cfg.cloudURL === undefined) {
+                const newCfg = {
+                    cloudURL: this.url,
+                    ...this.cfg,
+                };
+                Workspace.Data.storeWorkspaceInfo(newCfg);
+            }
+        })
         .catch(err => User.processError(err));
 }
 module.exports.loginDialog = loginDialog;
