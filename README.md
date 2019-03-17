@@ -101,6 +101,14 @@ The Extension provides the following commands:
 
 Select a new project working directory using **File > Open Folder...**, if you have not done so. Select the **View > Command Palette... > imp: New Project** menu item.
 
+When you create new project (or perform any other action that requires access to the impCloud), you will be asked to provide:
+
+- The impCentral API base URL. The default value should be used, unless you are working with an Electric Imp Private impCloud.
+- Your Electric Imp account user name, password and one-time password (OTP) as needed.
+- Whether the Extension should create a new project or open an existing one.
+- A Product that belongs to another user who has granted your appropriate [collaborator roles](https://developer.electricimp.com/tools/impcentral/collaboratoractions).
+- Whether the Extension should create a new Device Group or select an existing one.
+
 The project directory will be set up with the following files and structure:
 
 ```

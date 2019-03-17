@@ -22,6 +22,7 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
+const IsReachable = require('is-reachable');
 const validUrl = require('valid-url');
 const vscode = require('vscode');
 const Api = require('./api');
@@ -54,7 +55,7 @@ async function getCloudUrl(cloudURL) {
         return defaultCloudURL;
     }
 
-    function validateURL(url) { return validUrl.isWebUri(url) ? null : 'Incorrect URL'; }
+    async function validateURL(url) { return validUrl.isWebUri(url) && await IsReachable(url) ? null : 'Incorrect URL'; }
 
     const urlOptions = {
         prompt: User.MESSAGES.AUTH_PROMPT_ENTER_URL,
@@ -143,9 +144,23 @@ module.exports.getUserCreds = getUserCreds;
 //
 function loginDialog() {
     Workspace.Data.getWorkspaceInfo()
-        .then(cfg => getCloudUrl(cfg.cloudURL))
-        .then(url => getUserCreds(url))
+        .then((cfg) => { this.cfg = cfg; })
+        .then(() => getCloudUrl(this.cfg.cloudURL))
+        .then((url) => { this.url = url; })
+        .then(() => getUserCreds(this.url))
         .then(auth => Workspace.Data.storeAuthInfo(auth))
+        .then(() => {
+            /*
+             * Store cloudURL to imp.config file if it was not defined.
+             */
+            if (this.cfg.cloudURL === undefined) {
+                const newCfg = {
+                    cloudURL: this.url,
+                    ...this.cfg,
+                };
+                Workspace.Data.storeWorkspaceInfo(newCfg);
+            }
+        })
         .catch(err => User.processError(err));
 }
 module.exports.loginDialog = loginDialog;

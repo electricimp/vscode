@@ -422,7 +422,7 @@ function createProjectFiles(url, dgID, ownerID, force = false) {
 
 function validateDG(config) {
     return new Promise((resolve, reject) => {
-        Api.getDG(config.cloudUrl, config.accessToken, config.deviceGroupId)
+        Api.getDG(config.cloudURL, config.accessToken, config.deviceGroupId)
             .then(() => {
                 resolve(config);
             }, (err) => {

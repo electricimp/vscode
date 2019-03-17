@@ -274,9 +274,18 @@ async function checkIfProjectAlreadyExist(input, state) {
         /*
          * Correct behaviour, we cannot read workspace in the cwd.
          */
+    }
+
+    if (nextState.config === undefined) {
         if (nextState.cloudURL === undefined) {
-            nextState.cloudURL = await Auth.getCloudUrl();
+            try {
+                nextState.cloudURL = await Auth.getCloudUrl();
+            } catch (error) {
+                User.processError(error);
+                return undefined;
+            }
         }
+
         return nextIn => pickOwner(nextIn, nextState);
     }
 
@@ -293,8 +302,14 @@ async function checkIfProjectAlreadyExist(input, state) {
 
     if (pick.label === 'Yes') {
         if (nextState.cloudURL === undefined) {
-            nextState.cloudURL = await Auth.getCloudUrl();
+            try {
+                nextState.cloudURL = await Auth.getCloudUrl();
+            } catch (error) {
+                User.processError(error);
+                return undefined;
+            }
         }
+
         return nextIn => pickOwner(nextIn, nextState);
     }
 
