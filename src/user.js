@@ -24,6 +24,7 @@
 
 
 const vscode = require('vscode');
+const ImpCentralApi = require('imp-central-api');
 const Auth = require('./auth');
 
 const ERRORS = {
@@ -45,6 +46,7 @@ const ERRORS = {
     PRODUCT_CREATE: 'Cannot create new product:',
     PRODUCT_LIST: 'Cannot retrieve product list:',
     PROJECT_CREATE: 'Cannot create project:',
+    REFREASH_AUTH: 'Cannot refresh access_token:',
     VSCODE_API: 'IMP API:',
     WORKSPACE_MULTIROOT: 'Multi-root workspaces are not supported',
     WORKSPACE_FOLDER_SELECT: 'Please select the workspace folder to proceed',
@@ -63,6 +65,8 @@ module.exports.ERRORS = ERRORS;
 const MESSAGES = {
     AUTH_PROMPT_ENTER_CREDS: 'Enter username or email address:',
     AUTH_PROMPT_ENTER_PWD: 'Enter password:',
+    AUTH_PROMPT_ENTER_OTP: 'Enter OTP (One Time Password):',
+    AUTH_PROMPT_ENTER_URL: 'Enter Imp Cloud URL:',
     AUTH_SUCCESS: 'Workspace login is successful',
     DEVICE_PROMPT_DEVICE_ID: 'Enter a valid device ID:',
     WORKSPACE_CREATED: 'Project created.',
@@ -101,3 +105,125 @@ function showImpApiError(msg, err) {
     vscode.window.showErrorMessage(`${msg} ${err}`);
 }
 module.exports.showImpApiError = showImpApiError;
+
+/*
+ * Internal vscode extension errors
+ */
+class LoginError extends Error {
+    constructor(apiErr) {
+        super();
+        this.apiErr = apiErr;
+    }
+}
+module.exports.LoginError = LoginError;
+
+class RefreshAccessTokenError extends Error {
+    constructor(apiErr) {
+        super();
+        this.apiErr = apiErr;
+    }
+}
+module.exports.RefreshAccessTokenError = RefreshAccessTokenError;
+
+class GetAuthFileError extends Error {
+    constructor(sysErr) {
+        super();
+        this.sysErr = sysErr;
+    }
+}
+module.exports.GetAuthFileError = GetAuthFileError;
+
+class UserInputCanceledError extends Error {
+    constructor(message) {
+        super(message || 'User Input Canceled');
+    }
+}
+module.exports.UserInputCanceledError = UserInputCanceledError;
+
+class DGListRetrieveError extends Error {
+    constructor(apiErr) {
+        super();
+        this.apiErr = apiErr;
+    }
+}
+module.exports.DGListRetrieveError = DGListRetrieveError;
+
+class DeviceListRetrieveError extends Error {
+    constructor(apiErr) {
+        super();
+        this.apiErr = apiErr;
+    }
+}
+module.exports.DeviceListRetrieveError = DeviceListRetrieveError;
+
+class NoAvailableDevicesError extends Error {
+    constructor(message) {
+        super(message || 'No Available Devices');
+    }
+}
+module.exports.NoAvailableDevicesError = NoAvailableDevicesError;
+
+class BuilderError extends Error {
+    constructor(builderErr) {
+        super();
+        this.builderErr = builderErr;
+    }
+}
+module.exports.BuilderError = BuilderError;
+
+class PreprocessedFileError extends Error {
+    constructor(fileErr) {
+        super();
+        this.fileErr = fileErr;
+    }
+}
+module.exports.PreprocessedFileError = PreprocessedFileError;
+
+class DeployError extends Error {
+    constructor(deployErr) {
+        super();
+        this.deployErr = deployErr;
+    }
+}
+module.exports.DeployError = DeployError;
+
+class DGHaveNoDevicesError extends Error {
+    constructor(dgID) {
+        super();
+        this.dgID = dgID;
+    }
+}
+module.exports.DGHaveNoDevicesError = DGHaveNoDevicesError;
+
+function processError(err) {
+    if (err instanceof LoginError) {
+        vscode.window.showErrorMessage(`${ERRORS.AUTH_LOGIN} ${err.apiErr.message}`);
+    } else if (err instanceof RefreshAccessTokenError) {
+        vscode.window.showErrorMessage(`${ERRORS.REFREASH_AUTH} ${err.apiErr.message}`);
+    } else if (err instanceof GetAuthFileError) {
+        vscode.window.showErrorMessage(`${ERRORS.AUTH_FILE} ${err.sysErr.message}`);
+    } else if (err instanceof UserInputCanceledError) {
+        // It mean that user pressed 'Esc' in case of data input, so do nothing.
+    } else if (err instanceof DGListRetrieveError) {
+        // Will be added later.
+    } else if (err instanceof DeviceListRetrieveError) {
+        vscode.window.showErrorMessage(`${ERRORS.DEVICE_RETRIEVE} ${err.apiErr.message}`);
+    } else if (err instanceof NoAvailableDevicesError) {
+        vscode.window.showWarningMessage('There are no available devices.');
+    } else if (err instanceof BuilderError) {
+        vscode.window.showErrorMessage(`${ERRORS.BUILDER_FAIL} ${err.builderErr}`);
+    } else if (err instanceof PreprocessedFileError) {
+        vscode.window.showErrorMessage(`Preprocessed files error: ${err.fileErr}`);
+    } else if (err instanceof DeployError) {
+        vscode.window.showErrorMessage(`Deploy failed: ${err.deployErr}`);
+    } else if (err instanceof DGHaveNoDevicesError) {
+        vscode.window.showWarningMessage(`The DG ${err.dgID} have no devices`);
+    } else if (err instanceof ImpCentralApi.Errors.InvalidDataError) {
+        vscode.window.showErrorMessage(err.message);
+    } else if (err instanceof ImpCentralApi.Errors.ImpCentralApiError) {
+        vscode.window.showErrorMessage(err.message);
+    } else if (err instanceof Error) {
+        vscode.window.showErrorMessage(err.message);
+    }
+}
+module.exports.processError = processError;

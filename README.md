@@ -62,7 +62,7 @@ Visual Studio Code can be [downloaded for a variety of platforms here](https://c
 
 ### 4. Install The Visual Studio Code Extension ###
 
-The Electric Imp Visual Studio Code Extension can be installed using any of a number of methods, listed below. Once the Extension has been published to the [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode), this will be the recommended way to install the Extension, but you may alternatively perform the install using a `.vsix` file or by building the Extension from the source code.
+The Electric Imp Visual Studio Code Extension can be installed using any of a number of methods, listed below. Once the Extension has been published to the [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode), this will be the recommended way to install the Extension by building it from the source code.
 
 #### Installation From The Visual Studio Marketplace ####
 
@@ -101,6 +101,14 @@ The Extension provides the following commands:
 
 Select a new project working directory using **File > Open Folder...**, if you have not done so. Select the **View > Command Palette... > imp: New Project** menu item.
 
+When you create new project (or perform any other action that requires access to the impCloud), you will be asked to:
+
+- Provide your impCentral API base URL. The default value should be used, unless you are working with a private Electric Imp cloud.
+- Provide your Electric Imp account user name, password and one-time password (OTP) as needed.
+- Specify whether a new Product should be created or an existing one selected for the project.
+- Select an impCentral account for the project from a list of accounts available for the user. Please see [Collaboration](https://developer.electricimp.com/tools/impcentral/collaboratoractions) for more details.
+- Specify whether a new Device Group should be created or an existing one selected for the project.
+
 The project directory will be set up with the following files and structure:
 
 ```
@@ -130,11 +138,12 @@ The `imp.config` file contains:
 #### Example ####
 
 ```json
-{ "ownerID"         : "<user id>",
-  "deviceGroupId"   : "<device group id>",
-  "device_code"     : "<path to device source file; src/device.nut by default>",
-  "agent_code"      : "<path to agent source file; src/agent.nut by default>",
-  "builderSettings" : "<different Builder variables>" }
+{ "cloudURL"       : "<Electric Imp Cloud URL>",
+  "ownerID"        : "<user id>",
+  "deviceGroupId"  : "<device group id>",
+  "device_code"    : "<path to device source file; src/device.nut by default>",
+  "agent_code"     : "<path to agent source file; src/agent.nut by default>",
+  "builderSettings": "<different Builder variables>" }
 ```
 
 When a project is created, empty device and agent code files (`device.nut` and `agent.nut`, respectively) are automatically created and stored in the project working directory’s `src` sub-directory.
@@ -144,7 +153,7 @@ If the project was created successfully, the `imp.config` file is opened.
 #### Important Notes ####
 
 - If the project working directory is not open in Visual Studio Code, no Extension commands will work. Use **File > Open Folder...** to open the directory.
-- The code which is deployed to a Device Group is preprocessed and therefore may contain line control markers. 
+- The code which is deployed to a Device Group is pre-processed and therefore may contain line control markers. 
 - When you select an existing Device Group, the Extension downloads the code currently deployed to the group, but doesn’t transfer this code to the project file/directory structure.
 - If you are working with collaborators on a project, please share the original Electric Imp Extension project sources/structure via a source control system.
 
@@ -190,11 +199,11 @@ The URL of a device’s agent can be retrieved by selecting **View > Command Pal
 
 ## Pre-processor And Multiple File Support ##
 
-Please refer to the [Builder documentation](https://developer.electricimp.com/tools/builder) for more information on the preprocessor syntax that you can use in your Squirrel code.
+Please refer to the [Builder documentation](https://developer.electricimp.com/tools/builder) for more information on the pre-processor syntax that you can use in your Squirrel code.
 
 ### Specify GitHub Authentication Information ###
 
-Please use the project `<project working directory>/settings/auth.info` file to specify your Builder GitHub authentication information:
+Please use the `<project working directory>/settings/auth.info` file to specify your Builder GitHub authentication information:
 
 ```json
 { ...,
@@ -204,7 +213,7 @@ Please use the project `<project working directory>/settings/auth.info` file to 
 
 ### Specify Builder Preset Variable Definitions ###
 
-Please use the project `<project working directory>/settings/imp.config` file to specify Builder variable definitions (as [described here](https://developer.electricimp.com/tools/builder#builder-expressions)).
+Please use the `<project working directory>/settings/imp.config` file to specify Builder variable definitions (as [described here](https://developer.electricimp.com/tools/builder#builder-expressions)).
 
 ```json
 { "builderSettings": { ...,

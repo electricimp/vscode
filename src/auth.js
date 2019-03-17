@@ -22,10 +22,148 @@
 // ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 // OTHER DEALINGS IN THE SOFTWARE.
 
-
+const IsReachable = require('is-reachable');
+const validUrl = require('valid-url');
 const vscode = require('vscode');
 const Api = require('./api');
+const User = require('./user');
 const Workspace = require('./workspace');
+
+const defaultCloudURL = 'https://api.electricimp.com/v5';
+module.exports.defaultCloudURL = defaultCloudURL;
+
+async function getCloudUrl(cloudURL) {
+    if (cloudURL) {
+        return cloudURL;
+    }
+
+    const pickCloudUrlOptions = {
+        matchOnDescription: true,
+        matchOnDetail: true,
+        placeHolder: `Use default Imp Cloud URL (${defaultCloudURL}) ?`,
+        ignoreFocusOut: true,
+        canPickMany: false,
+        onDidSelectItem: undefined,
+    };
+
+    const pick = await vscode.window.showQuickPick(['Yes', 'No'], pickCloudUrlOptions);
+    if (pick === undefined) {
+        throw new User.UserInputCanceledError();
+    }
+
+    if (pick === 'Yes') {
+        return defaultCloudURL;
+    }
+
+    async function validateURL(url) { return validUrl.isWebUri(url) && await IsReachable(url) ? null : 'Incorrect URL'; }
+
+    const urlOptions = {
+        prompt: User.MESSAGES.AUTH_PROMPT_ENTER_URL,
+        placeHolder: '',
+        password: false,
+        ignoreFocusOut: true,
+        validateInput: validateURL,
+    };
+
+    const url = await vscode.window.showInputBox(urlOptions);
+    if (url === undefined) {
+        throw new User.UserInputCanceledError();
+    }
+
+    return url;
+}
+module.exports.getCloudUrl = getCloudUrl;
+
+async function getUserCreds(url) {
+    const userOptions = {
+        prompt: User.MESSAGES.AUTH_PROMPT_ENTER_CREDS,
+        placeHolder: '',
+        password: false,
+        ignoreFocusOut: true,
+    };
+
+    const user = await vscode.window.showInputBox(userOptions);
+    if (user === undefined) {
+        throw new User.UserInputCanceledError();
+    }
+
+    const pwdOptions = {
+        prompt: User.MESSAGES.AUTH_PROMPT_ENTER_PWD,
+        placeHolder: '',
+        password: true,
+        ignoreFocusOut: true,
+    };
+
+    const pwd = await vscode.window.showInputBox(pwdOptions);
+    if (pwd === undefined) {
+        throw new User.UserInputCanceledError();
+    }
+
+    let token;
+    const creds = {
+        username: user,
+        password: pwd,
+    };
+
+    try {
+        token = await Api.login(url, creds);
+    } catch (err) {
+        if (Api.isMFAError(err)) {
+            const otpOptions = {
+                prompt: User.MESSAGES.AUTH_PROMPT_ENTER_OTP,
+                placeHolder: '',
+                password: false,
+                ignoreFocusOut: true,
+            };
+
+            const otp = await vscode.window.showInputBox(otpOptions);
+            if (otp === undefined) {
+                throw new User.UserInputCanceledError();
+            }
+
+            token = await Api.loginWithOTP(url, otp, Api.getMFALoginToken(err));
+        } else {
+            throw new User.LoginError(err);
+        }
+    }
+
+    return {
+        accessToken: token,
+    };
+}
+module.exports.getUserCreds = getUserCreds;
+
+// Initiate user login dialog using username/password authorization.
+// Save file with access token in the workspace directory.
+//
+// Parameters:
+//     none
+//
+// Returns:
+//     none
+//
+function loginDialog() {
+    Workspace.Data.getWorkspaceInfo()
+        .then((cfg) => { this.cfg = cfg; })
+        .then(() => getCloudUrl(this.cfg.cloudURL))
+        .then((url) => { this.url = url; })
+        .then(() => getUserCreds(this.url))
+        .then(auth => Workspace.Data.storeAuthInfo(auth))
+        .then(() => {
+            /*
+             * Store cloudURL to imp.config file if it was not defined.
+             */
+            if (this.cfg.cloudURL === undefined) {
+                const newCfg = {
+                    cloudURL: this.url,
+                    ...this.cfg,
+                };
+                Workspace.Data.storeWorkspaceInfo(newCfg);
+            }
+        })
+        .catch(err => User.processError(err));
+}
+module.exports.loginDialog = loginDialog;
 
 function isAccessTokenExpired(auth) {
     if (!Number.isInteger(Date.parse(auth.expires_at)) ||
@@ -48,21 +186,39 @@ function isAccessTokenExpired(auth) {
     return false;
 }
 
-function refreshAccessToken(accessToken) {
-    return new Promise((resolve, reject) => {
-        if (isAccessTokenExpired(accessToken) === false) {
-            resolve(accessToken);
-            return;
+async function checkAccess(url, token) {
+    try {
+        await Api.getMe(url, token);
+    } catch (err) {
+        if (!Api.isAuthError(err)) {
+            throw new User.LoginError(err);
         }
 
-        Api.refreshAccessToken(accessToken.refresh_token)
-            .then((refreshedAuth) => {
-                const freshAccessToken = refreshedAuth;
-                freshAccessToken.refresh_token = accessToken.refresh_token;
-                Workspace.Data.storeAuthInfo(freshAccessToken)
-                    .then(() => resolve(freshAccessToken), err => reject(err));
-            }, err => reject(err));
-    });
+        return false;
+    }
+
+    return true;
+}
+
+async function validateAccessToken(url, token) {
+    let newAccessToken;
+    const auth = {
+        accessToken: token,
+    };
+
+    if (await checkAccess(url, token.access_token) === false ||
+        isAccessTokenExpired(token) === true) {
+        try {
+            newAccessToken = await Api.refreshAccessToken(url, token.refresh_token);
+        } catch (err) {
+            throw new User.RefreshAccessTokenError(err);
+        }
+
+        auth.accessToken = newAccessToken;
+        await Workspace.Data.storeAuthInfo(auth);
+    }
+
+    return auth.accessToken;
 }
 
 // Authorization procedure using authorization file from current workspace.
@@ -73,16 +229,25 @@ function refreshAccessToken(accessToken) {
 // Returns:                     Promise that resolves when the login is successfull,
 //                              or rejects with an error
 //
-function authorize() {
-    return new Promise(((resolve, reject) => {
+function authorize(config) {
+    return new Promise((resolve, reject) => {
         Workspace.Data.getAuthInfo()
-            .then(auth => refreshAccessToken(auth.accessToken))
-            .then(accessToken => resolve(accessToken.access_token))
+            .then(auth => validateAccessToken(config.cloudURL, auth.accessToken))
+            .then((accessToken) => {
+                const authorizedConfig = config;
+                authorizedConfig.accessToken = accessToken.access_token;
+                resolve(authorizedConfig);
+            })
             .catch((err) => {
-                vscode.commands.executeCommand('imp.auth.creds');
+                /*
+                 * Do not propose relogin to user if we have errors related to bad cloud URL.
+                 */
+                if (!Api.isENOTFOUNDError(err.apiErr) && !Api.isBadRequestError(err.apiErr)) {
+                    vscode.commands.executeCommand('imp.auth.creds');
+                }
                 reject(err);
             });
-    }));
+    });
 }
 module.exports.authorize = authorize;
 

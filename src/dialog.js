@@ -26,12 +26,9 @@
 const util = require('util');
 const vscode = require('vscode');
 const Api = require('./api');
+const Auth = require('./auth');
 const User = require('./user');
 const Workspace = require('./workspace');
-
-function getLoginTitle() {
-    return 'Electric Imp Login';
-}
 
 function getCreateProjectTitle() {
     return 'Create New Project';
@@ -68,7 +65,7 @@ async function getDGName(input, state) {
 
     if (state.product) {
         try {
-            dgList = await Api.getDGList(state.accessToken, state.product.id, state.owner);
+            dgList = await Api.getDGList(state.cloudURL, state.accessToken, state.product.id, state.owner);
         } catch (err) {
             const nextState = state;
             nextState.err = err;
@@ -100,7 +97,7 @@ async function getDGName(input, state) {
 async function getProductName(input, state) {
     let productList;
     try {
-        productList = await Api.getProductList(state.accessToken, state.owner);
+        productList = await Api.getProductList(state.cloudURL, state.accessToken, state.owner);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -130,7 +127,7 @@ async function getProductName(input, state) {
 async function pickDGFromList(input, state) {
     let dgs;
     try {
-        dgs = await Api.getDGList(state.accessToken, state.product.id, state.owner);
+        dgs = await Api.getDGList(state.cloudURL, state.accessToken, state.product.id, state.owner);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -168,7 +165,7 @@ async function pickDGFromList(input, state) {
 async function pickProductFromList(input, state) {
     let products;
     try {
-        products = await Api.getProductList(state.accessToken, state.owner);
+        products = await Api.getProductList(state.cloudURL, state.accessToken, state.owner);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -206,8 +203,8 @@ async function pickOwner(input, state) {
     let me;
     let owners;
     try {
-        me = await Api.getMe(state.accessToken);
-        owners = await Api.getOwners(state.accessToken);
+        me = await Api.getMe(state.cloudURL, state.accessToken);
+        owners = await Api.getOwners(state.cloudURL, state.accessToken);
     } catch (err) {
         const nextState = state;
         nextState.err = err;
@@ -247,77 +244,48 @@ async function pickOwner(input, state) {
     return nextIn => pickProductFromList(nextIn, nextState);
 }
 
-async function getPassword(input, state) {
-    const pick = await input.showInputBox(
-        getLoginTitle(),
-        2,
-        2,
-        state.password || '',
-        User.MESSAGES.AUTH_PROMPT_ENTER_PWD,
-        () => {},
-        undefined,
-        shouldResume,
-        true,
-    );
-
-    const nextState = state;
-    nextState.password = pick;
-    if (state.newProject === undefined) {
-        return;
-    }
-
-    try {
-        const auth = await Api.login(state);
-        nextState.auth = auth;
-        nextState.accessToken = auth.access_token;
-        return nextIn => pickOwner(nextIn, nextState);
-    } catch (err) {
-        nextState.err = err;
-        User.showImpApiError(`${User.ERRORS.PROJECT_CREATE}`, nextState.err);
-    }
-}
-
-async function getUsername(input, state) {
-    const pick = await input.showInputBox(
-        getLoginTitle(),
-        1,
-        2,
-        state.username || '',
-        User.MESSAGES.AUTH_PROMPT_ENTER_CREDS,
-        () => {},
-        undefined,
-        shouldResume,
-    );
-
-    const nextState = state;
-    nextState.username = pick;
-
-    return nextIn => getPassword(nextIn, nextState);
-}
-
 async function checkIfProjectAlreadyExist(input, state) {
-    let auth;
+    const nextState = state;
+
     try {
-        auth = await Workspace.Data.getAuthInfo();
+        nextState.auth = await Workspace.Data.getAuthInfo();
+        nextState.accessToken = nextState.auth.accessToken.access_token;
     } catch (err) {
         /*
-         * If we cannot get auth information, start the login procedure.
+         * If we cannot get auth information, start the login procedure below.
          * The auth information should be saved later too.
          */
-        const nextState = state;
-        nextState.newProject = true;
-        return nextIn => getUsername(nextIn, nextState);
     }
 
-    let config;
+    if (nextState.auth === undefined) {
+        try {
+            nextState.cloudURL = await Auth.getCloudUrl();
+            nextState.auth = await Auth.getUserCreds(nextState.cloudURL);
+            nextState.accessToken = nextState.auth.accessToken.access_token;
+        } catch (error) {
+            User.processError(error);
+            return undefined;
+        }
+    }
+
     try {
-        config = await Workspace.Data.getWorkspaceInfo();
+        nextState.config = await Workspace.Data.getWorkspaceInfo();
     } catch (err) {
         /*
          * Correct behaviour, we cannot read workspace in the cwd.
          */
-        const nextState = state;
-        nextState.accessToken = auth.accessToken.access_token;
+    }
+
+    if (nextState.config === undefined) {
+        if (nextState.cloudURL === undefined) {
+            try {
+                nextState.cloudURL = await Auth.getCloudUrl();
+            } catch (error) {
+                User.processError(error);
+                return undefined;
+            }
+        }
+
         return nextIn => pickOwner(nextIn, nextState);
     }
 
@@ -327,15 +295,21 @@ async function checkIfProjectAlreadyExist(input, state) {
         3,
         'The project already exist, overwrite it?',
         ['No', 'Yes'].map(label => ({ label })),
-        typeof state.alreadyExist !== 'string' ? state.projectType : undefined,
+        typeof state.alreadyExist !== 'string' ? state.alreadyExist : undefined,
         undefined,
         shouldResume,
     );
 
-    const nextState = state;
-    nextState.config = config;
-    nextState.accessToken = auth.accessToken.access_token;
     if (pick.label === 'Yes') {
+        if (nextState.cloudURL === undefined) {
+            try {
+                nextState.cloudURL = await Auth.getCloudUrl();
+            } catch (error) {
+                User.processError(error);
+                return undefined;
+            }
+        }
+
         return nextIn => pickOwner(nextIn, nextState);
     }
 
@@ -476,40 +450,10 @@ class Dialog {
         }
     }
 
-    static async loginCollectInputs() {
-        const state = {};
-        await Dialog.run(input => getUsername(input, state));
-        return state;
-    }
-
     static async newProjectCollectInputs() {
         const state = {};
         await Dialog.run(input => checkIfProjectAlreadyExist(input, state));
         return state;
-    }
-
-    // Initiate user login dialog using username/password authorization.
-    // Save file with access token in the workspace directory.
-    //
-    // Parameters:
-    //     none
-    //
-    // Returns:
-    //     none
-    //
-    static async login() {
-        const state = await Dialog.loginCollectInputs();
-
-        /*
-         * The state.username and state.password values are expected.
-         */
-        // console.log(util.inspect(state, { showHidden: false, depth: null }));
-        if (state.username && state.password) {
-            Api.login(state)
-                .then(Workspace.Data.storeAuthInfo)
-                .then(() => vscode.window.showInformationMessage(User.MESSAGES.AUTH_SUCCESS))
-                .catch(err => vscode.window.showErrorMessage(err.message));
-        }
     }
 
     static async newProject() {
@@ -541,18 +485,18 @@ class Dialog {
         }
 
         if (state.auth) {
-            await Workspace.Data.storeAuthInfo(state.auth);
+            await Workspace.Data.storeAuthInfo({ accessToken: state.auth.accessToken });
         }
 
         switch (state.type) {
         case projectTypes.existDG:
-            Workspace.newProjectExistDG(state.dg.id, state.owner);
+            Workspace.newProjectExistDG(state.cloudURL, state.dg.id, state.owner);
             break;
         case projectTypes.newDG:
-            Workspace.newProjectNewDG(state.accessToken, state.product, state.dgName, state.owner);
+            Workspace.newProjectNewDG(state.cloudURL, state.accessToken, state.product, state.dgName, state.owner);
             break;
         case projectTypes.newProduct:
-            Workspace.newProjectNewProduct(state.accessToken, state.productName, state.dgName, state.owner);
+            Workspace.newProjectNewProduct(state.cloudURL, state.accessToken, state.productName, state.dgName, state.owner);
             break;
         default:
             break;

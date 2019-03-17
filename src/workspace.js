@@ -146,12 +146,15 @@ module.exports.isWorkspaceFolderOpened = isWorkspaceFolderOpened;
 
 // This class is required to hide all project files interaction logic.
 class Data {
-    static storeAuthInfo(impAccessToken) {
+    /*
+     * The input function argument should have the next structure:
+     * {   accessToken: object returned from ImpCentralApi.login(),
+     *     cloudURL: string with actual cloud url }
+     */
+    static storeAuthInfo(auth) {
         return new Promise((resolve, reject) => {
-            const authInfo = {
-                accessToken: impAccessToken,
-                builderSettings: { github_user: null, github_token: null },
-            };
+            const authInfo = auth;
+            authInfo.builderSettings = { github_user: null, github_token: null };
 
             if (!isWorkspaceFolderOpened()) {
                 reject(User.ERRORS.WORKSPACE_FOLDER_SELECT);
@@ -179,7 +182,18 @@ class Data {
             const gitIgnoreFile = path.join(Path.getPWD(), Consts.gitIgnoreFileName);
             try {
                 fs.writeFileSync(authFile, JSON.stringify(authInfo, null, 2));
-                fs.writeFileSync(gitIgnoreFile, Consts.gitIgnoreFileContent);
+                if (!fs.existsSync(gitIgnoreFile)) {
+                    fs.writeFileSync(gitIgnoreFile, Consts.gitIgnoreFileContent);
+                } else {
+                    /*
+                     * Check if auth.info is added to it.
+                     */
+                    const gitIgnoreContent = fs.readFileSync(gitIgnoreFile);
+                    const gitIgnoreItem = Consts.gitIgnoreFileContent;
+                    if (gitIgnoreContent.includes(`${gitIgnoreItem}\n`) === false) {
+                        fs.writeFileSync(gitIgnoreFile, `${gitIgnoreItem}\n${gitIgnoreContent}`);
+                    }
+                }
                 resolve();
             } catch (err) {
                 reject(err);
@@ -223,17 +237,20 @@ class Data {
                 return;
             }
 
+            let auth;
             try {
-                const auth = Data.getAuthInfoSync();
-                if (!Data.isAuthInfoValid(auth)) {
-                    reject(new Error(User.ERRORS.AUTH_FILE_ERROR));
-                    return;
-                }
-
-                resolve(auth);
+                auth = Data.getAuthInfoSync();
             } catch (err) {
-                reject(err);
+                reject(new User.GetAuthFileError(err));
+                return;
             }
+
+            if (!Data.isAuthInfoValid(auth)) {
+                reject(new Error(User.ERRORS.AUTH_FILE_ERROR));
+                return;
+            }
+
+            resolve(auth);
         });
     }
 
@@ -358,9 +375,10 @@ class Data {
 }
 module.exports.Data = Data;
 
-function createProjectFiles(dgID, ownerID, force = false) {
+function createProjectFiles(url, dgID, ownerID, force = false) {
     return new Promise((resolve, reject) => {
         const defaultOptions = {
+            cloudURL: url,
             ownerId: ownerID,
             deviceGroupId: dgID,
             device_code: path.join(Consts.srcDirName, Consts.deviceSourceFileName),
@@ -402,11 +420,11 @@ function createProjectFiles(dgID, ownerID, force = false) {
     });
 }
 
-function validateDG(accessToken, config) {
+function validateDG(config) {
     return new Promise((resolve, reject) => {
-        Api.getDG(accessToken, config.deviceGroupId)
+        Api.getDG(config.cloudURL, config.accessToken, config.deviceGroupId)
             .then(() => {
-                resolve({ token: accessToken, cfg: config });
+                resolve(config);
             }, (err) => {
                 Auth.reloginIfAuthError(err, Auth.hideAuthError);
                 reject(new Error(`${User.ERRORS.DG_RETRIEVE} ${err}`));
@@ -422,27 +440,27 @@ function showSources(src) {
     vscode.window.showInformationMessage(`${User.MESSAGES.WORKSPACE_CREATED}`);
 }
 
-function newProjectExistDG(dgID, ownerID) {
-    createProjectFiles(dgID, ownerID, true)
+function newProjectExistDG(cloudURL, dgID, ownerID) {
+    createProjectFiles(cloudURL, dgID, ownerID, true)
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
 }
 module.exports.newProjectExistDG = newProjectExistDG;
 
-function newProjectNewDG(accessToken, product, dgName, ownerID) {
-    Api.newDG(accessToken, product.id, dgName)
-        .then(dg => createProjectFiles(dg.data.id, ownerID, true))
+function newProjectNewDG(cloudURL, accessToken, product, dgName, ownerID) {
+    Api.newDG(cloudURL, accessToken, product.id, dgName)
+        .then(dg => createProjectFiles(cloudURL, dg.data.id, ownerID, true))
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
 }
 module.exports.newProjectNewDG = newProjectNewDG;
 
-function newProjectNewProduct(accessToken, productName, dgName, ownerID) {
-    Api.newProduct(accessToken, productName, ownerID)
-        .then(product => Api.newDG(accessToken, product.data.id, dgName))
-        .then(dg => createProjectFiles(dg.data.id, ownerID, true))
+function newProjectNewProduct(cloudURL, accessToken, productName, dgName, ownerID) {
+    Api.newProduct(cloudURL, accessToken, productName, ownerID)
+        .then(product => Api.newDG(cloudURL, accessToken, product.data.id, dgName))
+        .then(dg => createProjectFiles(cloudURL, dg.data.id, ownerID, true))
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
@@ -454,96 +472,104 @@ module.exports.newProjectNewProduct = newProjectNewProduct;
 // Parameters:
 //     none
 function deploy(logstream, diagnostic) {
-    Promise.all([Auth.authorize(), Data.getWorkspaceInfo(), vscode.workspace.saveAll()])
-        .then(([accessToken, cfg]) => validateDG(accessToken, cfg))
-        .then((ret) => {
+    vscode.workspace.saveAll()
+        .then(() => Data.getWorkspaceInfo())
+        .then(cfg => Auth.authorize(cfg))
+        .then(cfg => validateDG(cfg))
+        .then((cfg) => {
+            this.cloudURL = cfg.cloudURL;
+            this.accessToken = cfg.accessToken;
+            this.ownerId = cfg.ownerId;
+            this.dg = cfg.deviceGroupId;
+            this.agentCode = cfg.agent_code;
+            this.deviceCode = cfg.device_code;
+            this.builderSettings = cfg.builderSettings;
+            this.diagnostic = diagnostic;
+        })
+        .then(() => Data.getAuthInfo())
+        .then((auth) => { this.auth = auth; })
+        .then(() => {
             const agentPre = new Preproc();
             const devicePre = new Preproc();
             diagnostic.setPreprocessors(agentPre, devicePre);
-            Data.getSources().then((src) => {
-                let agentSource;
-                const agentInc = path.dirname(src.agent_path);
-                try {
-                    const agentName = path.basename(ret.cfg.agent_code);
-                    const code = src.agent_source;
-                    const auth = Data.getAuthInfoSync();
-                    const gh = {
-                        username: auth.builderSettings.github_user,
-                        token: auth.builderSettings.github_token,
-                    };
-                    const defines = ret.cfg.builderSettings.variable_definitions;
-                    agentSource = agentPre.preprocess(agentName, code, agentInc, gh, defines);
-                } catch (err) {
-                    diagnostic.addBuilderError(agentInc, err.message);
-                    vscode.window.showErrorMessage(`${User.ERRORS.BUILDER_FAIL} ${err}`);
-                    return;
-                }
-
-                let deviceSource;
-                const devInc = path.dirname(src.device_path);
-                try {
-                    const devName = path.basename(ret.cfg.device_code);
-                    const code = src.device_source;
-                    const auth = Data.getAuthInfoSync();
-                    const gh = {
-                        username: auth.builderSettings.github_user,
-                        token: auth.builderSettings.github_token,
-                    };
-                    const defines = ret.cfg.builderSettings.variable_definitions;
-                    deviceSource = devicePre.preprocess(devName, code, devInc, gh, defines);
-                } catch (err) {
-                    diagnostic.addBuilderError(devInc, err.message);
-                    vscode.window.showErrorMessage(`${User.ERRORS.BUILDER_FAIL} ${err}`);
-                    return;
-                }
-
-                try {
-                    /*
-                     * The code below is only for debug purposes.
-                     * Write preprocessed files to workspace directory for future analyzes.
-                     */
-                    const storePostprocessed = true;
-                    if (storePostprocessed) {
-                        const buildPath = path.join(Path.getPWD(), 'build');
-                        if (!fs.existsSync(buildPath)) {
-                            fs.mkdirSync(buildPath);
-                        }
-                        fs.writeFileSync(path.join(buildPath, 'preprocessed_agent.nut'), agentSource);
-                        fs.writeFileSync(path.join(buildPath, 'preprocessed_device.nut'), deviceSource);
-                        // vscode.window.showInformationMessage('Preprocessed files were saved.');
-                    }
-                } catch (err) {
-                    vscode.window.showErrorMessage(`Preprocessed files error: ${err}`);
-                    return;
-                }
-
-                const dg = ret.cfg.deviceGroupId;
-                const attrs = {
-                    agent_code: agentSource,
-                    device_code: deviceSource,
+            this.agentPre = agentPre;
+            this.devicePre = devicePre;
+        })
+        .then(() => Data.getSources())
+        .then((src) => { this.src = src; })
+        .then(() => {
+            let agentSource;
+            const agentInc = path.dirname(this.src.agent_path);
+            try {
+                const agentName = path.basename(this.agentCode);
+                const code = this.src.agent_source;
+                const gh = {
+                    username: this.auth.builderSettings.github_user,
+                    token: this.auth.builderSettings.github_token,
                 };
+                const defines = this.builderSettings.variable_definitions;
+                agentSource = this.agentPre.preprocess(agentName, code, agentInc, gh, defines);
+            } catch (err) {
+                diagnostic.addBuilderError(agentInc, err.message);
+                throw new User.BuilderError(err);
+            }
 
-                Api.deploy(ret.token, dg, DevGroups.TYPE_DEVELOPMENT, attrs)
-                    .then((devices) => {
-                        if (devices === undefined) {
-                            vscode.window.showWarningMessage(`The DG ${dg} have no devices`);
-                            vscode.commands.executeCommand('imp.device.add');
-                            return;
-                        }
+            let deviceSource;
+            const devInc = path.dirname(this.src.device_path);
+            try {
+                const devName = path.basename(this.deviceCode);
+                const code = this.src.device_source;
+                const gh = {
+                    username: this.auth.builderSettings.github_user,
+                    token: this.auth.builderSettings.github_token,
+                };
+                const defines = this.builderSettings.variable_definitions;
+                deviceSource = this.devicePre.preprocess(devName, code, devInc, gh, defines);
+            } catch (err) {
+                diagnostic.addBuilderError(devInc, err.message);
+                throw new User.BuilderError(err);
+            }
 
-                        logstream.addDevice(ret.token, devices.data[0].id, true)
-                            .then(() => {
-                                Api.restartDevices(ret.token, dg)
-                                    .then(
-                                        () => vscode.window.showInformationMessage(`Successfully deployed on ${dg}`),
-                                        err => User.showImpApiError('Reset devices:', err),
-                                    );
-                            }, () => {});
-                    }, (err) => {
-                        diagnostic.addDeployError(err);
-                        User.showImpApiError('Deploy failed:', err);
-                    });
-            }, err => vscode.window.showErrorMessage(`Cannot read source files: ${err}`));
-        }).catch(err => vscode.window.showErrorMessage(err.message));
+            try {
+                const buildPath = path.join(Path.getPWD(), 'build');
+                if (!fs.existsSync(buildPath)) {
+                    fs.mkdirSync(buildPath);
+                }
+                fs.writeFileSync(path.join(buildPath, 'preprocessed_agent.nut'), agentSource);
+                fs.writeFileSync(path.join(buildPath, 'preprocessed_device.nut'), deviceSource);
+            } catch (err) {
+                throw new User.PreprocessedFileError(err);
+            }
+
+            return {
+                agent_code: agentSource,
+                device_code: deviceSource,
+            };
+        })
+        .then(async (attrs) => {
+            let devices;
+            try {
+                devices = await Api.deploy(this.cloudURL, this.accessToken, this.dg, DevGroups.TYPE_DEVELOPMENT, attrs);
+            } catch (err) {
+                this.diagnostic.addDeployError(err);
+                throw new User.DeployError(err);
+            }
+
+            return devices;
+        })
+        .then((devices) => {
+            if (devices) {
+                this.devices = devices;
+                return;
+            }
+
+            vscode.commands.executeCommand('imp.device.add');
+            throw new User.DGHaveNoDevicesError(this.dg);
+        })
+        .then(() => logstream.setImpCentralApi(this.cloudURL))
+        .then(() => logstream.addDevice(this.accessToken, this.devices.data[0].id, true))
+        .then(() => Api.restartDevices(this.cloudURL, this.accessToken, this.dg))
+        .then(() => vscode.window.showInformationMessage(`Successfully deployed on ${this.dg}`))
+        .catch(err => User.processError(err));
 }
 module.exports.deploy = deploy;

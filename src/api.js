@@ -24,7 +24,6 @@
 
 
 const ImpCentralApi = require('imp-central-api');
-const User = require('./user');
 
 const ImpDeviceGroups = ImpCentralApi.DeviceGroups;
 const ImpProducts = ImpCentralApi.Products;
@@ -32,25 +31,97 @@ const ImpDevices = ImpCentralApi.Devices;
 
 const maxPageSize = 100;
 
-function login(creds) {
-    const api = new ImpCentralApi();
+function login(url, creds) {
+    const api = new ImpCentralApi(url);
 
     return new Promise((resolve, reject) => {
         api.auth.login(creds.username, creds.password)
             .then(authInfo => resolve(authInfo), (err) => {
-                reject(new Error(`${User.ERRORS.AUTH_LOGIN} ${err}`));
+                reject(err);
             });
     });
 }
 module.exports.login = login;
 
-function refreshAccessToken(refreshToken) {
-    const api = new ImpCentralApi();
+function isAuthError(err) {
+    return err instanceof ImpCentralApi.Errors.ImpCentralApiError &&
+        err._statusCode === 401;
+}
+module.exports.isAuthError = isAuthError;
+
+function isEntityNotFoundError(error) {
+    return error instanceof ImpCentralApi.Errors.ImpCentralApiError &&
+        error._statusCode === 404;
+}
+module.exports.isEntityNotFoundError = isEntityNotFoundError;
+
+function isBadRequestError(error) {
+    return error instanceof ImpCentralApi.Errors.ImpCentralApiError &&
+        error._statusCode === 400;
+}
+module.exports.isBadRequestError = isBadRequestError;
+
+function isENOTFOUNDError(err) {
+    if (err instanceof ImpCentralApi.Errors.InvalidDataError && 
+        err.message.indexOf('ENOTFOUND') >= 0) {
+        return true;
+    }
+
+    return false;
+}
+module.exports.isENOTFOUNDError = isENOTFOUNDError;
+
+function isMFAError(err) {
+    // Check that errors array present in the error.
+    if (!err.body || !err.body.errors || err.body.errors.length !== 1) {
+        return false;
+    }
+
+    // Check error code and status.
+    const error = err.body.errors[0];
+    if (!error.code || error.code !== 'PX200' || !error.status || error.status !== '403') {
+        return false;
+    }
+
+    // Check login_token.
+    if (!error.meta || !error.meta.login_token || !error.meta.expires_at) {
+        return false;
+    }
+
+    return true;
+}
+module.exports.isMFAError = isMFAError;
+
+function getMFALoginToken(err) {
+    if (err && err.body && err.body.errors[0] && err.body.errors[0].meta) {
+        return err.body.errors[0].meta.login_token;
+    }
+
+    return undefined;
+}
+module.exports.getMFALoginToken = getMFALoginToken;
+
+function loginWithOTP(url, otp, loginToken) {
+    const api = new ImpCentralApi(url);
+
+    return new Promise((resolve, reject) => {
+        api.auth.loginWithOTP(otp, loginToken)
+            .then(authInfo => resolve(authInfo), (err) => {
+                reject(err);
+            });
+    });
+}
+module.exports.loginWithOTP = loginWithOTP;
+
+function refreshAccessToken(url, refreshToken) {
+    const api = new ImpCentralApi(url);
 
     return new Promise((resolve, reject) => {
         api.auth.refreshAccessToken(refreshToken)
-            .then((authInfo) => {
-                resolve(authInfo);
+            .then((accessToken) => {
+                const newAccessToken = accessToken;
+                newAccessToken.refresh_token = refreshToken;
+                resolve(newAccessToken);
             }, (err) => {
                 reject(err);
             });
@@ -58,8 +129,8 @@ function refreshAccessToken(refreshToken) {
 }
 module.exports.refreshAccessToken = refreshAccessToken;
 
-function getDG(accessToken, dgID) {
-    const api = new ImpCentralApi();
+function getDG(url, accessToken, dgID) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     return new Promise((resolve, reject) => {
@@ -72,8 +143,8 @@ function getDG(accessToken, dgID) {
 }
 module.exports.getDG = getDG;
 
-function getAgentURL(accessToken, deviceID) {
-    const api = new ImpCentralApi();
+function getAgentURL(url, accessToken, deviceID) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     return new Promise((resolve, reject) => {
@@ -86,8 +157,8 @@ function getAgentURL(accessToken, deviceID) {
 }
 module.exports.getAgentURL = getAgentURL;
 
-function addDeviceToDG(accessToken, dgID, deviceID) {
-    const api = new ImpCentralApi();
+function addDeviceToDG(url, accessToken, dgID, deviceID) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     return new Promise((resolve, reject) => {
@@ -100,8 +171,8 @@ function addDeviceToDG(accessToken, dgID, deviceID) {
 }
 module.exports.addDeviceToDG = addDeviceToDG;
 
-function removeDeviceFromDG(accessToken, dgID, deviceID) {
-    const api = new ImpCentralApi();
+function removeDeviceFromDG(url, accessToken, dgID, deviceID) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     return new Promise((resolve, reject) => {
@@ -115,8 +186,8 @@ function removeDeviceFromDG(accessToken, dgID, deviceID) {
 }
 module.exports.removeDeviceFromDG = removeDeviceFromDG;
 
-async function getProductList(accessToken, owner) {
-    const api = new ImpCentralApi();
+async function getProductList(url, accessToken, owner) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     let filters = null;
@@ -146,8 +217,8 @@ async function getProductList(accessToken, owner) {
 }
 module.exports.getProductList = getProductList;
 
-function getMe(accessToken) {
-    const api = new ImpCentralApi();
+function getMe(url, accessToken) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     return new Promise((resolve, reject) => {
@@ -160,8 +231,8 @@ function getMe(accessToken) {
 }
 module.exports.getMe = getMe;
 
-function getOwners(accessToken) {
-    const api = new ImpCentralApi();
+function getOwners(url, accessToken) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     return new Promise((resolve, reject) => {
@@ -181,8 +252,8 @@ function getOwners(accessToken) {
 }
 module.exports.getOwners = getOwners;
 
-function getDGOwnerID(accessToken, dgID) {
-    const api = new ImpCentralApi();
+function getDGOwnerID(url, accessToken, dgID) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     return new Promise((resolve, reject) => {
@@ -195,8 +266,8 @@ function getDGOwnerID(accessToken, dgID) {
 }
 module.exports.getDGOwnerID = getDGOwnerID;
 
-async function getDGList(accessToken, product, owner) {
-    const api = new ImpCentralApi();
+async function getDGList(url, accessToken, product, owner) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     let filters = null;
@@ -227,8 +298,8 @@ async function getDGList(accessToken, product, owner) {
 }
 module.exports.getDGList = getDGList;
 
-function newProduct(accessToken, productName, ownerID = null) {
-    const api = new ImpCentralApi();
+function newProduct(url, accessToken, productName, ownerID = null) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     const attrs = {
@@ -245,8 +316,8 @@ function newProduct(accessToken, productName, ownerID = null) {
 }
 module.exports.newProduct = newProduct;
 
-function newDG(accessToken, productID, dgName) {
-    const api = new ImpCentralApi();
+function newDG(url, accessToken, productID, dgName) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     const attrs = {
@@ -264,8 +335,8 @@ function newDG(accessToken, productID, dgName) {
 }
 module.exports.newDG = newDG;
 
-async function getDeviceList(accessToken, ownerID, dgIDAssigned, dgIDExclude) {
-    const api = new ImpCentralApi();
+async function getDeviceList(url, accessToken, ownerID, dgIDAssigned, dgIDExclude) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     const filters = {
@@ -328,8 +399,8 @@ function logStreamClose(impCentralApi, logStreamID) {
 }
 module.exports.logStreamClose = logStreamClose;
 
-function logStreamAddDevice(accessToken, logStreamID, deviceID) {
-    const api = new ImpCentralApi();
+function logStreamAddDevice(url, accessToken, logStreamID, deviceID) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     return new Promise((resolve, reject) => {
@@ -342,8 +413,8 @@ function logStreamAddDevice(accessToken, logStreamID, deviceID) {
 }
 module.exports.logStreamAddDevice = logStreamAddDevice;
 
-function logStreamRemoveDevice(accessToken, logStreamID, deviceID) {
-    const api = new ImpCentralApi();
+function logStreamRemoveDevice(url, accessToken, logStreamID, deviceID) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     return new Promise((resolve, reject) => {
@@ -356,8 +427,8 @@ function logStreamRemoveDevice(accessToken, logStreamID, deviceID) {
 }
 module.exports.logStreamRemoveDevice = logStreamRemoveDevice;
 
-function deploy(accessToken, dgID, dgType, attrs) {
-    const api = new ImpCentralApi();
+function deploy(url, accessToken, dgID, dgType, attrs) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     return new Promise((resolve, reject) => {
@@ -377,8 +448,8 @@ function deploy(accessToken, dgID, dgType, attrs) {
 }
 module.exports.deploy = deploy;
 
-function restartDevices(accessToken, dgID) {
-    const api = new ImpCentralApi();
+function restartDevices(url, accessToken, dgID) {
+    const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
     return new Promise((resolve, reject) => {
