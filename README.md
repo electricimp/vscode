@@ -101,9 +101,9 @@ The Extension provides the following commands:
 
 Select a new project working directory using **File > Open Folder...**, if you have not done so. Select the **View > Command Palette... > imp: New Project** menu item.
 
-When you create new project (or perform any other action that requires access to the impCloud), you will be asked to:
+When you create new project (or perform any other action that requires access to the Electric Imp impCloud), you will be asked to:
 
-- Provide your impCentral API base URL. The default value should be used, unless you are working with a private Electric Imp cloud.
+- Provide your impCentral API base URL. The default value should be used, unless you are working with a Private impCloud.
 - Provide your Electric Imp account user name, password and one-time password (OTP) as needed.
 - Specify whether a new Product should be created or an existing one selected for the project.
 - Select an impCentral account for the project from a list of accounts available for the user. Please see [Collaboration](https://developer.electricimp.com/tools/impcentral/collaboratoractions) for more details.
@@ -138,9 +138,9 @@ The `imp.config` file contains:
 #### Example ####
 
 ```json
-{ "cloudURL"       : "<Electric Imp Cloud URL>",
-  "ownerID"        : "<user id>",
-  "deviceGroupId"  : "<device group id>",
+{ "cloudURL"       : "<Electric Imp impCloud URL>",
+  "ownerID"        : "<user ID>",
+  "deviceGroupId"  : "<device group ID>",
   "device_code"    : "<path to device source file; src/device.nut by default>",
   "agent_code"     : "<path to agent source file; src/agent.nut by default>",
   "builderSettings": "<different Builder variables>" }
