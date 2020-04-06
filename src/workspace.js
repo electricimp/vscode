@@ -383,7 +383,7 @@ function createProjectFiles(url, dgID, ownerID, force = false) {
             deviceGroupId: dgID,
             device_code: path.join(Consts.srcDirName, Consts.deviceSourceFileName),
             agent_code: path.join(Consts.srcDirName, Consts.agentSourceFileName),
-            builderSettings: { variable_definitions: {} },
+            builderSettings: { variable_definitions: {}, builder_libs: [] },
         };
 
         const agentPath = path.join(Path.getPWD(), defaultOptions.agent_code);
@@ -508,7 +508,10 @@ function deploy(logstream, diagnostic) {
                     token: this.auth.builderSettings.github_token,
                 };
                 const defines = this.builderSettings.variable_definitions;
-                agentSource = this.agentPre.preprocess(agentName, code, agentInc, gh, defines);
+                const builder_libs = (this.builderSettings.builder_libs) ?
+                                      this.builderSettings.builder_libs.map(l => (path.isAbsolute(l) ? l : path.join(Path.getPWD(), l))) :
+                                      [];
+                agentSource = this.agentPre.preprocess(agentName, code, agentInc, gh, defines, builder_libs);
             } catch (err) {
                 diagnostic.addBuilderError(agentInc, err.message);
                 throw new User.BuilderError(err);
@@ -524,7 +527,10 @@ function deploy(logstream, diagnostic) {
                     token: this.auth.builderSettings.github_token,
                 };
                 const defines = this.builderSettings.variable_definitions;
-                deviceSource = this.devicePre.preprocess(devName, code, devInc, gh, defines);
+                const builder_libs = (this.builderSettings.builder_libs) ?
+                                      this.builderSettings.builder_libs.map(l => (path.isAbsolute(l) ? l : path.join(Path.getPWD(), l))) :
+                                      [];
+                deviceSource = this.devicePre.preprocess(devName, code, devInc, gh, defines, builder_libs);
             } catch (err) {
                 diagnostic.addBuilderError(devInc, err.message);
                 throw new User.BuilderError(err);
