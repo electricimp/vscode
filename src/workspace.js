@@ -507,7 +507,10 @@ function deploy(logstream, diagnostic) {
                     username: this.auth.builderSettings.github_user,
                     token: this.auth.builderSettings.github_token,
                 };
-                const defines = this.builderSettings.variable_definitions;
+                var defines = this.builderSettings.variable_definitions;
+                if (!('vscodeWorkdir' in defines)) {
+                    defines.vscodeWorkdir = Path.getPWD();
+                }
                 const builder_libs = (this.builderSettings.builder_libs) ?
                                       this.builderSettings.builder_libs.map(l => (path.isAbsolute(l) ? l : path.join(Path.getPWD(), l))) :
                                       [];
@@ -526,7 +529,10 @@ function deploy(logstream, diagnostic) {
                     username: this.auth.builderSettings.github_user,
                     token: this.auth.builderSettings.github_token,
                 };
-                const defines = this.builderSettings.variable_definitions;
+                var defines = this.builderSettings.variable_definitions;
+                if (!('vscodeWorkdir' in defines)) {
+                    defines.vscodeWorkdir = Path.getPWD();
+                }
                 const builder_libs = (this.builderSettings.builder_libs) ?
                                       this.builderSettings.builder_libs.map(l => (path.isAbsolute(l) ? l : path.join(Path.getPWD(), l))) :
                                       [];
