@@ -61,8 +61,8 @@ class Preprocessor {
     // Returns:
     //     none
     //
-    preprocess(inputFileName, inputData, includeDir, githubCreds, variables) {
-        const builder = new Builder();
+    preprocess(inputFileName, inputData, includeDir, githubCreds, variables, builderLibs) {
+        const builder = new Builder({ libs: builderLibs });
         builder.machine.file = inputFileName;
         builder.machine.path = includeDir;
         builder.machine.generateLineControlStatements = true;
