@@ -170,7 +170,7 @@
         "minimist": "^1.2.5",
         "tar": "^6.0.1",
         "typescript": "^2.6.1",
-        "vscode": "^1.1.21"
+        "vscode": "^1.1.37"
     },
     "dependencies": {
         "Builder": "^2.8.1",
