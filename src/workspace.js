@@ -423,8 +423,10 @@ function createProjectFiles(url, dgID, ownerID, force = false) {
 function validateDG(config) {
     return new Promise((resolve, reject) => {
         Api.getDG(config.cloudURL, config.accessToken, config.deviceGroupId)
-            .then(() => {
-                resolve(config);
+            .then((group) => {
+                const groupConfig = config;
+                groupConfig.dgType = group.data.type;
+                resolve(groupConfig);
             }, (err) => {
                 Auth.reloginIfAuthError(err, Auth.hideAuthError);
                 reject(new Error(`${User.ERRORS.DG_RETRIEVE} ${err}`));
@@ -481,6 +483,7 @@ function deploy(logstream, diagnostic) {
             this.accessToken = cfg.accessToken;
             this.ownerId = cfg.ownerId;
             this.dg = cfg.deviceGroupId;
+            this.dgType = cfg.dgType;
             this.agentCode = cfg.agent_code;
             this.deviceCode = cfg.device_code;
             this.builderSettings = cfg.builderSettings;
@@ -561,7 +564,7 @@ function deploy(logstream, diagnostic) {
         .then(async (attrs) => {
             let devices;
             try {
-                devices = await Api.deploy(this.cloudURL, this.accessToken, this.dg, DevGroups.TYPE_DEVELOPMENT, attrs);
+                devices = await Api.deploy(this.cloudURL, this.accessToken, this.dg, this.dgType, attrs);
             } catch (err) {
                 this.diagnostic.addDeployError(err);
                 throw new User.DeployError(err);
