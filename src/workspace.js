@@ -23,7 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
-const path = require('path');
+const upath = require('upath');
 const fs = require('fs');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
@@ -53,7 +53,7 @@ class Consts {
     }
 
     static get authFileLocalPath() {
-        return path.join(Consts.settingsDirName, Consts.authFileName);
+        return upath.join(Consts.settingsDirName, Consts.authFileName);
     }
 
     static get configFileName() {
@@ -61,7 +61,7 @@ class Consts {
     }
 
     static get configFileLocalPath() {
-        return path.join(Consts.settingsDirName, Consts.configFileName);
+        return upath.join(Consts.settingsDirName, Consts.configFileName);
     }
 
     static get srcDirName() {
@@ -105,15 +105,15 @@ class Path {
     }
 
     static getConfig() {
-        return path.join(Path.getPWD(), Consts.configFileLocalPath);
+        return upath.join(Path.getPWD(), Consts.configFileLocalPath);
     }
 
     static getAuth() {
-        return path.join(Path.getPWD(), Consts.authFileLocalPath);
+        return upath.join(Path.getPWD(), Consts.authFileLocalPath);
     }
 
     static getDefaultSrcDir() {
-        return path.join(Path.getPWD(), Consts.srcDirName);
+        return upath.join(Path.getPWD(), Consts.srcDirName);
     }
 }
 module.exports.Path = Path;
@@ -161,12 +161,12 @@ class Data {
                 return;
             }
 
-            const settingsDirPath = path.join(Path.getPWD(), Consts.settingsDirName);
+            const settingsDirPath = upath.join(Path.getPWD(), Consts.settingsDirName);
             if (!fs.existsSync(settingsDirPath)) {
                 fs.mkdirSync(settingsDirPath);
             }
 
-            const authFile = path.join(Path.getPWD(), Consts.authFileLocalPath);
+            const authFile = upath.join(Path.getPWD(), Consts.authFileLocalPath);
             try {
                 if (fs.existsSync(authFile)) {
                     /*
@@ -179,7 +179,7 @@ class Data {
                 vscode.window.showWarningMessage(`Cannot read old auth info ${err}`);
             }
 
-            const gitIgnoreFile = path.join(Path.getPWD(), Consts.gitIgnoreFileName);
+            const gitIgnoreFile = upath.join(Path.getPWD(), Consts.gitIgnoreFileName);
             try {
                 fs.writeFileSync(authFile, JSON.stringify(authInfo, null, 2));
                 if (!fs.existsSync(gitIgnoreFile)) {
@@ -255,7 +255,7 @@ class Data {
     }
 
     static getWorkspaceInfoFilePath() {
-        return path.join(Path.getPWD(), Consts.configFileLocalPath);
+        return upath.join(Path.getPWD(), Consts.configFileLocalPath);
     }
 
     static storeWorkspaceInfo(info) {
@@ -265,7 +265,7 @@ class Data {
                 return;
             }
 
-            const settingsDirPath = path.join(Path.getPWD(), Consts.settingsDirName);
+            const settingsDirPath = upath.join(Path.getPWD(), Consts.settingsDirName);
             if (!fs.existsSync(settingsDirPath)) {
                 fs.mkdirSync(settingsDirPath);
             }
@@ -305,14 +305,14 @@ class Data {
                     return;
                 }
 
-                const agentSrc = path.join(Path.getPWD(), config.agent_code);
+                const agentSrc = upath.join(Path.getPWD(), config.agent_code);
                 if (!fs.existsSync(agentSrc)) {
                     vscode.window.showTextDocument(vscode.workspace.openTextDocument(cfgFile));
                     reject(new Error(User.ERRORS.WORKSPACE_SRC_AGENT_NONE));
                     return;
                 }
 
-                const deviceSrc = path.join(Path.getPWD(), config.device_code);
+                const deviceSrc = upath.join(Path.getPWD(), config.device_code);
                 if (!fs.existsSync(deviceSrc)) {
                     vscode.window.showTextDocument(vscode.workspace.openTextDocument(cfgFile));
                     reject(new Error(User.ERRORS.WORKSPACE_SRC_DEVICE_NONE));
@@ -338,8 +338,8 @@ class Data {
     static getSourcesPathsSync() {
         const config = Data.getWorkspaceInfoSync();
         return {
-            agent_path: path.join(Path.getPWD(), config.agent_code),
-            device_path: path.join(Path.getPWD(), config.device_code),
+            agent_path: upath.join(Path.getPWD(), config.agent_code),
+            device_path: upath.join(Path.getPWD(), config.device_code),
         };
     }
 
@@ -352,9 +352,9 @@ class Data {
 
             Data.getWorkspaceInfo().then((config) => {
                 try {
-                    const agentSourcePath = path.join(Path.getPWD(), config.agent_code);
+                    const agentSourcePath = upath.join(Path.getPWD(), config.agent_code);
                     const agentSource = fs.readFileSync(agentSourcePath).toString();
-                    const deviceSourcePath = path.join(Path.getPWD(), config.device_code);
+                    const deviceSourcePath = upath.join(Path.getPWD(), config.device_code);
                     const deviceSource = fs.readFileSync(deviceSourcePath).toString();
                     const sources = {
                         agent_source: agentSource,
@@ -381,19 +381,19 @@ function createProjectFiles(url, dgID, ownerID, force = false) {
             cloudURL: url,
             ownerId: ownerID,
             deviceGroupId: dgID,
-            device_code: path.join(Consts.srcDirName, Consts.deviceSourceFileName),
-            agent_code: path.join(Consts.srcDirName, Consts.agentSourceFileName),
+            device_code: upath.join(Consts.srcDirName, Consts.deviceSourceFileName),
+            agent_code: upath.join(Consts.srcDirName, Consts.agentSourceFileName),
             builderSettings: { variable_definitions: {}, builder_libs: [] },
         };
 
-        const agentPath = path.join(Path.getPWD(), defaultOptions.agent_code);
+        const agentPath = upath.join(Path.getPWD(), defaultOptions.agent_code);
         if (fs.existsSync(agentPath) && !force) {
             vscode.window.showTextDocument(vscode.workspace.openTextDocument(agentPath));
             reject(User.ERRORS.WORKSPACE_SRC_AGENT_EXIST);
             return;
         }
 
-        const devPath = path.join(Path.getPWD(), defaultOptions.device_code);
+        const devPath = upath.join(Path.getPWD(), defaultOptions.device_code);
         if (fs.existsSync(devPath) && !force) {
             vscode.window.showTextDocument(vscode.workspace.openTextDocument(devPath));
             reject(User.ERRORS.WORKSPACE_SRC_DEVICE_EXIST);
@@ -502,9 +502,9 @@ function deploy(logstream, diagnostic) {
         .then((src) => { this.src = src; })
         .then(() => {
             let agentSource;
-            const agentInc = path.dirname(this.src.agent_path);
+            const agentInc = upath.dirname(this.src.agent_path);
             try {
-                const agentName = path.basename(this.agentCode);
+                const agentName = upath.basename(this.agentCode);
                 const code = this.src.agent_source;
                 const gh = {
                     username: this.auth.builderSettings.github_user,
@@ -515,7 +515,7 @@ function deploy(logstream, diagnostic) {
                     defines.vscodeWorkdir = Path.getPWD();
                 }
                 const builder_libs = (this.builderSettings.builder_libs) ?
-                                      this.builderSettings.builder_libs.map(l => (path.isAbsolute(l) ? l : path.join(Path.getPWD(), l))) :
+                                      this.builderSettings.builder_libs.map(l => (upath.isAbsolute(l) ? l : upath.join(Path.getPWD(), l))) :
                                       [];
                 agentSource = this.agentPre.preprocess(agentName, code, agentInc, gh, defines, builder_libs);
             } catch (err) {
@@ -524,9 +524,9 @@ function deploy(logstream, diagnostic) {
             }
 
             let deviceSource;
-            const devInc = path.dirname(this.src.device_path);
+            const devInc = upath.dirname(this.src.device_path);
             try {
-                const devName = path.basename(this.deviceCode);
+                const devName = upath.basename(this.deviceCode);
                 const code = this.src.device_source;
                 const gh = {
                     username: this.auth.builderSettings.github_user,
@@ -537,7 +537,7 @@ function deploy(logstream, diagnostic) {
                     defines.vscodeWorkdir = Path.getPWD();
                 }
                 const builder_libs = (this.builderSettings.builder_libs) ?
-                                      this.builderSettings.builder_libs.map(l => (path.isAbsolute(l) ? l : path.join(Path.getPWD(), l))) :
+                                      this.builderSettings.builder_libs.map(l => (upath.isAbsolute(l) ? l : upath.join(Path.getPWD(), l))) :
                                       [];
                 deviceSource = this.devicePre.preprocess(devName, code, devInc, gh, defines, builder_libs);
             } catch (err) {
@@ -546,12 +546,12 @@ function deploy(logstream, diagnostic) {
             }
 
             try {
-                const buildPath = path.join(Path.getPWD(), 'build');
+                const buildPath = upath.join(Path.getPWD(), 'build');
                 if (!fs.existsSync(buildPath)) {
                     fs.mkdirSync(buildPath);
                 }
-                fs.writeFileSync(path.join(buildPath, 'preprocessed_agent.nut'), agentSource);
-                fs.writeFileSync(path.join(buildPath, 'preprocessed_device.nut'), deviceSource);
+                fs.writeFileSync(upath.join(buildPath, 'preprocessed_agent.nut'), agentSource);
+                fs.writeFileSync(upath.join(buildPath, 'preprocessed_device.nut'), deviceSource);
             } catch (err) {
                 throw new User.PreprocessedFileError(err);
             }

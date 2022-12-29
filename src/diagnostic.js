@@ -24,7 +24,7 @@
 
 
 const fs = require('fs');
-const path = require('path');
+const upath = require('upath');
 const util = require('util');
 const vscode = require('vscode');
 const Workspace = require('./workspace');
@@ -89,7 +89,7 @@ class Diagnostic {
         }
 
         let uri;
-        const relativeFilePath = path.join(includeDir, parsedError.file);
+        const relativeFilePath = upath.join(includeDir, parsedError.file);
         const absoluteFilePath = parsedError.file;
         if (fs.existsSync(relativeFilePath)) {
             uri = vscode.Uri.file(relativeFilePath);
@@ -134,7 +134,7 @@ class Diagnostic {
                 }
 
                 let uri;
-                const relativeFilePath = path.join(path.dirname(data.file), errData[0]);
+                const relativeFilePath = upath.join(upath.dirname(data.file), errData[0]);
                 const absoluteFilePath = errData[0];
                 if (fs.existsSync(relativeFilePath)) {
                     uri = vscode.Uri.file(relativeFilePath);
@@ -193,7 +193,7 @@ class Diagnostic {
              * The location could be a path relative to Builder include dir or absolute path.
              * Check the both cases below.
              */
-            const relativeFilePath = path.join(path.dirname(src.file), errData[0]);
+            const relativeFilePath = upath.join(upath.dirname(src.file), errData[0]);
             const absoluteFilePath = errData[0];
             if (fs.existsSync(relativeFilePath)) {
                 uri = vscode.Uri.file(relativeFilePath);
@@ -209,7 +209,7 @@ class Diagnostic {
              * The second -1 below mean that we shold compensate "#line 1"
              * preprocessor derictive on the top of source file.
              */
-            const sourceFile = path.join(Workspace.Path.getPWD(), logStreamError.file);
+            const sourceFile = upath.join(Workspace.Path.getPWD(), logStreamError.file);
             uri = vscode.Uri.file(sourceFile);
             pos = new vscode.Position(logStreamError.line - 1 - 1, 0);
         }
