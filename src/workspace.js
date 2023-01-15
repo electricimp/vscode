@@ -375,49 +375,106 @@ class Data {
 }
 module.exports.Data = Data;
 
-function createProjectFiles(url, dgID, ownerID, force = false) {
-    return new Promise((resolve, reject) => {
-        const defaultOptions = {
-            cloudURL: url,
-            ownerId: ownerID,
-            deviceGroupId: dgID,
-            device_code: upath.join(Consts.srcDirName, Consts.deviceSourceFileName),
-            agent_code: upath.join(Consts.srcDirName, Consts.agentSourceFileName),
-            builderSettings: { variable_definitions: {}, builder_libs: [] },
-        };
+async function createProjectFiles(url, accessToken, dg, ownerID) {
+    const defaultOptions = {
+        cloudURL: url,
+        ownerId: ownerID,
+        deviceGroupId: dg.id,
+        device_code: upath.join(Consts.srcDirName, Consts.deviceSourceFileName),
+        agent_code: upath.join(Consts.srcDirName, Consts.agentSourceFileName),
+        builderSettings: { variable_definitions: {}, builder_libs: [] },
+    };
 
-        const agentPath = upath.join(Path.getPWD(), defaultOptions.agent_code);
-        if (fs.existsSync(agentPath) && !force) {
-            vscode.window.showTextDocument(vscode.workspace.openTextDocument(agentPath));
-            reject(User.ERRORS.WORKSPACE_SRC_AGENT_EXIST);
-            return;
-        }
+    const agentPath = upath.join(Path.getPWD(), defaultOptions.agent_code);
+    const devPath = upath.join(Path.getPWD(), defaultOptions.device_code);
+    const sourceFilesExist = fs.existsSync(agentPath) || fs.existsSync(devPath);
+    const deploymentExists = 'current_deployment' in dg.relationships;
+    const createSourcesCfg = await createSourcesDialog(sourceFilesExist, deploymentExists);
 
-        const devPath = upath.join(Path.getPWD(), defaultOptions.device_code);
-        if (fs.existsSync(devPath) && !force) {
-            vscode.window.showTextDocument(vscode.workspace.openTextDocument(devPath));
-            reject(User.ERRORS.WORKSPACE_SRC_DEVICE_EXIST);
-            return;
-        }
+    let agentSrc = Consts.agentSourceHeader;
+    let deviceSrc = Consts.deviceSourceHeader;
 
+    if (createSourcesCfg.downloadCode) {
+        const latestCode = await downloadLatestCode(url, accessToken, dg);
+        agentSrc = latestCode.agentCode;
+        deviceSrc = latestCode.deviceCode;
+    }
+
+    try {
         if (!fs.existsSync(Path.getDefaultSrcDir())) {
             fs.mkdirSync(Path.getDefaultSrcDir());
         }
 
-        try {
-            fs.writeFileSync(agentPath, Consts.agentSourceHeader);
-            fs.writeFileSync(devPath, Consts.deviceSourceHeader);
-        } catch (err) {
-            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_SRC_FILE} ${err}`);
-            reject(err);
-            return;
+        const writeFiles = createSourcesCfg.blankSources || createSourcesCfg.downloadCode;
+
+        if (writeFiles || !fs.existsSync(agentPath)) {
+            fs.writeFileSync(agentPath, agentSrc);
         }
 
-        Data.storeWorkspaceInfo(defaultOptions).then(() => resolve(), (err) => {
-            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${err}`);
-            reject(err);
+        if (writeFiles || !fs.existsSync(devPath)) {
+            fs.writeFileSync(devPath, deviceSrc);
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_SRC_FILE} ${err}`);
+        throw err;
+    }
+
+    try {
+        await Data.storeWorkspaceInfo(defaultOptions);
+    } catch (err) {
+        vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${err}`);
+    }
+}
+
+function downloadLatestCode(cloudURL, accessToken, dg) {
+    return Api.getDeployment(cloudURL, accessToken, dg.relationships['current_deployment'].id)
+        .then((result) => {
+            const deployment = result.data;
+            return { 'agentCode': deployment.attributes['agent_code'], 'deviceCode': deployment.attributes['device_code'] };
         });
-    });
+}
+
+async function createSourcesDialog(sourceFilesExist, deploymentExists) {
+    let blankSources = false;
+    let downloadCode = false;
+
+    const pickCloudUrlOptions = {
+        matchOnDescription: true,
+        matchOnDetail: true,
+        ignoreFocusOut: true,
+        canPickMany: false,
+        onDidSelectItem: undefined
+    };
+
+    if (sourceFilesExist) {
+        pickCloudUrlOptions.placeHolder = User.PICK_PLACEHOLDERS.WORKSPACE_SRC_FILES_EXIST;
+        const items = [User.PICK_ITEMS.WORKSPACE_LEAVE_SRC_FILES_AS_IS, User.PICK_ITEMS.WORKSPACE_MAKE_SRC_FILES_BLANK];
+
+        if (deploymentExists) {
+            items.push(User.PICK_ITEMS.WORKSPACE_PUT_DEPLOY_TO_SRC_FILES);
+        }
+
+        const pick = await vscode.window.showQuickPick(items, pickCloudUrlOptions);
+
+        if (pick === User.PICK_ITEMS.WORKSPACE_MAKE_SRC_FILES_BLANK) {
+            blankSources = true;
+        } else if (pick === User.PICK_ITEMS.WORKSPACE_PUT_DEPLOY_TO_SRC_FILES) {
+            downloadCode = true;
+        }
+    } else if (deploymentExists) {
+        pickCloudUrlOptions.placeHolder = User.PICK_PLACEHOLDERS.WORKSPACE_DOWNLOAD_DEPLOYED_CODE;
+        const items = [User.PICK_ITEMS.YES, User.PICK_ITEMS.NO];
+
+        const pick = await vscode.window.showQuickPick(items, pickCloudUrlOptions);
+
+        if (pick === User.PICK_ITEMS.YES) {
+            downloadCode = true;
+        }
+    } else {
+        blankSources = true;
+    }
+
+    return { 'blankSources': blankSources, 'downloadCode': downloadCode };
 }
 
 function validateDG(config) {
@@ -442,17 +499,18 @@ function showSources(src) {
     vscode.window.showInformationMessage(`${User.MESSAGES.WORKSPACE_CREATED}`);
 }
 
-function newProjectExistDG(cloudURL, dgID, ownerID) {
-    createProjectFiles(cloudURL, dgID, ownerID, true)
+function newProjectExistDG(cloudURL, accessToken, dg, ownerID) {
+    createProjectFiles(cloudURL, accessToken, dg, ownerID)
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
 }
+
 module.exports.newProjectExistDG = newProjectExistDG;
 
 function newProjectNewDG(cloudURL, accessToken, product, dgName, ownerID) {
     Api.newDG(cloudURL, accessToken, product.id, dgName)
-        .then(dg => createProjectFiles(cloudURL, dg.data.id, ownerID, true))
+        .then(dg => createProjectFiles(cloudURL, accessToken, dg.data, ownerID))
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
@@ -462,7 +520,7 @@ module.exports.newProjectNewDG = newProjectNewDG;
 function newProjectNewProduct(cloudURL, accessToken, productName, dgName, ownerID) {
     Api.newProduct(cloudURL, accessToken, productName, ownerID)
         .then(product => Api.newDG(cloudURL, accessToken, product.data.id, dgName))
-        .then(dg => createProjectFiles(cloudURL, dg.data.id, ownerID, true))
+        .then(dg => createProjectFiles(cloudURL, accessToken, dg.data, ownerID))
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
