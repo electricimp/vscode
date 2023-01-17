@@ -63,7 +63,7 @@ async function getDGName(input, state) {
     let dgList;
     function nameIsUnique(name) { return dgList.get(name) ? 'Already exist' : ''; }
 
-    if (state.product) {
+    if (state.type === projectTypes.newDG) {
         try {
             dgList = await Api.getDGList(state.cloudURL, state.accessToken, state.product.id, state.owner);
         } catch (err) {
@@ -467,7 +467,7 @@ class Dialog {
          * 2) If state.auth is defined, do not forget to save it.
          *
          * 3) If state.type == 'Exist DG':
-         * state should contait state.dgName and state.dg variables.
+         * state should contain state.dgName and state.dg variables.
          *
          * 2) If state.type == 'New DG':
          * state should contain state.productName, state.product and state.dgName.
@@ -490,7 +490,7 @@ class Dialog {
 
         switch (state.type) {
         case projectTypes.existDG:
-            Workspace.newProjectExistDG(state.cloudURL, state.dg.id, state.owner);
+            Workspace.newProjectExistDG(state.cloudURL, state.accessToken, state.dg, state.owner);
             break;
         case projectTypes.newDG:
             Workspace.newProjectNewDG(state.cloudURL, state.accessToken, state.product, state.dgName, state.owner);
@@ -505,11 +505,6 @@ class Dialog {
         return undefined;
     }
 }
-
-function loginDialog() {
-    Dialog.login();
-}
-module.exports.loginDialog = loginDialog;
 
 function newProjectDialog() {
     Dialog.newProject();
