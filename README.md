@@ -1,7 +1,4 @@
-# Electric Imp impCentral Microsoft Visual Studio Code Extension (Alpha) #
-
-| This extension is in the Alpha state. Please report any issues that you find. Thanks for your patience and cooperation! |
-| --- |
+# Electric Imp impCentral Microsoft Visual Studio Code Extension #
 
 ## Contents ##
 
@@ -62,9 +59,9 @@ Visual Studio Code can be [downloaded for a variety of platforms here](https://c
 
 ### 4. Install The Visual Studio Code Extension ###
 
-The Electric Imp Visual Studio Code Extension can be installed using any of a number of methods, listed below. Once the Extension has been published to the [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode), this will be the recommended way to install the Extension by building it from the source code.
+The Electric Imp Visual Studio Code Extension can be installed using any of a number of methods, listed below.
 
-#### Installation From The Visual Studio Marketplace ####
+#### Installation From The Visual Studio Marketplace (Recommended) ####
 
 The [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode) can be accessed through Visual Studio Code itself. Please refer to the Marketplace [documentation](https://code.visualstudio.com/docs/editor/extension-gallery) for more details. Search for the extension using `"Electric Imp Squirrel"` and, when the extension is listed, click the **Install** button next to it in the search results.
 
@@ -105,9 +102,10 @@ When you create new project (or perform any other action that requires access to
 
 - Provide your impCentral API base URL. The default value should be used, unless you are working with a Private impCloud.
 - Provide your Electric Imp account user name, password and one-time password (OTP) as needed.
-- Specify whether a new Product should be created or an existing one selected for the project.
 - Select an impCentral account for the project from a list of accounts available for the user. Please see [‘impCentral Collaborator Account Access’](https://developer.electricimp.com/tools/impcentral/collaboratoractions) for more details.
+- Specify whether a new Product should be created or an existing one selected for the project.
 - Specify whether a new Device Group should be created or an existing one selected for the project.
+- Choose what to do with sources: download them from the chosen DG, make them blank or leave them as is (if already exist)
 
 The project directory will be set up with the following files and structure:
 
@@ -130,31 +128,43 @@ The project directory will be set up with the following files and structure:
 
 The `imp.config` file contains:
 
+- Electric Imp impCloud URL
 - A unique user identifier.
 - A unique Device Group identifier.
 - Device and agent code file names.
-- [Builder](https://developer.electricimp.com/tools/builder) settings.
+- [Builder](https://developer.electricimp.com/tools/builder) settings (also, see more [below](#pre-processor-and-multiple-file-support)):
+  - [Variables](https://github.com/electricimp/Builder#variables).
+  - [JavaScript libraries](https://github.com/electricimp/Builder#including-javascript-libraries).
 
 #### Example ####
 
 ```json
-{ "cloudURL"       : "<Electric Imp impCloud URL>",
+{
+  "cloudURL"       : "<Electric Imp impCloud URL>",
   "ownerID"        : "<user ID>",
   "deviceGroupId"  : "<device group ID>",
   "device_code"    : "<path to device source file; src/device.nut by default>",
   "agent_code"     : "<path to agent source file; src/agent.nut by default>",
-  "builderSettings": "<different Builder variables>" }
+  "builderSettings": {
+    "variable_definitions": {
+      "<variable 1>": <value 1>,
+      ...
+    },
+    "builder_libs": [
+      "<path to Builder js library 1>",
+      ...
+    ]
+  }
+}
 ```
 
-When a project is created, empty device and agent code files (`device.nut` and `agent.nut`, respectively) are automatically created and stored in the project working directory’s `src` sub-directory.
-
-If the project was created successfully, the `imp.config` file is opened.
+When a project is created, device and agent code files (`device.nut` and `agent.nut`, respectively) are automatically created (if not exist yet) and stored in the project working directory’s `src` sub-directory.
 
 #### Important Notes ####
 
 - If the project working directory is not open in Visual Studio Code, no Extension commands will work. Use **File > Open Folder...** to open the directory.
 - The code which is deployed to a Device Group is pre-processed and therefore may contain line control markers. 
-- When you select an existing Device Group, the Extension downloads the code currently deployed to the group, but doesn’t transfer this code to the project file/directory structure.
+- If you choose to download the code currently deployed to the Device Group, the Extension downloads the code but doesn’t transfer it to the project file/directory structure.
 - If you are working with collaborators on a project, please share the original Electric Imp Extension project sources/structure via a source control system.
 
 ### Open An Existing Project ###
@@ -242,6 +252,15 @@ server.log(@{BoolTypeTrue});  // true
 server.log(@{BoolTypeFalse}); // false
 server.log(@{NullType});      // (null : 0x0)
 server.log(@{NotDefined});    // (null : 0x0)
+```
+
+### Include Builder JavaScript Libraries ###
+
+Please use the `<project working directory>/settings/imp.config` file to include Builder JavaScript libraries (as [described here](https://github.com/electricimp/Builder#including-javascript-libraries)).
+
+```json
+{ "builderSettings": { ...,
+                       "builder_libs": ["my_builder_lib.js", "another_builder_lib.js"]}
 ```
 
 ## License ##
