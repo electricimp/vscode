@@ -34,12 +34,7 @@ const maxPageSize = 100;
 function login(url, creds) {
     const api = new ImpCentralApi(url);
 
-    return new Promise((resolve, reject) => {
-        api.auth.login(creds.username, creds.password)
-            .then(authInfo => resolve(authInfo), (err) => {
-                reject(err);
-            });
-    });
+    return api.auth.login(creds.username, creds.password);
 }
 module.exports.login = login;
 
@@ -62,7 +57,7 @@ function isBadRequestError(error) {
 module.exports.isBadRequestError = isBadRequestError;
 
 function isENOTFOUNDError(err) {
-    if (err instanceof ImpCentralApi.Errors.InvalidDataError && 
+    if (err instanceof ImpCentralApi.Errors.InvalidDataError &&
         err.message.indexOf('ENOTFOUND') >= 0) {
         return true;
     }
@@ -104,12 +99,7 @@ module.exports.getMFALoginToken = getMFALoginToken;
 function loginWithOTP(url, otp, loginToken) {
     const api = new ImpCentralApi(url);
 
-    return new Promise((resolve, reject) => {
-        api.auth.loginWithOTP(otp, loginToken)
-            .then(authInfo => resolve(authInfo), (err) => {
-                reject(err);
-            });
-    });
+    return api.auth.loginWithOTP(otp, loginToken);
 }
 module.exports.loginWithOTP = loginWithOTP;
 
@@ -133,15 +123,17 @@ function getDG(url, accessToken, dgID) {
     const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
-    return new Promise((resolve, reject) => {
-        api.deviceGroups.get(dgID).then((result) => {
-            resolve(result);
-        }, (err) => {
-            reject(err);
-        });
-    });
+    return api.deviceGroups.get(dgID);
 }
 module.exports.getDG = getDG;
+
+function getDeployment(url, accessToken, deploymentID) {
+    const api = new ImpCentralApi(url);
+    api.auth.accessToken = accessToken;
+
+    return api.deployments.get(deploymentID);
+}
+module.exports.getDeployment = getDeployment;
 
 function getAgentURL(url, accessToken, deviceID) {
     const api = new ImpCentralApi(url);
@@ -221,13 +213,7 @@ function getMe(url, accessToken) {
     const api = new ImpCentralApi(url);
     api.auth.accessToken = accessToken;
 
-    return new Promise((resolve, reject) => {
-        api.accounts.get('me').then((me) => {
-            resolve(me);
-        }, (err) => {
-            reject(err);
-        });
-    });
+    return api.accounts.get('me');
 }
 module.exports.getMe = getMe;
 
@@ -237,9 +223,9 @@ function getOwners(url, accessToken) {
 
     return new Promise((resolve, reject) => {
         api.accounts.get('me').then((me) => {
-            api.accounts.list().then((accaunts) => {
+            api.accounts.list().then((accounts) => {
                 const owners = new Map();
-                accaunts.data.forEach((item) => {
+                accounts.data.forEach((item) => {
                     owners.set(item.attributes.username, item.id);
                 });
                 owners.delete(me.data.attributes.username);
@@ -306,13 +292,7 @@ function newProduct(url, accessToken, productName, ownerID = null) {
         name: productName,
     };
 
-    return new Promise((resolve, reject) => {
-        api.products.create(attrs, ownerID).then((product) => {
-            resolve(product);
-        }, (err) => {
-            reject(err);
-        });
-    });
+    return api.products.create(attrs, ownerID)
 }
 module.exports.newProduct = newProduct;
 
@@ -324,14 +304,7 @@ function newDG(url, accessToken, productID, dgName) {
         name: dgName,
     };
 
-    return new Promise((resolve, reject) => {
-        api.deviceGroups.create(productID, ImpDeviceGroups.TYPE_DEVELOPMENT, attrs)
-            .then((dg) => {
-                resolve(dg);
-            }, (err) => {
-                reject(err);
-            });
-    });
+    return api.deviceGroups.create(productID, ImpDeviceGroups.TYPE_DEVELOPMENT, attrs);
 }
 module.exports.newDG = newDG;
 

@@ -24,7 +24,7 @@
 
 
 const fs = require('fs');
-const path = require('path');
+const upath = require('upath');
 const strftime = require('strftime');
 const IsReachable = require('is-reachable');
 const vscode = require('vscode');
@@ -178,7 +178,7 @@ class LogStream {
              * or relative path with include directory.
              * Check the both cases below.
              */
-            const relativeFilePath = path.join(path.dirname(src.file), errData[0]);
+            const relativeFilePath = upath.join(upath.dirname(src.file), errData[0]);
             const absoluteFilePath = errData[0];
             if (fs.existsSync(relativeFilePath)) {
                 return `${msg.replace(`${result[1]}:${result[2]}`, `${relativeFilePath}:${errData[1]}`)}:0`;
@@ -189,7 +189,7 @@ class LogStream {
             /*
              * If we cannot find the full path to file with error, just log the filename.
              */
-            return `${msg.replace(`${result[1]}:${result[2]}`, `${path.basename(errData[0])}:${errData[1]}`)}:0`;
+            return `${msg.replace(`${result[1]}:${result[2]}`, `${upath.basename(errData[0])}:${errData[1]}`)}:0`;
         }
 
         const replaceIfPreNotDefined = false;

@@ -1,178 +1,198 @@
 {
-  "name": "vscode-electricimp",
-  "displayName": "Electric Imp Squirrel",
-  "description": "Electric Imp Application Development",
-  "version": "0.2.0",
-  "publisher": "electricimp",
-  "icon": "modern_nut.png",
-  "license": "MIT",
-  "engines": {
-    "vscode": "^1.28.0"
-  },
-  "categories": [
-    "Programming Languages"
-  ],
-  "keywords": [
-    "electric imp",
-    "electricimp",
-    "imp"
-  ],
-  "activationEvents": [
-    "onCommand:imp.auth.creds",
-    "onCommand:imp.workspace.project.new",
-    "onCommand:imp.workspace.project.deploy",
-    "onCommand:imp.logstream.add",
-    "onCommand:imp.logstream.remove",
-    "onCommand:imp.device.add",
-    "onCommand:imp.device.remove",
-    "onCommand:imp.device.agenturl",
-    "onCommand:imp.show.commands",
-    "onLanguage:squirrel"
-  ],
-  "main": "./src/extension",
-  "contributes": {
-    "commands": [
-      {
-        "command": "imp.auth.creds",
-        "title": "imp: Auth User Password"
-      },
-      {
-        "command": "imp.workspace.project.new",
-        "title": "imp: New Project"
-      },
-      {
-        "command": "imp.workspace.project.deploy",
-        "title": "imp: Deploy Project"
-      },
-      {
-        "command": "imp.logstream.add",
-        "title": "imp: Start Device Logs"
-      },
-      {
-        "command": "imp.logstream.remove",
-        "title": "imp: Stop Device Logs"
-      },
-      {
-        "command": "imp.logstream.pause",
-        "title": "imp: Pause Logs"
-      },
-      {
-        "command": "imp.logstream.clean",
-        "title": "imp: Clear Logs"
-      },
-      {
-        "command": "imp.device.add",
-        "title": "imp: Add Device to current DG"
-      },
-      {
-        "command": "imp.device.remove",
-        "title": "imp: Remove Device from current DG"
-      },
-      {
-        "command": "imp.device.agenturl",
-        "title": "imp: Get agent URL"
-      },
-      {
-        "command": "imp.show.commands",
-        "title": "imp: Show All Commands...",
-        "description": "Shows all commands from the imp extension in the quick pick"
-      }
+    "name": "vscode-electricimp",
+    "displayName": "Electric Imp Squirrel",
+    "description": "Electric Imp Application Development",
+    "version": "0.2.0",
+    "publisher": "electricimp",
+    "icon": "modern_nut.png",
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.28.0"
+    },
+    "categories": [
+        "Programming Languages"
     ],
-    "keybindings": [
-      {
-        "command": "imp.show.commands",
-        "key": "ctrl+shift+c",
-        "mac": "ctrl+shift+c"
-      },
-      {
-        "command": "imp.workspace.project.new",
-        "key": "ctrl+shift+y",
-        "mac": "ctrl+shift+y"
-      },
-      {
-        "command": "imp.workspace.project.deploy",
-        "key": "ctrl+shift+x",
-        "mac": "ctrl+shift+x"
-      }
+    "keywords": [
+        "electric imp",
+        "electricimp",
+        "imp"
     ],
-    "languages": [
-      {
-        "id": "squirrel",
-        "aliases": [
-          "Squirrel",
-          "squirrel"
+    "activationEvents": [
+        "onCommand:imp.auth.creds",
+        "onCommand:imp.workspace.project.new",
+        "onCommand:imp.workspace.project.deploy",
+        "onCommand:imp.logstream.add",
+        "onCommand:imp.logstream.remove",
+        "onCommand:imp.device.add",
+        "onCommand:imp.device.remove",
+        "onCommand:imp.device.agenturl",
+        "onCommand:imp.show.commands",
+        "onLanguage:squirrel"
+    ],
+    "main": "./src/extension",
+    "contributes": {
+        "commands": [
+            {
+                "command": "imp.auth.creds",
+                "title": "imp: Auth User Password"
+            },
+            {
+                "command": "imp.workspace.project.new",
+                "title": "imp: New Project"
+            },
+            {
+                "command": "imp.workspace.project.deploy",
+                "title": "imp: Deploy Project"
+            },
+            {
+                "command": "imp.logstream.add",
+                "title": "imp: Start Device Logs"
+            },
+            {
+                "command": "imp.logstream.remove",
+                "title": "imp: Stop Device Logs"
+            },
+            {
+                "command": "imp.logstream.pause",
+                "title": "imp: Pause Logs"
+            },
+            {
+                "command": "imp.logstream.clean",
+                "title": "imp: Clear Logs"
+            },
+            {
+                "command": "imp.device.add",
+                "title": "imp: Add Device to current DG"
+            },
+            {
+                "command": "imp.device.remove",
+                "title": "imp: Remove Device from current DG"
+            },
+            {
+                "command": "imp.device.agenturl",
+                "title": "imp: Get agent URL"
+            },
+            {
+                "command": "imp.show.commands",
+                "title": "imp: Show All Commands...",
+                "description": "Shows all commands from the imp extension in the quick pick"
+            }
         ],
-        "extensions": [
-          ".nut"
+        "keybindings": [
+            {
+                "command": "imp.show.commands",
+                "key": "ctrl+shift+c",
+                "mac": "ctrl+shift+c"
+            },
+            {
+                "command": "imp.workspace.project.new",
+                "key": "ctrl+shift+y",
+                "mac": "ctrl+shift+y"
+            },
+            {
+                "command": "imp.workspace.project.deploy",
+                "key": "ctrl+shift+x",
+                "mac": "ctrl+shift+x"
+            }
         ],
-        "configuration": "./language-configuration.json"
-      },
-      {
-        "id": "Log",
-        "aliases": [
-          "log"
+        "languages": [
+            {
+                "id": "squirrel",
+                "aliases": [
+                    "Squirrel",
+                    "squirrel"
+                ],
+                "extensions": [
+                    ".nut"
+                ],
+                "configuration": "./language-configuration.json"
+            },
+            {
+                "id": "Log",
+                "aliases": [
+                    "log"
+                ],
+                "extensions": [
+                    ".log"
+                ],
+                "configuration": "./log.configuration.json",
+                "mimetypes": [
+                    "log",
+                    "text/log",
+                    "text/x-log",
+                    "text/x-code-output",
+                    "x-code-output"
+                ]
+            }
         ],
-        "extensions": [
-          ".log"
+        "grammars": [
+            {
+                "language": "squirrel",
+                "scopeName": "source.squirrel",
+                "path": "./syntaxes/nut.tmLanguage"
+            },
+            {
+                "language": "Log",
+                "scopeName": "stream.log",
+                "path": "./syntaxes/log.tmLanguage"
+            }
         ],
-        "configuration": "./log.configuration.json",
-        "mimetypes": [
-          "log",
-          "text/log",
-          "text/x-log",
-          "text/x-code-output",
-          "x-code-output"
+        "snippets": [
+            {
+                "language": "squirrel",
+                "path": "./snippets/electric-imp-squirrel-completions.json"
+            },
+            {
+                "language": "squirrel",
+                "path": "./snippets/squirrelSnippets.json"
+            }
         ]
-      }
-    ],
-    "grammars": [
-      {
-        "language": "squirrel",
-        "scopeName": "source.squirrel",
-        "path": "./syntaxes/nut.tmLanguage"
-      },
-      {
-        "language": "Log",
-        "scopeName": "stream.log",
-        "path": "./syntaxes/log.tmLanguage"
-      }
-    ],
-    "snippets": [
-      {
-        "language": "squirrel",
-        "path": "./snippets/electric-imp-squirrel-completions.json"
-      },
-      {
-        "language": "squirrel",
-        "path": "./snippets/squirrelSnippets.json"
-      }
-    ]
-  },
-  "scripts": {
-    "postinstall": "node ./node_modules/vscode/bin/install",
-    "lint": "./node_modules/.bin/eslint src/",
-    "test": "node ./node_modules/vscode/bin/test"
-  },
-  "devDependencies": {
-    "@types/mocha": "^2.2.42",
-    "@types/node": "^8.10.25",
-    "eslint": "^4.11.0",
-    "eslint-plugin-import": "^2.14.0",
-    "eslint-config-airbnb-base": "^12.0.0",
-    "typescript": "^2.6.1",
-    "vscode": "^1.1.21",
-    "ajv": "^5.0.0"
-  },
-  "dependencies": {
-    "colors": "^1.3.3",
-    "strftime": "^0.10.0",
-    "imp-central-api": "^1.4.1",
-    "Builder": "^2.4.0",
-    "is-reachable": "^3.0.0",
-    "valid-url": "^1.0.9"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/electricimp/vscode.git"
-  }
+    },
+    "scripts": {
+        "preinstall": "npx npm-force-resolutions",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "lint": "./node_modules/.bin/eslint src/",
+        "test": "node ./node_modules/vscode/bin/test"
+    },
+    "devDependencies": {
+        "@types/mocha": "^2.2.42",
+        "@types/node": "^8.10.25",
+        "acorn": "^7.1.1",
+        "ajv": "^5.0.0",
+        "diff": "^4.0.2",
+        "eslint": "^4.11.0",
+        "eslint-config-airbnb-base": "^12.0.0",
+        "eslint-plugin-import": "^2.14.0",
+        "fstream": "^1.0.12",
+        "https-proxy-agent": "^5.0.0",
+        "js-yaml": "^3.13.1",
+        "lodash": "^4.17.15",
+        "minimist": "^1.2.5",
+        "tar": "^6.0.1",
+        "typescript": "^2.6.1",
+        "vscode": "^1.1.37"
+    },
+    "dependencies": {
+        "Builder": "^2.8.1",
+        "colors": "^1.4.0",
+        "imp-central-api": "^1.7.0",
+        "is-reachable": "^3.1.0",
+        "strftime": "^0.10.0",
+        "valid-url": "^1.0.9",
+        "upath": "^2.0.1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/electricimp/vscode.git"
+    },
+    "resolutions": {
+        "https-proxy-agent": "^2.2.3",
+        "acorn": "^5.7.4",
+        "minimist": "^0.2.1",
+        "lodash": "^4.17.12",
+        "diff": "^3.5.0",
+        "js-yaml": "^3.13.1",
+        "fstream": "^1.0.12",
+        "tar": "^2.2.2"
+    }
 }
