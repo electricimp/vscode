@@ -67,27 +67,29 @@ const MESSAGES = {
     AUTH_PROMPT_ENTER_PWD: 'Enter password:',
     AUTH_PROMPT_ENTER_OTP: 'Enter OTP (One Time Password):',
     AUTH_PROMPT_ENTER_URL: 'Enter Imp Cloud URL:',
-    AUTH_SUCCESS: 'Workspace login is successful',
-    DEVICE_PROMPT_DEVICE_ID: 'Enter a valid device ID:',
-    WORKSPACE_CREATED: 'Project created.',
-    WORKSPACE_PROMPT_DG_EXIST: 'Enter an exist device group ID:',
-    WORKSPACE_PROMPT_DG_NEW: 'Enter a new device group name:',
-    WORKSPACE_PROMPT_PRODUCT_EXIST: 'Enter an exist product ID:',
-    WORKSPACE_PROMPT_PRODUCT_NEW: 'Enter an new product name:',
+    WORKSPACE_CREATED: 'Project created'
 };
 module.exports.MESSAGES = MESSAGES;
+
+const PICK_PLACEHOLDERS = {
+    WORKSPACE_SRC_FILES_EXIST: 'You already have source file(s):',
+    WORKSPACE_DOWNLOAD_DEPLOYED_CODE: 'Download the currently deployed code from the DG?'
+};
+module.exports.PICK_PLACEHOLDERS = PICK_PLACEHOLDERS;
+
+const PICK_ITEMS = {
+    YES: 'Yes',
+    NO: 'No',
+    WORKSPACE_LEAVE_SRC_FILES_AS_IS: 'Leave them as is',
+    WORKSPACE_MAKE_SRC_FILES_BLANK: 'Make them blank',
+    WORKSPACE_PUT_DEPLOY_TO_SRC_FILES: 'Overwrite them with the currently deployed code from the DG'
+};
+module.exports.PICK_ITEMS = PICK_ITEMS;
 
 const NAMES = {
     OUTPUT_CHANNEL: 'imp: LogStream',
 };
 module.exports.NAMES = NAMES;
-
-const CONSTS = {
-    NEW_PROJECT_EXIST_DG: 'New Project, exist DG',
-    NEW_PROJECT_NEW_DG: 'New Project, new DG',
-    NEW_PROJECT_NEW_PRODUCT: 'New Project, new Product',
-};
-module.exports.CONSTS = CONSTS;
 
 // Display imp-central-api error as pop-up message.
 //

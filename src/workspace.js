@@ -23,7 +23,7 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 
 
-const path = require('path');
+const upath = require('upath');
 const fs = require('fs');
 const vscode = require('vscode');
 const ImpCentralApi = require('imp-central-api');
@@ -53,7 +53,7 @@ class Consts {
     }
 
     static get authFileLocalPath() {
-        return path.join(Consts.settingsDirName, Consts.authFileName);
+        return upath.join(Consts.settingsDirName, Consts.authFileName);
     }
 
     static get configFileName() {
@@ -61,7 +61,7 @@ class Consts {
     }
 
     static get configFileLocalPath() {
-        return path.join(Consts.settingsDirName, Consts.configFileName);
+        return upath.join(Consts.settingsDirName, Consts.configFileName);
     }
 
     static get srcDirName() {
@@ -105,15 +105,15 @@ class Path {
     }
 
     static getConfig() {
-        return path.join(Path.getPWD(), Consts.configFileLocalPath);
+        return upath.join(Path.getPWD(), Consts.configFileLocalPath);
     }
 
     static getAuth() {
-        return path.join(Path.getPWD(), Consts.authFileLocalPath);
+        return upath.join(Path.getPWD(), Consts.authFileLocalPath);
     }
 
     static getDefaultSrcDir() {
-        return path.join(Path.getPWD(), Consts.srcDirName);
+        return upath.join(Path.getPWD(), Consts.srcDirName);
     }
 }
 module.exports.Path = Path;
@@ -161,12 +161,12 @@ class Data {
                 return;
             }
 
-            const settingsDirPath = path.join(Path.getPWD(), Consts.settingsDirName);
+            const settingsDirPath = upath.join(Path.getPWD(), Consts.settingsDirName);
             if (!fs.existsSync(settingsDirPath)) {
                 fs.mkdirSync(settingsDirPath);
             }
 
-            const authFile = path.join(Path.getPWD(), Consts.authFileLocalPath);
+            const authFile = upath.join(Path.getPWD(), Consts.authFileLocalPath);
             try {
                 if (fs.existsSync(authFile)) {
                     /*
@@ -179,7 +179,7 @@ class Data {
                 vscode.window.showWarningMessage(`Cannot read old auth info ${err}`);
             }
 
-            const gitIgnoreFile = path.join(Path.getPWD(), Consts.gitIgnoreFileName);
+            const gitIgnoreFile = upath.join(Path.getPWD(), Consts.gitIgnoreFileName);
             try {
                 fs.writeFileSync(authFile, JSON.stringify(authInfo, null, 2));
                 if (!fs.existsSync(gitIgnoreFile)) {
@@ -255,7 +255,7 @@ class Data {
     }
 
     static getWorkspaceInfoFilePath() {
-        return path.join(Path.getPWD(), Consts.configFileLocalPath);
+        return upath.join(Path.getPWD(), Consts.configFileLocalPath);
     }
 
     static storeWorkspaceInfo(info) {
@@ -265,7 +265,7 @@ class Data {
                 return;
             }
 
-            const settingsDirPath = path.join(Path.getPWD(), Consts.settingsDirName);
+            const settingsDirPath = upath.join(Path.getPWD(), Consts.settingsDirName);
             if (!fs.existsSync(settingsDirPath)) {
                 fs.mkdirSync(settingsDirPath);
             }
@@ -305,14 +305,14 @@ class Data {
                     return;
                 }
 
-                const agentSrc = path.join(Path.getPWD(), config.agent_code);
+                const agentSrc = upath.join(Path.getPWD(), config.agent_code);
                 if (!fs.existsSync(agentSrc)) {
                     vscode.window.showTextDocument(vscode.workspace.openTextDocument(cfgFile));
                     reject(new Error(User.ERRORS.WORKSPACE_SRC_AGENT_NONE));
                     return;
                 }
 
-                const deviceSrc = path.join(Path.getPWD(), config.device_code);
+                const deviceSrc = upath.join(Path.getPWD(), config.device_code);
                 if (!fs.existsSync(deviceSrc)) {
                     vscode.window.showTextDocument(vscode.workspace.openTextDocument(cfgFile));
                     reject(new Error(User.ERRORS.WORKSPACE_SRC_DEVICE_NONE));
@@ -338,8 +338,8 @@ class Data {
     static getSourcesPathsSync() {
         const config = Data.getWorkspaceInfoSync();
         return {
-            agent_path: path.join(Path.getPWD(), config.agent_code),
-            device_path: path.join(Path.getPWD(), config.device_code),
+            agent_path: upath.join(Path.getPWD(), config.agent_code),
+            device_path: upath.join(Path.getPWD(), config.device_code),
         };
     }
 
@@ -352,9 +352,9 @@ class Data {
 
             Data.getWorkspaceInfo().then((config) => {
                 try {
-                    const agentSourcePath = path.join(Path.getPWD(), config.agent_code);
+                    const agentSourcePath = upath.join(Path.getPWD(), config.agent_code);
                     const agentSource = fs.readFileSync(agentSourcePath).toString();
-                    const deviceSourcePath = path.join(Path.getPWD(), config.device_code);
+                    const deviceSourcePath = upath.join(Path.getPWD(), config.device_code);
                     const deviceSource = fs.readFileSync(deviceSourcePath).toString();
                     const sources = {
                         agent_source: agentSource,
@@ -375,56 +375,115 @@ class Data {
 }
 module.exports.Data = Data;
 
-function createProjectFiles(url, dgID, ownerID, force = false) {
-    return new Promise((resolve, reject) => {
-        const defaultOptions = {
-            cloudURL: url,
-            ownerId: ownerID,
-            deviceGroupId: dgID,
-            device_code: path.join(Consts.srcDirName, Consts.deviceSourceFileName),
-            agent_code: path.join(Consts.srcDirName, Consts.agentSourceFileName),
-            builderSettings: { variable_definitions: {}, builder_libs: [] },
-        };
+async function createProjectFiles(url, accessToken, dg, ownerID) {
+    const defaultOptions = {
+        cloudURL: url,
+        ownerId: ownerID,
+        deviceGroupId: dg.id,
+        device_code: upath.join(Consts.srcDirName, Consts.deviceSourceFileName),
+        agent_code: upath.join(Consts.srcDirName, Consts.agentSourceFileName),
+        builderSettings: { variable_definitions: {}, builder_libs: [] },
+    };
 
-        const agentPath = path.join(Path.getPWD(), defaultOptions.agent_code);
-        if (fs.existsSync(agentPath) && !force) {
-            vscode.window.showTextDocument(vscode.workspace.openTextDocument(agentPath));
-            reject(User.ERRORS.WORKSPACE_SRC_AGENT_EXIST);
-            return;
-        }
+    const agentPath = upath.join(Path.getPWD(), defaultOptions.agent_code);
+    const devPath = upath.join(Path.getPWD(), defaultOptions.device_code);
+    const sourceFilesExist = fs.existsSync(agentPath) || fs.existsSync(devPath);
+    const deploymentExists = 'current_deployment' in dg.relationships;
+    const createSourcesCfg = await createSourcesDialog(sourceFilesExist, deploymentExists);
 
-        const devPath = path.join(Path.getPWD(), defaultOptions.device_code);
-        if (fs.existsSync(devPath) && !force) {
-            vscode.window.showTextDocument(vscode.workspace.openTextDocument(devPath));
-            reject(User.ERRORS.WORKSPACE_SRC_DEVICE_EXIST);
-            return;
-        }
+    let agentSrc = Consts.agentSourceHeader;
+    let deviceSrc = Consts.deviceSourceHeader;
 
+    if (createSourcesCfg.downloadCode) {
+        const latestCode = await downloadLatestCode(url, accessToken, dg);
+        agentSrc = latestCode.agentCode;
+        deviceSrc = latestCode.deviceCode;
+    }
+
+    try {
         if (!fs.existsSync(Path.getDefaultSrcDir())) {
             fs.mkdirSync(Path.getDefaultSrcDir());
         }
 
-        try {
-            fs.writeFileSync(agentPath, Consts.agentSourceHeader);
-            fs.writeFileSync(devPath, Consts.deviceSourceHeader);
-        } catch (err) {
-            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_SRC_FILE} ${err}`);
-            reject(err);
-            return;
+        const writeFiles = createSourcesCfg.blankSources || createSourcesCfg.downloadCode;
+
+        if (writeFiles || !fs.existsSync(agentPath)) {
+            fs.writeFileSync(agentPath, agentSrc);
         }
 
-        Data.storeWorkspaceInfo(defaultOptions).then(() => resolve(), (err) => {
-            vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${err}`);
-            reject(err);
+        if (writeFiles || !fs.existsSync(devPath)) {
+            fs.writeFileSync(devPath, deviceSrc);
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_SRC_FILE} ${err}`);
+        throw err;
+    }
+
+    try {
+        await Data.storeWorkspaceInfo(defaultOptions);
+    } catch (err) {
+        vscode.window.showErrorMessage(`${User.ERRORS.WORSPACE_CFG_FILE} ${err}`);
+    }
+}
+
+function downloadLatestCode(cloudURL, accessToken, dg) {
+    return Api.getDeployment(cloudURL, accessToken, dg.relationships['current_deployment'].id)
+        .then((result) => {
+            const deployment = result.data;
+            return { 'agentCode': deployment.attributes['agent_code'], 'deviceCode': deployment.attributes['device_code'] };
         });
-    });
+}
+
+async function createSourcesDialog(sourceFilesExist, deploymentExists) {
+    let blankSources = false;
+    let downloadCode = false;
+
+    const pickCloudUrlOptions = {
+        matchOnDescription: true,
+        matchOnDetail: true,
+        ignoreFocusOut: true,
+        canPickMany: false,
+        onDidSelectItem: undefined
+    };
+
+    if (sourceFilesExist) {
+        pickCloudUrlOptions.placeHolder = User.PICK_PLACEHOLDERS.WORKSPACE_SRC_FILES_EXIST;
+        const items = [User.PICK_ITEMS.WORKSPACE_LEAVE_SRC_FILES_AS_IS, User.PICK_ITEMS.WORKSPACE_MAKE_SRC_FILES_BLANK];
+
+        if (deploymentExists) {
+            items.push(User.PICK_ITEMS.WORKSPACE_PUT_DEPLOY_TO_SRC_FILES);
+        }
+
+        const pick = await vscode.window.showQuickPick(items, pickCloudUrlOptions);
+
+        if (pick === User.PICK_ITEMS.WORKSPACE_MAKE_SRC_FILES_BLANK) {
+            blankSources = true;
+        } else if (pick === User.PICK_ITEMS.WORKSPACE_PUT_DEPLOY_TO_SRC_FILES) {
+            downloadCode = true;
+        }
+    } else if (deploymentExists) {
+        pickCloudUrlOptions.placeHolder = User.PICK_PLACEHOLDERS.WORKSPACE_DOWNLOAD_DEPLOYED_CODE;
+        const items = [User.PICK_ITEMS.YES, User.PICK_ITEMS.NO];
+
+        const pick = await vscode.window.showQuickPick(items, pickCloudUrlOptions);
+
+        if (pick === User.PICK_ITEMS.YES) {
+            downloadCode = true;
+        }
+    } else {
+        blankSources = true;
+    }
+
+    return { 'blankSources': blankSources, 'downloadCode': downloadCode };
 }
 
 function validateDG(config) {
     return new Promise((resolve, reject) => {
         Api.getDG(config.cloudURL, config.accessToken, config.deviceGroupId)
-            .then(() => {
-                resolve(config);
+            .then((group) => {
+                const groupConfig = config;
+                groupConfig.dgType = group.data.type;
+                resolve(groupConfig);
             }, (err) => {
                 Auth.reloginIfAuthError(err, Auth.hideAuthError);
                 reject(new Error(`${User.ERRORS.DG_RETRIEVE} ${err}`));
@@ -440,17 +499,18 @@ function showSources(src) {
     vscode.window.showInformationMessage(`${User.MESSAGES.WORKSPACE_CREATED}`);
 }
 
-function newProjectExistDG(cloudURL, dgID, ownerID) {
-    createProjectFiles(cloudURL, dgID, ownerID, true)
+function newProjectExistDG(cloudURL, accessToken, dg, ownerID) {
+    createProjectFiles(cloudURL, accessToken, dg, ownerID)
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
 }
+
 module.exports.newProjectExistDG = newProjectExistDG;
 
 function newProjectNewDG(cloudURL, accessToken, product, dgName, ownerID) {
     Api.newDG(cloudURL, accessToken, product.id, dgName)
-        .then(dg => createProjectFiles(cloudURL, dg.data.id, ownerID, true))
+        .then(dg => createProjectFiles(cloudURL, accessToken, dg.data, ownerID))
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
@@ -460,7 +520,7 @@ module.exports.newProjectNewDG = newProjectNewDG;
 function newProjectNewProduct(cloudURL, accessToken, productName, dgName, ownerID) {
     Api.newProduct(cloudURL, accessToken, productName, ownerID)
         .then(product => Api.newDG(cloudURL, accessToken, product.data.id, dgName))
-        .then(dg => createProjectFiles(cloudURL, dg.data.id, ownerID, true))
+        .then(dg => createProjectFiles(cloudURL, accessToken, dg.data, ownerID))
         .then(Data.getSources)
         .then(showSources)
         .catch(err => User.showImpApiError(User.ERRORS.PROJECT_CREATE, err));
@@ -481,6 +541,7 @@ function deploy(logstream, diagnostic) {
             this.accessToken = cfg.accessToken;
             this.ownerId = cfg.ownerId;
             this.dg = cfg.deviceGroupId;
+            this.dgType = cfg.dgType;
             this.agentCode = cfg.agent_code;
             this.deviceCode = cfg.device_code;
             this.builderSettings = cfg.builderSettings;
@@ -499,9 +560,9 @@ function deploy(logstream, diagnostic) {
         .then((src) => { this.src = src; })
         .then(() => {
             let agentSource;
-            const agentInc = path.dirname(this.src.agent_path);
+            const agentInc = upath.dirname(this.src.agent_path);
             try {
-                const agentName = path.basename(this.agentCode);
+                const agentName = upath.basename(this.agentCode);
                 const code = this.src.agent_source;
                 const gh = {
                     username: this.auth.builderSettings.github_user,
@@ -512,7 +573,7 @@ function deploy(logstream, diagnostic) {
                     defines.vscodeWorkdir = Path.getPWD();
                 }
                 const builder_libs = (this.builderSettings.builder_libs) ?
-                                      this.builderSettings.builder_libs.map(l => (path.isAbsolute(l) ? l : path.join(Path.getPWD(), l))) :
+                                      this.builderSettings.builder_libs.map(l => (upath.isAbsolute(l) ? l : upath.join(Path.getPWD(), l))) :
                                       [];
                 agentSource = this.agentPre.preprocess(agentName, code, agentInc, gh, defines, builder_libs);
             } catch (err) {
@@ -521,9 +582,9 @@ function deploy(logstream, diagnostic) {
             }
 
             let deviceSource;
-            const devInc = path.dirname(this.src.device_path);
+            const devInc = upath.dirname(this.src.device_path);
             try {
-                const devName = path.basename(this.deviceCode);
+                const devName = upath.basename(this.deviceCode);
                 const code = this.src.device_source;
                 const gh = {
                     username: this.auth.builderSettings.github_user,
@@ -534,7 +595,7 @@ function deploy(logstream, diagnostic) {
                     defines.vscodeWorkdir = Path.getPWD();
                 }
                 const builder_libs = (this.builderSettings.builder_libs) ?
-                                      this.builderSettings.builder_libs.map(l => (path.isAbsolute(l) ? l : path.join(Path.getPWD(), l))) :
+                                      this.builderSettings.builder_libs.map(l => (upath.isAbsolute(l) ? l : upath.join(Path.getPWD(), l))) :
                                       [];
                 deviceSource = this.devicePre.preprocess(devName, code, devInc, gh, defines, builder_libs);
             } catch (err) {
@@ -543,12 +604,12 @@ function deploy(logstream, diagnostic) {
             }
 
             try {
-                const buildPath = path.join(Path.getPWD(), 'build');
+                const buildPath = upath.join(Path.getPWD(), 'build');
                 if (!fs.existsSync(buildPath)) {
                     fs.mkdirSync(buildPath);
                 }
-                fs.writeFileSync(path.join(buildPath, 'preprocessed_agent.nut'), agentSource);
-                fs.writeFileSync(path.join(buildPath, 'preprocessed_device.nut'), deviceSource);
+                fs.writeFileSync(upath.join(buildPath, 'preprocessed_agent.nut'), agentSource);
+                fs.writeFileSync(upath.join(buildPath, 'preprocessed_device.nut'), deviceSource);
             } catch (err) {
                 throw new User.PreprocessedFileError(err);
             }
@@ -561,7 +622,7 @@ function deploy(logstream, diagnostic) {
         .then(async (attrs) => {
             let devices;
             try {
-                devices = await Api.deploy(this.cloudURL, this.accessToken, this.dg, DevGroups.TYPE_DEVELOPMENT, attrs);
+                devices = await Api.deploy(this.cloudURL, this.accessToken, this.dg, this.dgType, attrs);
             } catch (err) {
                 this.diagnostic.addDeployError(err);
                 throw new User.DeployError(err);
