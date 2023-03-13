@@ -2,7 +2,7 @@
     "name": "vscode-electricimp",
     "displayName": "Electric Imp Squirrel",
     "description": "Electric Imp Application Development",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "publisher": "electricimp",
     "icon": "modern_nut.png",
     "license": "MIT",
