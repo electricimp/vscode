@@ -22,6 +22,7 @@
 - [Pre-processor And Multiple File Support](#pre-processor-and-multiple-file-support)
     - [Specify GitHub Authentication Information](#specify-github-authentication-information)
     - [Specify Builder Preset Variable Definitions](#specify-builder-preset-variable-definitions)
+    - [Include Builder JavaScript Libraries](#include-builder-javascript-libraries)
 
 ## Overview ##
 
@@ -260,7 +261,7 @@ Please use the `<project working directory>/settings/imp.config` file to include
 
 ```json
 { "builderSettings": { ...,
-                       "builder_libs": ["my_builder_lib.js", "another_builder_lib.js"]}
+                       "builder_libs": ["my_builder_lib.js", "another_builder_lib.js"]}}
 ```
 
 ## License ##
