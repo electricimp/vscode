@@ -60,32 +60,19 @@ Visual Studio Code can be [downloaded for a variety of platforms here](https://c
 
 ### 4. Install The Visual Studio Code Extension ###
 
-The Electric Imp Visual Studio Code Extension can be installed using any of a number of methods, listed below.
-
-#### Installation From The Visual Studio Marketplace (Recommended) ####
+It is recommended to install the Electric Imp Visual Studio Code Extension from the Visual Studio Marketplace.
 
 The [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode) can be accessed through Visual Studio Code itself. Please refer to the Marketplace [documentation](https://code.visualstudio.com/docs/editor/extension-gallery) for more details. Search for the extension using `"Electric Imp Squirrel"` and, when the extension is listed, click the **Install** button next to it in the search results.
-
-#### Installation From Source ####
-
-Follow these steps to install the Extension manually:
-
-1. At the command line, `cd` to the Visual Studio Code extension directory:
-    - **macOS** *~/.vscode/extensions*
-    - **Windows** *%USERPROFILE%\\.vscode\extensions*
-2. Clone the [full GitHub source repository](https://github.com/electricimp/vscode.git).
-3. Run `npm install .`
-4. Restart Visual Studio Code.
 
 ## Extension Commands List ##
 
 The Extension provides the following commands:
 
 * `imp: Auth User Password` &mdash; Create an authorization file with a new access token in the selected workspace directory.
-* `imp: New Project` &mdash; Create a new configuration file and empty source code files in the selected workspace directory.
+* `imp: New Project` &mdash; Create a new project (configuration and source code files) in the selected workspace directory.
 * `imp: Deploy Project` &mdash; Deploy the source code to the selected Device Group and restart the group’s devices.
-* `imp: Start Device Logs` &mdash; Begin including a device’s logs to the console output.
-* `imp: Stop Device Logs` &mdash; Stop showing a device’s logs in the console output.
+* `imp: Start Device Logs` &mdash; Start showing logs from a device in the console output.
+* `imp: Stop Device Logs` &mdash; Stop showing logs from a device in the console output.
 * `imp: Pause Logs` &mdash; Pause the logs in the console output.
 * `imp: Clear Logs` &mdash; Clear the logs in the console output.
 * `imp: Add Device to current DG` &mdash; Add a device to the workspace Device Group.
@@ -184,7 +171,9 @@ If you want to run your code on specific devices and view the logs from those de
 
 ### The Log Console ###
 
-Live logs are streamed to the console, displayed by selecting the **View > Output** menu item. It is possible to add a specific device to the live logs by its ID using the **View > Command Palette... > imp: Start Device Logs** command. The console shows live logs streamed from the current Device Group if the group contains at least one device.
+Live logs from devices are streamed to the console that is displayed by selecting the **View > Output** menu item. It is possible to add a specific device to the live logs by its ID using the **View > Command Palette... > imp: Start Device Logs** command. To stop showing logs from a specific device use the **View > Command Palette... > imp: Stop Device Logs** command. The console shows live logs streamed from the current Device Group if the group contains at least one device.
+
+Also you can pause the logs (using the **View > Command Palette... > imp: Pause Logs** command) and clear the logs (using the **View > Command Palette... > imp: Clear Logs** command).
 
 ### Assign A Device To The Project Device Group ###
 
