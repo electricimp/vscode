@@ -1,7 +1,4 @@
-# Electric Imp impCentral Microsoft Visual Studio Code Extension (Alpha) #
-
-| This extension is in the Alpha state. Please report any issues that you find. Thanks for your patience and cooperation! |
-| --- |
+# Electric Imp impCentral Microsoft Visual Studio Code Extension #
 
 ## Contents ##
 
@@ -25,6 +22,7 @@
 - [Pre-processor And Multiple File Support](#pre-processor-and-multiple-file-support)
     - [Specify GitHub Authentication Information](#specify-github-authentication-information)
     - [Specify Builder Preset Variable Definitions](#specify-builder-preset-variable-definitions)
+    - [Include Builder JavaScript Libraries](#include-builder-javascript-libraries)
 
 ## Overview ##
 
@@ -62,32 +60,19 @@ Visual Studio Code can be [downloaded for a variety of platforms here](https://c
 
 ### 4. Install The Visual Studio Code Extension ###
 
-The Electric Imp Visual Studio Code Extension can be installed using any of a number of methods, listed below. Once the Extension has been published to the [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode), this will be the recommended way to install the Extension by building it from the source code.
-
-#### Installation From The Visual Studio Marketplace ####
+It is recommended to install the Electric Imp Visual Studio Code Extension from the Visual Studio Marketplace.
 
 The [Visual Studio Marketplace](https://marketplace.visualstudio.com/VSCode) can be accessed through Visual Studio Code itself. Please refer to the Marketplace [documentation](https://code.visualstudio.com/docs/editor/extension-gallery) for more details. Search for the extension using `"Electric Imp Squirrel"` and, when the extension is listed, click the **Install** button next to it in the search results.
-
-#### Installation From Source ####
-
-Follow these steps to install the Extension manually:
-
-1. At the command line, `cd` to the Visual Studio Code extension directory:
-    - **macOS** *~/.vscode/extensions*
-    - **Windows** *%USERPROFILE%\\.vscode\extensions*
-2. Clone the [full GitHub source repository](https://github.com/electricimp/vscode.git).
-3. Run `npm install .`
-4. Restart Visual Studio Code.
 
 ## Extension Commands List ##
 
 The Extension provides the following commands:
 
 * `imp: Auth User Password` &mdash; Create an authorization file with a new access token in the selected workspace directory.
-* `imp: New Project` &mdash; Create a new configuration file and empty source code files in the selected workspace directory.
+* `imp: New Project` &mdash; Create a new project (configuration and source code files) in the selected workspace directory.
 * `imp: Deploy Project` &mdash; Deploy the source code to the selected Device Group and restart the group’s devices.
-* `imp: Start Device Logs` &mdash; Begin including a device’s logs to the console output.
-* `imp: Stop Device Logs` &mdash; Stop showing a device’s logs in the console output.
+* `imp: Start Device Logs` &mdash; Start showing logs from a device in the console output.
+* `imp: Stop Device Logs` &mdash; Stop showing logs from a device in the console output.
 * `imp: Pause Logs` &mdash; Pause the logs in the console output.
 * `imp: Clear Logs` &mdash; Clear the logs in the console output.
 * `imp: Add Device to current DG` &mdash; Add a device to the workspace Device Group.
@@ -105,9 +90,10 @@ When you create new project (or perform any other action that requires access to
 
 - Provide your impCentral API base URL. The default value should be used, unless you are working with a Private impCloud.
 - Provide your Electric Imp account user name, password and one-time password (OTP) as needed.
-- Specify whether a new Product should be created or an existing one selected for the project.
 - Select an impCentral account for the project from a list of accounts available for the user. Please see [‘impCentral Collaborator Account Access’](https://developer.electricimp.com/tools/impcentral/collaboratoractions) for more details.
+- Specify whether a new Product should be created or an existing one selected for the project.
 - Specify whether a new Device Group should be created or an existing one selected for the project.
+- Choose what to do with sources: download them from the chosen DG, make them blank or leave them as is (if already exist)
 
 The project directory will be set up with the following files and structure:
 
@@ -130,31 +116,43 @@ The project directory will be set up with the following files and structure:
 
 The `imp.config` file contains:
 
+- Electric Imp impCloud URL
 - A unique user identifier.
 - A unique Device Group identifier.
 - Device and agent code file names.
-- [Builder](https://developer.electricimp.com/tools/builder) settings.
+- [Builder](https://developer.electricimp.com/tools/builder) settings (also, see more [below](#pre-processor-and-multiple-file-support)):
+  - [Variables](https://github.com/electricimp/Builder#variables).
+  - [JavaScript libraries](https://github.com/electricimp/Builder#including-javascript-libraries).
 
 #### Example ####
 
 ```json
-{ "cloudURL"       : "<Electric Imp impCloud URL>",
+{
+  "cloudURL"       : "<Electric Imp impCloud URL>",
   "ownerID"        : "<user ID>",
   "deviceGroupId"  : "<device group ID>",
   "device_code"    : "<path to device source file; src/device.nut by default>",
   "agent_code"     : "<path to agent source file; src/agent.nut by default>",
-  "builderSettings": "<different Builder variables>" }
+  "builderSettings": {
+    "variable_definitions": {
+      "<variable 1>": <value 1>,
+      ...
+    },
+    "builder_libs": [
+      "<path to Builder js library 1>",
+      ...
+    ]
+  }
+}
 ```
 
-When a project is created, empty device and agent code files (`device.nut` and `agent.nut`, respectively) are automatically created and stored in the project working directory’s `src` sub-directory.
-
-If the project was created successfully, the `imp.config` file is opened.
+When a project is created, device and agent code files (`device.nut` and `agent.nut`, respectively) are automatically created (if not exist yet) and stored in the project working directory’s `src` sub-directory.
 
 #### Important Notes ####
 
 - If the project working directory is not open in Visual Studio Code, no Extension commands will work. Use **File > Open Folder...** to open the directory.
 - The code which is deployed to a Device Group is pre-processed and therefore may contain line control markers. 
-- When you select an existing Device Group, the Extension downloads the code currently deployed to the group, but doesn’t transfer this code to the project file/directory structure.
+- If you choose to download the code currently deployed to the Device Group, the Extension downloads the code but doesn’t transfer it to the project file/directory structure.
 - If you are working with collaborators on a project, please share the original Electric Imp Extension project sources/structure via a source control system.
 
 ### Open An Existing Project ###
@@ -173,7 +171,9 @@ If you want to run your code on specific devices and view the logs from those de
 
 ### The Log Console ###
 
-Live logs are streamed to the console, displayed by selecting the **View > Output** menu item. It is possible to add a specific device to the live logs by its ID using the **View > Command Palette... > imp: Start Device Logs** command. The console shows live logs streamed from the current Device Group if the group contains at least one device.
+Live logs from devices are streamed to the console that is displayed by selecting the **View > Output** menu item. It is possible to add a specific device to the live logs by its ID using the **View > Command Palette... > imp: Start Device Logs** command. To stop showing logs from a specific device use the **View > Command Palette... > imp: Stop Device Logs** command. The console shows live logs streamed from the current Device Group if the group contains at least one device.
+
+Also you can pause the logs (using the **View > Command Palette... > imp: Pause Logs** command) and clear the logs (using the **View > Command Palette... > imp: Clear Logs** command).
 
 ### Assign A Device To The Project Device Group ###
 
@@ -242,6 +242,15 @@ server.log(@{BoolTypeTrue});  // true
 server.log(@{BoolTypeFalse}); // false
 server.log(@{NullType});      // (null : 0x0)
 server.log(@{NotDefined});    // (null : 0x0)
+```
+
+### Include Builder JavaScript Libraries ###
+
+Please use the `<project working directory>/settings/imp.config` file to include Builder JavaScript libraries (as [described here](https://github.com/electricimp/Builder#including-javascript-libraries)).
+
+```json
+{ "builderSettings": { ...,
+                       "builder_libs": ["my_builder_lib.js", "another_builder_lib.js"]}}
 ```
 
 ## License ##

@@ -2,7 +2,7 @@
     "name": "vscode-electricimp",
     "displayName": "Electric Imp Squirrel",
     "description": "Electric Imp Application Development",
-    "version": "0.3.0",
+    "version": "1.0.0",
     "publisher": "electricimp",
     "icon": "modern_nut.png",
     "license": "MIT",
@@ -173,26 +173,26 @@
         "vscode": "^1.1.37"
     },
     "dependencies": {
-        "Builder": "^2.8.1",
+        "Builder": "^4.2.1",
         "colors": "^1.4.0",
         "imp-central-api": "^1.7.0",
         "is-reachable": "^3.1.0",
         "strftime": "^0.10.0",
-        "valid-url": "^1.0.9",
-        "upath": "^2.0.1"
+        "upath": "^2.0.1",
+        "valid-url": "^1.0.9"
     },
     "repository": {
         "type": "git",
         "url": "https://github.com/electricimp/vscode.git"
     },
     "resolutions": {
-        "https-proxy-agent": "^2.2.3",
-        "acorn": "^5.7.4",
-        "minimist": "^0.2.1",
-        "lodash": "^4.17.12",
-        "diff": "^3.5.0",
-        "js-yaml": "^3.13.1",
-        "fstream": "^1.0.12",
-        "tar": "^2.2.2"
+        "https-proxy-agent": "2.2.3",
+        "acorn": "5.7.4",
+        "minimist": "0.2.1",
+        "lodash": "4.17.12",
+        "diff": "3.5.0",
+        "js-yaml": "3.13.1",
+        "fstream": "1.0.12",
+        "tar": "2.2.2"
     }
 }
